@@ -171,14 +171,25 @@ class ConfigurationManager:
                 rules=rules
             ))
         
+        # Handle authentication credentials - check if we're using application credentials
+        username = config_dict.get('username', '')
+        password = config_dict.get('password', '')
+        tenant_name = config_dict.get('tenant_name', '')
+        
+        # If application credentials are provided, use them instead
+        if 'application_credential_id' in config_dict and 'application_credential_secret' in config_dict:
+            username = ''
+            password = ''
+            tenant_name = config_dict.get('tenant_name', config_dict.get('project_name', ''))
+        
         # Create DeploymentConfig
         return DeploymentConfig(
             auth_url=config_dict['auth_url'],
-            username=config_dict['username'],
-            password=config_dict['password'],
-            tenant_name=config_dict['tenant_name'],
-            region=config_dict['region'],
-            project_name=config_dict['project_name'],
+            username=username,
+            password=password,
+            tenant_name=tenant_name,
+            region=config_dict.get('region', ''),
+            project_name=config_dict.get('project_name', ''),
             instances=instances,
             networks=networks,
             volumes=volumes,
@@ -203,17 +214,13 @@ class ConfigurationManager:
         elif not self._is_valid_url(config.auth_url):
             errors.append(f"auth_url is not a valid HTTPS URL: {config.auth_url}")
         
-        if not config.username:
-            errors.append("username is required")
-        
-        if not config.password:
-            errors.append("password is required")
-        
-        if not config.tenant_name:
-            errors.append("tenant_name is required")
-        
+        # Validate required fields - we always require region and auth_url
         if not config.region:
             errors.append("region is required")
+            
+        # For tenant_name, we allow it to be empty since it might be set via application credentials
+        # The important thing is that auth_url is provided and region is provided
+        # We don't enforce tenant_name requirement here since it could be empty for app credentials
         
         # Validate at least one instance
         if not config.instances:

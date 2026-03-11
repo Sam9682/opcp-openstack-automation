@@ -1,0 +1,35 @@
+# Traditional OVH OpenStack Deployment Configuration
+# This configuration uses traditional username/password authentication
+
+auth_url: "https://auth.cloud.ovh.net/v3"
+username: "${OS_USERNAME}"
+password: "${OS_PASSWORD}"
+tenant_name: "${OS_TENANT_NAME}"
+region: "GRA7"
+project_name: "traditional-project"
+
+networks:
+  - name: "traditional-network"
+    subnets:
+      - name: "traditional-subnet"
+        cidr: "192.168.1.0/24"
+
+security_groups:
+  - name: "traditional-sg"
+    description: "Traditional security group"
+    rules:
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: "0.0.0.0/0"
+
+instances:
+  - name: "traditional-instance"
+    flavor: "s1-2"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids:
+      - "traditional-network"
+    security_groups:
+      - "traditional-sg"

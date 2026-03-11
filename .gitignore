@@ -60,9 +60,11 @@ logs/
 # Credentials and secrets
 *.pem
 *.key
-*credentials*
 *secrets*
 .env
 
 # OS
 Thumbs.db
+
+# credentials
+credentials/*

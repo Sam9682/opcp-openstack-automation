@@ -1,6 +1,12 @@
 """Example usage of authentication and connection management."""
 
 import os
+import sys
+import pathlib
+
+# Add the parent directory to Python path to allow importing openstack_sdk
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+
 from openstack_sdk.auth_manager import AuthenticationManager, ConnectionManager
 from config.models import AuthCredentials
 from utils.logger import setup_logging
@@ -22,6 +28,13 @@ def example_load_from_env():
         print(f"✓ Loaded credentials for user: {credentials.username}")
         print(f"✓ Region: {credentials.region}")
         print(f"✓ Auth URL: {credentials.auth_url}")
+        
+        # Check authentication type
+        if credentials.application_credential_id:
+            print("✓ Using Application Credentials authentication")
+            print(f"✓ Application Credential ID: {credentials.application_credential_id}")
+        else:
+            print("✓ Using Traditional Username/Password authentication")
         
         # Authenticate and create connection
         connection = auth_manager.authenticate(credentials)
@@ -51,6 +64,13 @@ def example_load_from_file():
         # Load credentials from file
         credentials = auth_manager.load_credentials_from_file('examples/credentials.txt')
         print(f"✓ Loaded credentials for user: {credentials.username}")
+        
+        # Check authentication type
+        if credentials.application_credential_id:
+            print("✓ Using Application Credentials authentication")
+            print(f"✓ Application Credential ID: {credentials.application_credential_id}")
+        else:
+            print("✓ Using Traditional Username/Password authentication")
         
         # Authenticate
         connection = auth_manager.authenticate(credentials)
@@ -134,6 +154,46 @@ def example_context_manager():
         print(f"✗ Error: {e}")
 
 
+def example_application_credentials():
+    """Example: Demonstrate application credentials usage."""
+    print("\n=== Example 5: Application Credentials Usage ===")
+    
+    # Set up logging
+    logger = setup_logging(log_level="INFO")
+    
+    # Create authentication manager
+    auth_manager = AuthenticationManager(logger=logger)
+    
+    try:
+        # Load credentials from environment (this now supports application credentials)
+        credentials = auth_manager.load_credentials_from_env()
+        print(f"✓ Loaded credentials")
+        print(f"✓ Auth URL: {credentials.auth_url}")
+        print(f"✓ Region: {credentials.region}")
+        print(f"✓ Tenant: {credentials.tenant_name}")
+        
+        # Check if application credentials are being used
+        if credentials.application_credential_id:
+            print("✓ Using Application Credentials authentication")
+            print(f"✓ Application Credential ID: {credentials.application_credential_id}")
+        else:
+            print("✓ Using Traditional Username/Password authentication")
+            print(f"✓ Username: {credentials.username}")
+        
+        # Authenticate and create connection
+        connection = auth_manager.authenticate(credentials)
+        print("✓ Authentication successful!")
+        
+        # Test connection by listing projects
+        projects = list(connection.identity.projects())
+        print(f"✓ Found {len(projects)} projects")
+        
+        connection.close()
+        
+    except Exception as e:
+        print(f"✗ Error: {e}")
+
+
 def main():
     """Run all examples."""
     print("=" * 70)
@@ -149,7 +209,7 @@ def main():
         for var in missing_vars:
             print(f"  - {var}")
         print("\nSet these variables to run the examples with real credentials.")
-        print("\nExample:")
+        print("\nFor traditional credentials:")
         print("  export OS_AUTH_URL=https://auth.cloud.ovh.net/v3")
         print("  export OS_USERNAME=your-username")
         print("  export OS_PASSWORD=your-password")
@@ -159,10 +219,11 @@ def main():
     
     # Run examples
     # Note: These will fail if credentials are not properly set
-    # example_load_from_env()
-    # example_load_from_file()
-    # example_connection_manager()
-    # example_context_manager()
+    example_load_from_env()
+    example_load_from_file()
+    example_connection_manager()
+    example_context_manager()
+    example_application_credentials()
     
     print("\n" + "=" * 70)
     print("Examples completed!")

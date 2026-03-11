@@ -2,11 +2,15 @@
 
 import sys
 import os
+import pathlib
+import socket
+import requests
+from urllib3.exceptions import NameResolutionError, MaxRetryError
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add the parent directory to Python path to allow importing openstack_sdk
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
-from openstack_sdk.auth_manager import AuthenticationManager, ConnectionManager
+from openstack_sdk.auth_manager import AuthenticationManager, ConnectionManager, AuthenticationError
 from openstack_sdk.compute_manager import ComputeManager, ComputeError
 from config.models import InstanceSpec
 from utils.logger import get_logger
@@ -15,6 +19,8 @@ from utils.logger import get_logger
 def main():
     """Demonstrate compute instance creation."""
     logger = get_logger(__name__)
+    
+    conn_manager = None
     
     try:
         # Step 1: Load credentials and authenticate
@@ -32,8 +38,56 @@ def main():
         
         # Create connection manager
         conn_manager = ConnectionManager(credentials)
-        connection = conn_manager.connect()
-        logger.info("Successfully authenticated to OVH OpenStack")
+        
+        # Attempt to connect with improved error handling
+        try:
+            connection = conn_manager.connect()
+            logger.info("Successfully authenticated to OVH OpenStack")
+        except AuthenticationError as e:
+            logger.error(f"Authentication failed: {e}")
+            logger.error("Please verify your credentials and network connectivity")
+            logger.error("Common causes:")
+            logger.error("  - Incorrect credentials in environment variables or file")
+            logger.error("  - Incorrect endpoint URL in credentials")
+            logger.error("  - Network connectivity issues")
+            logger.error("  - DNS resolution problems")
+            raise
+        except NameResolutionError as e:
+            logger.error(f"DNS resolution failed: {e}")
+            logger.error("Please check if the OpenStack endpoint URL is correct and reachable")
+            logger.error("Common causes:")
+            logger.error("  - Incorrect endpoint URL in credentials")
+            logger.error("  - Network connectivity issues")
+            logger.error("  - DNS server problems")
+            raise
+        except MaxRetryError as e:
+            logger.error(f"Connection failed: {e}")
+            logger.error("Please verify your network connectivity and the OpenStack endpoint URL")
+            logger.error("Common causes:")
+            logger.error("  - Incorrect endpoint URL in credentials")
+            logger.error("  - Network connectivity issues")
+            logger.error("  - Firewall blocking connections")
+            raise
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            logger.error("Please verify your network connectivity and the OpenStack endpoint URL")
+            logger.error("Common causes:")
+            logger.error("  - Incorrect endpoint URL in credentials")
+            logger.error("  - Network connectivity issues")
+            logger.error("  - Firewall blocking connections")
+            raise
+        except socket.gaierror as e:
+            logger.error(f"DNS resolution failed: {e}")
+            logger.error("Please check if the OpenStack endpoint URL is correct and reachable")
+            logger.error("Common causes:")
+            logger.error("  - Incorrect endpoint URL in credentials")
+            logger.error("  - Network connectivity issues")
+            logger.error("  - DNS server problems")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected authentication error: {e}")
+            logger.error("Please verify your credentials and network connectivity")
+            raise
         
         # Step 2: Create compute manager
         logger.info("\n=== Step 2: Initialize Compute Manager ===")
@@ -147,7 +201,7 @@ systemctl start nginx
     
     finally:
         # Close connection
-        if 'conn_manager' in locals():
+        if conn_manager is not None:
             conn_manager.close()
             logger.info("Connection closed")
 

@@ -3,12 +3,21 @@
 
 # Authentication credentials
 # Use environment variables for sensitive data: ${VAR_NAME}
-auth_url: "https://auth.cloud.ovh.net/v3"
-username: "${OS_USERNAME}"
-password: "${OS_PASSWORD}"
-tenant_name: "${OS_TENANT_NAME}"
-region: "GRA7"
-project_name: "my-project"
+# For traditional authentication:
+# auth_url: "https://auth.cloud.ovh.net/v3"
+# username: "${OS_USERNAME}"
+# password: "${OS_PASSWORD}"
+# tenant_name: "${OS_TENANT_NAME}"
+# region: "GRA7"
+# project_name: "my-project"
+
+# For application credentials authentication:
+auth_url: "${OS_AUTH_URL}"
+auth_type: "${OS_AUTH_TYPE}"
+region: "${OS_REGION_NAME}"
+project_name: "${OS_TENANT_NAME}"
+application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
 
 # Network specifications
 networks:

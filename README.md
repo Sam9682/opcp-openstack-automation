@@ -58,12 +58,32 @@ cd ovh-openstack-deployment
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
-```bash
-export OS_USERNAME="your-username"
-export OS_PASSWORD="your-password"
-export OS_TENANT_NAME="your-tenant-name"
-```
+3. Set up environment variables for authentication:
+   
+   **For Traditional Username/Password:**
+   ```bash
+   export OS_AUTH_URL=https://auth.cloud.ovh.net/v3
+   export OS_USERNAME=your-username
+   export OS_PASSWORD=your-password
+   export OS_TENANT_NAME=your-project-name
+   export OS_REGION_NAME=GRA7
+   ```
+
+   **For Application Credentials:**
+   ```bash
+   export OS_AUTH_TYPE=v3applicationcredential
+   export OS_AUTH_URL=https://keystone.demo.bmp.ovhgoldorack.ovh/v3
+   export OS_IDENTITY_API_VERSION=3
+   export OS_REGION_NAME="demo"
+   export OS_INTERFACE=public
+   export OS_APPLICATION_CREDENTIAL_ID=your_id
+   export OS_APPLICATION_CREDENTIAL_SECRET=your_secret
+   ```
+
+   Or use the convenience script:
+   ```bash
+   source examples/set_app_cred_env.sh
+   ```
 
 ### Configuration
 
@@ -80,7 +100,7 @@ cp examples/minimal-config.yaml my-config.yaml
 from config import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config('my-config.yaml')
+config = manager.load_config('examples/minimal-config.yaml')
 validation = manager.validate_config(config)
 
 if validation.is_valid:
@@ -91,10 +111,30 @@ else:
         print(f"  - {error}")
 ```
 
+### Running Examples
+
+To run the examples with application credentials:
+
+1. Set up your environment variables as shown above
+2. Run the application credentials example:
+```bash
+python examples/app_cred_example.py
+```
+
+Or run individual examples:
+```bash
+python examples/auth_example.py
+python examples/compute_example.py
+python examples/network_example.py
+python examples/security_group_example.py
+python examples/volume_example.py
+```
+
 ## Configuration Format
 
 The system uses a unified configuration format (YAML or JSON) for all deployment solutions:
 
+### Traditional Authentication
 ```yaml
 # Authentication
 auth_url: "https://auth.cloud.ovh.net/v3"
@@ -103,6 +143,51 @@ password: "${OS_PASSWORD}"
 tenant_name: "${OS_TENANT_NAME}"
 region: "GRA7"
 project_name: "my-project"
+
+# Networks
+networks:
+  - name: "private-network"
+    subnets:
+      - name: "private-subnet"
+        cidr: "192.168.1.0/24"
+
+# Security Groups
+security_groups:
+  - name: "web-sg"
+    description: "Web server security group"
+    rules:
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: "0.0.0.0/0"
+
+# Instances
+instances:
+  - name: "web-server-1"
+    flavor: "s1-4"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids: ["private-network"]
+    security_groups: ["web-sg"]
+
+# Volumes
+volumes:
+  - name: "data-volume-1"
+    size: 100
+    volume_type: "classic"
+    attach_to: "web-server-1"
+```
+
+### Application Credentials Authentication
+```yaml
+# Authentication for application credentials
+auth_url: "${OS_AUTH_URL}"
+auth_type: "${OS_AUTH_TYPE}"
+region: "${OS_REGION_NAME}"
+project_name: "${OS_TENANT_NAME}"
+application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
 
 # Networks
 networks:

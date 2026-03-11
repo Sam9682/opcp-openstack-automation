@@ -69,10 +69,15 @@ class AuthenticationManager:
         missing_vars = []
         if not auth_url:
             missing_vars.append('OS_AUTH_URL')
-        if not tenant_name:
-            missing_vars.append('OS_TENANT_NAME or OS_PROJECT_NAME')
         if not region:
             missing_vars.append('OS_REGION_NAME')
+            
+        # For application credentials, tenant_name is not required as it's embedded in the credential
+        # For traditional credentials, tenant_name is required
+        if not app_credential_id and not app_credential_secret:
+            # Traditional credentials require tenant_name
+            if not tenant_name:
+                missing_vars.append('OS_TENANT_NAME or OS_PROJECT_NAME')
             
         # Either traditional or application credentials must be provided
         if not app_credential_id and not app_credential_secret and not username:
