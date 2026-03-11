@@ -39,12 +39,9 @@ class AuthenticationManager:
         """
         Load authentication credentials from environment variables.
         
-        Expected environment variables:
-        - OS_AUTH_URL: OpenStack authentication URL
-        - OS_USERNAME: OpenStack username
-        - OS_PASSWORD: OpenStack password
-        - OS_TENANT_NAME or OS_PROJECT_NAME: Tenant/project name
-        - OS_REGION_NAME: Region name
+        Supports both traditional username/password and application credentials:
+        - Traditional: OS_AUTH_URL, OS_USERNAME, OS_PASSWORD, OS_TENANT_NAME, OS_REGION_NAME
+        - Application: OS_AUTH_URL, OS_APPLICATION_CREDENTIAL_ID, OS_APPLICATION_CREDENTIAL_SECRET, OS_TENANT_NAME, OS_REGION_NAME
         
         Returns:
             AuthCredentials object
@@ -56,25 +53,33 @@ class AuthenticationManager:
         
         # Get required environment variables
         auth_url = os.environ.get('OS_AUTH_URL')
-        username = os.environ.get('OS_USERNAME')
-        password = os.environ.get('OS_PASSWORD')
         tenant_name = os.environ.get('OS_TENANT_NAME') or os.environ.get('OS_PROJECT_NAME')
         region = os.environ.get('OS_REGION_NAME')
         project_name = tenant_name  # Use same value for project_name
         
-        # Validate required fields
+        # Check if we're using application credentials
+        app_credential_id = os.environ.get('OS_APPLICATION_CREDENTIAL_ID')
+        app_credential_secret = os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET')
+        
+        # Check if we're using traditional credentials
+        username = os.environ.get('OS_USERNAME')
+        password = os.environ.get('OS_PASSWORD')
+        
+        # Validate required fields based on authentication type
         missing_vars = []
         if not auth_url:
             missing_vars.append('OS_AUTH_URL')
-        if not username:
-            missing_vars.append('OS_USERNAME')
-        if not password:
-            missing_vars.append('OS_PASSWORD')
         if not tenant_name:
             missing_vars.append('OS_TENANT_NAME or OS_PROJECT_NAME')
         if not region:
             missing_vars.append('OS_REGION_NAME')
-        
+            
+        # Either traditional or application credentials must be provided
+        if not app_credential_id and not app_credential_secret and not username:
+            missing_vars.extend(['OS_USERNAME or OS_APPLICATION_CREDENTIAL_ID'])
+        if not app_credential_secret and not password:
+            missing_vars.extend(['OS_PASSWORD or OS_APPLICATION_CREDENTIAL_SECRET'])
+            
         if missing_vars:
             raise AuthenticationError(
                 f"Missing required environment variables: {', '.join(missing_vars)}"
@@ -82,14 +87,17 @@ class AuthenticationManager:
         
         self._credentials = AuthCredentials(
             auth_url=auth_url,
-            username=username,
-            password=password,
+            username=username or '',
+            password=password or '',
             tenant_name=tenant_name,
             region=region,
-            project_name=project_name
+            project_name=project_name,
+            application_credential_id=app_credential_id,
+            application_credential_secret=app_credential_secret
         )
         
-        self.logger.info(f"Loaded credentials for user '{username}' in region '{region}'")
+        auth_type = "application credentials" if app_credential_id else "traditional credentials"
+        self.logger.info(f"Loaded {auth_type} for tenant '{tenant_name}' in region '{region}'")
         return self._credentials
     
     def load_credentials_from_file(self, file_path: str) -> AuthCredentials:
@@ -194,6 +202,8 @@ class AuthenticationManager:
         """
         Authenticate to OVH OpenStack and create connection.
         
+        Supports both traditional username/password and application credentials.
+        
         Args:
             credentials: Authentication credentials
             
@@ -203,21 +213,36 @@ class AuthenticationManager:
         Raises:
             AuthenticationError: If authentication fails
         """
-        self.logger.info(f"Attempting authentication to {credentials.auth_url} as user {credentials.username}")
+        self.logger.info(f"Attempting authentication to {credentials.auth_url}")
         
         try:
-            # Create connection with credentials
-            conn = openstack.connect(
-                auth_url=credentials.auth_url,
-                username=credentials.username,
-                password=credentials.password,
-                project_name=credentials.project_name,
-                user_domain_name='Default',
-                project_domain_name='Default',
-                region_name=credentials.region,
-                app_name='ovh-openstack-deployment',
-                app_version='1.0'
-            )
+            # Determine authentication method based on credentials provided
+            if credentials.application_credential_id and credentials.application_credential_secret:
+                self.logger.info("Using application credential authentication")
+                # Create connection with application credentials
+                conn = openstack.connect(
+                    auth_url=credentials.auth_url,
+                    application_credential_id=credentials.application_credential_id,
+                    application_credential_secret=credentials.application_credential_secret,
+                    project_name=credentials.project_name,
+                    region_name=credentials.region,
+                    app_name='ovh-openstack-deployment',
+                    app_version='1.0'
+                )
+            else:
+                self.logger.info("Using traditional username/password authentication")
+                # Create connection with traditional credentials
+                conn = openstack.connect(
+                    auth_url=credentials.auth_url,
+                    username=credentials.username,
+                    password=credentials.password,
+                    project_name=credentials.project_name,
+                    user_domain_name='Default',
+                    project_domain_name='Default',
+                    region_name=credentials.region,
+                    app_name='ovh-openstack-deployment',
+                    app_version='1.0'
+                )
             
             # Test authentication by making a simple API call
             # This will raise an exception if authentication fails

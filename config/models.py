@@ -91,6 +91,8 @@ class AuthCredentials:
     tenant_name: str
     region: str
     project_name: str
+    application_credential_id: Optional[str] = None
+    application_credential_secret: Optional[str] = None
 
 
 @dataclass
