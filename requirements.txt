@@ -1,0 +1,15 @@
+# Python dependencies for OVH OpenStack Deployment Automation
+
+# OpenStack SDK for programmatic deployment
+openstacksdk>=1.0.0
+
+# Configuration file parsing
+PyYAML>=6.0
+
+# HTTP requests (dependency of openstacksdk)
+requests>=2.28.0
+
+# For Ansible integration (optional)
+ansible>=2.14.0
+
+# Testing dependencies (see requirements-dev.txt for development)

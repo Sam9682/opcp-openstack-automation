@@ -1,0 +1,114 @@
+# Example OVH OpenStack Deployment Configuration
+# This file demonstrates the configuration format for deploying infrastructure
+
+# Authentication credentials
+# Use environment variables for sensitive data: ${VAR_NAME}
+auth_url: "https://auth.cloud.ovh.net/v3"
+username: "${OS_USERNAME}"
+password: "${OS_PASSWORD}"
+tenant_name: "${OS_TENANT_NAME}"
+region: "GRA7"
+project_name: "my-project"
+
+# Network specifications
+networks:
+  - name: "private-network"
+    admin_state_up: true
+    external: false
+    subnets:
+      - name: "private-subnet"
+        cidr: "192.168.1.0/24"
+        ip_version: 4
+        enable_dhcp: true
+        gateway_ip: "192.168.1.1"
+        dns_nameservers:
+          - "8.8.8.8"
+          - "8.8.4.4"
+
+# Security group specifications
+security_groups:
+  - name: "web-security-group"
+    description: "Security group for web servers"
+    rules:
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: "0.0.0.0/0"
+        ethertype: "IPv4"
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 80
+        port_range_max: 80
+        remote_ip_prefix: "0.0.0.0/0"
+        ethertype: "IPv4"
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 443
+        port_range_max: 443
+        remote_ip_prefix: "0.0.0.0/0"
+        ethertype: "IPv4"
+
+# Instance specifications
+instances:
+  - name: "web-server-1"
+    flavor: "s1-4"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids:
+      - "private-network"
+    security_groups:
+      - "web-security-group"
+    metadata:
+      environment: "production"
+      role: "web-server"
+
+  - name: "web-server-2"
+    flavor: "s1-4"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids:
+      - "private-network"
+    security_groups:
+      - "web-security-group"
+    metadata:
+      environment: "production"
+      role: "web-server"
+
+  - name: "web-server-3"
+    flavor: "s1-4"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids:
+      - "private-network"
+    security_groups:
+      - "web-security-group"
+    user_data: |
+      #!/bin/bash
+      apt-get update
+      apt-get install -y nginx
+      systemctl enable nginx
+      systemctl start nginx
+    metadata:
+      environment: "production"
+      role: "web-server"
+
+# Volume specifications
+volumes:
+  - name: "data-volume-1"
+    size: 100
+    volume_type: "classic"
+    bootable: false
+    attach_to: "web-server-1"
+
+  - name: "data-volume-2"
+    size: 100
+    volume_type: "classic"
+    bootable: false
+    attach_to: "web-server-2"
+
+  - name: "data-volume-3"
+    size: 100
+    volume_type: "classic"
+    bootable: false
+    attach_to: "web-server-3"

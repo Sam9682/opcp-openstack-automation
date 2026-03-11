@@ -1,0 +1,35 @@
+# Minimal OVH OpenStack Deployment Configuration
+# This is the simplest possible configuration
+
+auth_url: "https://auth.cloud.ovh.net/v3"
+username: "${OS_USERNAME}"
+password: "${OS_PASSWORD}"
+tenant_name: "${OS_TENANT_NAME}"
+region: "GRA7"
+project_name: "minimal-project"
+
+networks:
+  - name: "simple-network"
+    subnets:
+      - name: "simple-subnet"
+        cidr: "10.0.0.0/24"
+
+security_groups:
+  - name: "basic-sg"
+    description: "Basic security group"
+    rules:
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: "0.0.0.0/0"
+
+instances:
+  - name: "test-instance"
+    flavor: "s1-2"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids:
+      - "simple-network"
+    security_groups:
+      - "basic-sg"
