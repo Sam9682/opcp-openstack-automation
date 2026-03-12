@@ -73,14 +73,14 @@ def example_volume_with_application_credentials():
     
     standalone_volumes = [
         VolumeSpec(
-            name="data-volume-1",
+            name="opcp-automation-data-volume-1",
             size=100,
-            volume_type="classic"
+            volume_type="public_standard"
         ),
         VolumeSpec(
-            name="data-volume-2",
+            name="opcp-automation-data-volume-2",
             size=200,
-            volume_type="high-speed"
+            volume_type="public_standard"
         )
     ]
     
@@ -99,11 +99,12 @@ def example_volume_with_application_credentials():
     # Note: You need to get a valid image_id from your OpenStack environment
     # This is just an example - replace with actual image ID
     bootable_volume_spec = VolumeSpec(
-        name="boot-volume",
+        name="opcp-automation-boot-volume",
         size=50,
-        volume_type="high-speed",
+        volume_type="public_standard",
         bootable=True,
-        image_id="your-image-id-here"  # Replace with actual image ID
+        image_id="74c1d5a5-d794-4304-87c3-c7a4cdb71699"  # Replace with actual image ID
+        # Ubuntu 24.04 GOR
     )
     
     # Uncomment to create bootable volume:
@@ -132,9 +133,9 @@ def example_volume_with_application_credentials():
         
         attached_volumes = [
             VolumeSpec(
-                name=f"attached-volume-{first_instance_name}",
+                name=f"opcp-automation-attached-volume-{first_instance_name}",
                 size=150,
-                volume_type="classic",
+                volume_type="public_standard",
                 attach_to=first_instance_name
             )
         ]

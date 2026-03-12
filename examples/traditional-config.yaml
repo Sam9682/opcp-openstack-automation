@@ -6,16 +6,16 @@ username: "${OS_USERNAME}"
 password: "${OS_PASSWORD}"
 tenant_name: "${OS_TENANT_NAME}"
 region: "GRA7"
-project_name: "traditional-project"
+project_name: "opcp-automation-traditional-project"
 
 networks:
-  - name: "traditional-network"
+  - name: "opcp-automation-traditional-network"
     subnets:
       - name: "traditional-subnet"
         cidr: "192.168.1.0/24"
 
 security_groups:
-  - name: "traditional-sg"
+  - name: "opcp-automation-traditional-sg"
     description: "Traditional security group"
     rules:
       - direction: "ingress"
@@ -25,11 +25,11 @@ security_groups:
         remote_ip_prefix: "0.0.0.0/0"
 
 instances:
-  - name: "traditional-instance"
+  - name: "opcp-automation-traditional-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "my-ssh-key"
+    image: "Ubuntu 24.04 GOR"
+    key_name: "opcp-automation-my-ssh-key-training-001"
     network_ids:
-      - "traditional-network"
+      - "opcp_automation-traditional-network"
     security_groups:
-      - "traditional-sg"
+      - "opcp-automation-traditional-sg"

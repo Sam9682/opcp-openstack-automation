@@ -102,41 +102,41 @@ def main():
         
         instance_specs = [
             InstanceSpec(
-                name="web-server-1",
-                flavor="s1-2",  # Small instance flavor
-                image="Ubuntu 22.04",  # Ubuntu 22.04 image
-                key_name="my-ssh-key",  # Replace with your SSH key name
-                network_ids=["your-network-id"],  # Replace with your network ID
-                security_groups=["web-security-group"],  # Replace with your security group
+                name="opcp-automation-web-server-1",
+                flavor="scale-1",  # Small instance flavor
+                image="Ubuntu 24.04 GOR",  # Ubuntu 22.04 image
+                key_name="opcp-automation-my-ssh-key-training-001",  # Replace with your SSH key name
+                network_ids=["f96825f7-5c9f-4079-a393-b6f94628ee1e"],  # Replace with your network ID
+                security_groups=["opcp-automation-web-server-sg"],  # Replace with your security group
                 user_data="""#!/bin/bash
-echo "Hello from web-server-1" > /tmp/hello.txt
+echo "Hello from opcp-automation-web-server-1" > /tmp/hello.txt
 apt-get update
 apt-get install -y nginx
 systemctl start nginx
 """,
                 metadata={
-                    "project": "example",
+                    "project": "opcp-automation-example",
                     "environment": "dev",
-                    "role": "web-server"
+                    "role": "opcp-automation-web-server"
                 }
             ),
             InstanceSpec(
-                name="web-server-2",
-                flavor="s1-2",
-                image="Ubuntu 22.04",
-                key_name="my-ssh-key",
-                network_ids=["your-network-id"],
-                security_groups=["web-security-group"],
+                name="opcp-automation-web-server-2",
+                flavor="scale-1",
+                image="Ubuntu 24.04 GOR",
+                key_name="opcp-automation-my-ssh-key-training-001",
+                network_ids=["f96825f7-5c9f-4079-a393-b6f94628ee1e"],
+                security_groups=["opcp-automation-web-server-sg"],
                 user_data="""#!/bin/bash
-echo "Hello from web-server-2" > /tmp/hello.txt
+echo "Hello from opcp-automation-web-server-2" > /tmp/hello.txt
 apt-get update
 apt-get install -y nginx
 systemctl start nginx
 """,
                 metadata={
-                    "project": "example",
+                    "project": "opcp-automation-example",
                     "environment": "dev",
-                    "role": "web-server"
+                    "role": "opcp-automation-web-server"
                 }
             )
         ]

@@ -68,15 +68,15 @@ def example_security_group_with_application_credentials():
     security_groups = [
         # Web server security group
         SecurityGroupSpec(
-            name="web-server-sg",
+            name="opcp-automation-web-server-sg-001",
             description="Security group for web servers",
             rules=[
                 # SSH access (restrict to your IP in production)
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=22,
-                    port_range_max=22,
+                    port_range_min=60022, # 22
+                    port_range_max=60022, # 22
                     remote_ip_prefix="0.0.0.0/0",
                     ethertype="IPv4"
                 ),
@@ -84,8 +84,8 @@ def example_security_group_with_application_credentials():
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=80,
-                    port_range_max=80,
+                    port_range_min=60080, # 80
+                    port_range_max=60080, # 80
                     remote_ip_prefix="0.0.0.0/0",
                     ethertype="IPv4"
                 ),
@@ -93,8 +93,8 @@ def example_security_group_with_application_credentials():
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=443,
-                    port_range_max=443,
+                    port_range_min=60443, # 443
+                    port_range_max=60443, # 443
                     remote_ip_prefix="0.0.0.0/0",
                     ethertype="IPv4"
                 ),
@@ -109,15 +109,15 @@ def example_security_group_with_application_credentials():
         ),
         # Database security group
         SecurityGroupSpec(
-            name="database-sg",
+            name="opcp-automation-database-sg-001",
             description="Security group for database servers",
             rules=[
                 # PostgreSQL access from private network only
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=5432,
-                    port_range_max=5432,
+                    port_range_min=65432, # 5432
+                    port_range_max=65432, # 5432
                     remote_ip_prefix="192.168.1.0/24",
                     ethertype="IPv4"
                 ),
@@ -125,8 +125,8 @@ def example_security_group_with_application_credentials():
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=3306,
-                    port_range_max=3306,
+                    port_range_min=63306, # 3306
+                    port_range_max=63306, # 3306
                     remote_ip_prefix="192.168.1.0/24",
                     ethertype="IPv4"
                 ),
@@ -141,15 +141,15 @@ def example_security_group_with_application_credentials():
         ),
         # Application server security group
         SecurityGroupSpec(
-            name="app-server-sg",
+            name="opcp-automation-app-server-sg-001",
             description="Security group for application servers",
             rules=[
                 # SSH access
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=22,
-                    port_range_max=22,
+                    port_range_min=60220, # 22
+                    port_range_max=60220, # 22
                     remote_ip_prefix="0.0.0.0/0",
                     ethertype="IPv4"
                 ),
@@ -157,8 +157,8 @@ def example_security_group_with_application_credentials():
                 SecurityGroupRule(
                     direction="ingress",
                     protocol="tcp",
-                    port_range_min=8000,
-                    port_range_max=8999,
+                    port_range_min=68000, # 8000
+                    port_range_max=68999, # 8999
                     remote_ip_prefix="192.168.1.0/24",
                     ethertype="IPv4"
                 ),
