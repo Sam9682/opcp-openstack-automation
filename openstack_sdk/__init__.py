@@ -5,6 +5,7 @@ from .network_manager import NetworkManager, NetworkError
 from .security_group_manager import SecurityGroupManager, SecurityGroupError
 from .compute_manager import ComputeManager, ComputeError
 from .volume_manager import VolumeManager, VolumeError
+from .deployment_engine import DeploymentEngine, DeploymentResult, FailedResource, DeploymentError
 
 __all__ = [
     'AuthenticationManager',
@@ -16,5 +17,9 @@ __all__ = [
     'ComputeManager',
     'ComputeError',
     'VolumeManager',
-    'VolumeError'
+    'VolumeError',
+    'DeploymentEngine',
+    'DeploymentResult',
+    'FailedResource',
+    'DeploymentError'
 ]

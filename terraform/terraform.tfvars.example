@@ -1,0 +1,225 @@
+# =============================================================================
+# OVH OpenStack Deployment Configuration Example
+# =============================================================================
+# This file provides example values for all Terraform variables.
+# Copy this file to terraform.tfvars and update with your actual values.
+#
+# IMPORTANT: Never commit terraform.tfvars to version control!
+# The .gitignore file already excludes *.tfvars files.
+#
+# Usage:
+#   1. Copy this file: cp terraform.tfvars.example terraform.tfvars
+#   2. Edit terraform.tfvars with your actual credentials and configuration
+#   3. Run: terraform init
+#   4. Run: terraform plan
+#   5. Run: terraform apply
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Authentication Configuration (REQUIRED)
+# -----------------------------------------------------------------------------
+# These credentials are required to authenticate with OVH OpenStack API.
+# You can find these values in your OVH Control Panel under "Public Cloud" > 
+# "Users & Roles" > "OpenStack users"
+
+# The authentication URL for OVH OpenStack API
+# Common values:
+#   - https://auth.cloud.ovh.net/v3 (OVH Public Cloud)
+auth_url = "https://auth.cloud.ovh.net/v3"
+
+# Your OpenStack username (typically starts with "user-" followed by numbers)
+username = "user-xxxxxxxxxxxx"
+
+# Your OpenStack password (generate from OVH Control Panel)
+# SECURITY: Keep this secret! Never commit to version control!
+password = "your-secure-password-here"
+
+# The tenant/project name (also called project ID in OVH)
+# Find this in OVH Control Panel under your project settings
+tenant_name = "your-project-id-here"
+
+# The OVH OpenStack region where resources will be created
+# Available regions:
+#   - GRA7, GRA9, GRA11 (Gravelines, France)
+#   - SBG5, SBG7 (Strasbourg, France)
+#   - BHS5 (Beauharnois, Canada)
+#   - DE1 (Frankfurt, Germany)
+#   - UK1 (London, UK)
+#   - WAW1 (Warsaw, Poland)
+region = "GRA7"
+
+# -----------------------------------------------------------------------------
+# Instance Configuration
+# -----------------------------------------------------------------------------
+# Configuration for compute instances (virtual machines)
+
+# Number of compute instances to create
+# Default: 1
+# Example: 3 for a small cluster
+instance_count = 3
+
+# The flavor/size for compute instances
+# Common OVH flavors:
+#   - s1-2:  1 vCore,  2 GB RAM,  10 GB disk
+#   - s1-4:  1 vCore,  4 GB RAM,  20 GB disk
+#   - s1-8:  2 vCores, 8 GB RAM,  40 GB disk
+#   - b2-7:  2 vCores, 7 GB RAM,  50 GB disk
+#   - b2-15: 4 vCores, 15 GB RAM, 100 GB disk
+# Default: "s1-2"
+instance_flavor = "s1-4"
+
+# The image name or ID for compute instances
+# Common images:
+#   - "Ubuntu 22.04"
+#   - "Ubuntu 20.04"
+#   - "Debian 11"
+#   - "Debian 12"
+#   - "CentOS 7"
+#   - "Rocky Linux 9"
+# You can list available images with: openstack image list
+instance_image = "Ubuntu 22.04"
+
+# The SSH key name for instance access (REQUIRED)
+# This must be an SSH key already uploaded to your OVH OpenStack project
+# Upload keys via: OVH Control Panel > Public Cloud > SSH Keys
+# Or via CLI: openstack keypair create --public-key ~/.ssh/id_rsa.pub my-key
+key_name = "my-ssh-key"
+
+# -----------------------------------------------------------------------------
+# Network Configuration
+# -----------------------------------------------------------------------------
+# Configuration for private network and subnet
+
+# Name of the private network to create
+# Default: "private-network"
+network_name = "my-private-network"
+
+# CIDR notation for the subnet
+# This defines the IP address range for your private network
+# Common private ranges:
+#   - 192.168.1.0/24  (254 usable IPs: 192.168.1.1 - 192.168.1.254)
+#   - 10.0.0.0/24     (254 usable IPs: 10.0.0.1 - 10.0.0.254)
+#   - 172.16.0.0/24   (254 usable IPs: 172.16.0.1 - 172.16.0.254)
+# Default: "192.168.1.0/24"
+subnet_cidr = "192.168.1.0/24"
+
+# List of DNS nameservers for the subnet
+# Default: ["8.8.8.8", "8.8.4.4"] (Google DNS)
+# Alternatives:
+#   - ["1.1.1.1", "1.0.0.1"]           (Cloudflare DNS)
+#   - ["213.186.33.99", "8.8.8.8"]    (OVH DNS + Google DNS)
+dns_nameservers = ["8.8.8.8", "8.8.4.4"]
+
+# Enable DHCP for the subnet
+# When true, instances automatically receive IP addresses
+# Default: true
+enable_dhcp = true
+
+# -----------------------------------------------------------------------------
+# Volume Configuration
+# -----------------------------------------------------------------------------
+# Configuration for block storage volumes
+
+# Size of volumes in GB
+# Must be a positive integer
+# Default: 100
+volume_size = 100
+
+# Number of volumes to create
+# Set to 0 if you don't need additional volumes
+# Volumes will be automatically attached to instances (one per instance)
+# Default: 0
+volume_count = 3
+
+# Type of volume
+# OVH volume types:
+#   - "classic"    (Standard performance, lower cost)
+#   - "high-speed" (High performance SSD, higher cost)
+# Default: "classic"
+volume_type = "classic"
+
+# Whether volumes should be bootable
+# Set to true if you want to create bootable volumes
+# Requires volume_image_id to be set
+# Default: false
+volume_bootable = false
+
+# Image ID for bootable volumes
+# Required only if volume_bootable is true
+# Get image IDs with: openstack image list
+# Default: null
+volume_image_id = null
+
+# -----------------------------------------------------------------------------
+# Security Group Configuration
+# -----------------------------------------------------------------------------
+# Configuration for firewall rules
+
+# Name of the security group to create
+# Default: "default-security-group"
+security_group_name = "web-security-group"
+
+# Description of the security group
+# Default: "Default security group for instances"
+security_group_description = "Security group for web servers with SSH, HTTP, and HTTPS access"
+
+# CIDR range allowed to access SSH (port 22)
+# SECURITY WARNING: "0.0.0.0/0" allows SSH from anywhere (not recommended for production)
+# Best practice: Restrict to your IP or network (e.g., "203.0.113.0/24")
+# Default: "0.0.0.0/0"
+allow_ssh_from = "0.0.0.0/0"
+
+# Allow HTTP traffic (port 80)
+# Set to true to allow incoming HTTP connections
+# Default: true
+allow_http = true
+
+# Allow HTTPS traffic (port 443)
+# Set to true to allow incoming HTTPS connections
+# Default: true
+allow_https = true
+
+# -----------------------------------------------------------------------------
+# Instance Metadata and User Data
+# -----------------------------------------------------------------------------
+# Optional configuration for instance customization
+
+# Metadata tags to apply to instances (key-value pairs)
+# Useful for organization, billing, and automation
+# Default: {}
+instance_metadata = {
+  environment = "development"
+  project     = "my-project"
+  managed_by  = "terraform"
+  owner       = "devops-team"
+}
+
+# User data script to inject into instances (cloud-init script)
+# This script runs on first boot to configure the instance
+# Default: null
+# Example: Basic setup script
+instance_user_data = <<-EOF
+#!/bin/bash
+# Update system packages
+apt-get update
+apt-get upgrade -y
+
+# Install common tools
+apt-get install -y curl wget git vim htop
+
+# Configure timezone
+timedatectl set-timezone UTC
+
+# Create a welcome message
+echo "Instance provisioned by Terraform on $(date)" > /etc/motd
+EOF
+
+# Alternative example: Install and configure a web server
+# instance_user_data = <<-EOF
+# #!/bin/bash
+# apt-get update
+# apt-get install -y nginx
+# systemctl enable nginx
+# systemctl start nginx
+# echo "<h1>Hello from $(hostname)</h1>" > /var/www/html/index.html
+# EOF

@@ -886,4 +886,226 @@ See `examples/volume_example.py` for a complete example.
 
 ## Coming Soon
 
-- Full deployment engine implementation
+- Additional deployment features and optimizations
+
+## Deployment Engine
+
+The `deployment_engine` module provides complete infrastructure deployment orchestration with automatic rollback and cleanup capabilities.
+
+### Features
+
+- **Complete orchestration**: Deploys networks, security groups, instances, and volumes in correct dependency order
+- **Deployment tracking**: Unique deployment_id for each deployment attempt
+- **Automatic rollback**: Rolls back all resources on deployment failure
+- **Manual cleanup**: Cleanup function for removing specific resources
+- **Error handling**: Comprehensive error handling with try-catch blocks
+- **API rate limiting**: Exponential backoff for API rate limit handling
+- **Resource caching**: Caches flavors, images, and networks to reduce API calls
+- **Performance optimization**: Concurrent operations where possible
+- **Detailed results**: Returns comprehensive deployment results with resource IDs
+
+### Usage Examples
+
+#### 1. Complete Infrastructure Deployment
+
+```python
+from openstack_sdk import DeploymentEngine, AuthenticationManager
+from config.models import (
+    DeploymentConfig, NetworkSpec, SubnetSpec,
+    SecurityGroupSpec, SecurityGroupRule, InstanceSpec, VolumeSpec
+)
+
+# Load credentials
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+
+# Create deployment configuration
+config = DeploymentConfig(
+    auth_url=credentials.auth_url,
+    username=credentials.username,
+    password=credentials.password,
+    tenant_name=credentials.tenant_name,
+    region=credentials.region,
+    project_name=credentials.tenant_name,
+    
+    networks=[
+        NetworkSpec(
+            name="app-network",
+            admin_state_up=True,
+            external=False,
+            subnets=[
+                SubnetSpec(
+                    name="app-subnet",
+                    cidr="192.168.1.0/24",
+                    ip_version=4,
+                    enable_dhcp=True,
+                    dns_nameservers=["8.8.8.8", "8.8.4.4"]
+                )
+            ]
+        )
+    ],
+    
+    security_groups=[
+        SecurityGroupSpec(
+            name="web-sg",
+            description="Web server security group",
+            rules=[
+                SecurityGroupRule(
+                    direction="ingress",
+                    protocol="tcp",
+                    port_range_min=80,
+                    port_range_max=80,
+                    remote_ip_prefix="0.0.0.0/0",
+                    ethertype="IPv4"
+                )
+            ]
+        )
+    ],
+    
+    instances=[
+        InstanceSpec(
+            name="web-server",
+            flavor="s1-2",
+            image="Ubuntu 22.04",
+            key_name="my-ssh-key",
+            network_ids=[],  # Populated after network creation
+            security_groups=["web-sg"],
+            metadata={"role": "web"}
+        )
+    ],
+    
+    volumes=[
+        VolumeSpec(
+            name="data-volume",
+            size=100,
+            volume_type="classic",
+            attach_to="web-server"
+        )
+    ]
+)
+
+# Create deployment engine
+engine = DeploymentEngine(credentials)
+
+# Deploy infrastructure
+result = engine.deploy_infrastructure(config)
+
+if result.success:
+    print(f"Deployment successful! ID: {result.deployment_id}")
+    print(f"Duration: {result.duration_seconds:.2f}s")
+    print("Created resources:")
+    for resource_type, ids in result.created_resources.items():
+        print(f"  {resource_type}: {len(ids)} resource(s)")
+else:
+    print(f"Deployment failed! ID: {result.deployment_id}")
+    for failed in result.failed_resources:
+        print(f"  {failed.resource_type}: {failed.error_message}")
+```
+
+#### 2. Manual Resource Cleanup
+
+```python
+# Cleanup specific resources
+resource_ids = {
+    'instances': ['instance-id-1', 'instance-id-2'],
+    'volumes': ['volume-id-1'],
+    'networks': ['network-id-1']
+}
+
+results = engine.cleanup_resources(resource_ids)
+
+for resource_key, success in results.items():
+    status = "✓" if success else "✗"
+    print(f"{status} {resource_key}")
+```
+
+#### 3. Deployment with Error Handling
+
+```python
+from openstack_sdk import DeploymentError
+
+try:
+    result = engine.deploy_infrastructure(config)
+    
+    if result.success:
+        print(f"Deployment {result.deployment_id} successful")
+        # Save deployment ID for later reference
+        with open('deployment_id.txt', 'w') as f:
+            f.write(result.deployment_id)
+    else:
+        print(f"Deployment {result.deployment_id} failed")
+        if result.orphaned_resources:
+            print("Orphaned resources requiring manual cleanup:")
+            for orphaned in result.orphaned_resources:
+                print(f"  - {orphaned}")
+
+except DeploymentError as e:
+    print(f"Deployment error: {e}")
+```
+
+### Deployment Result
+
+The `DeploymentResult` object contains:
+
+```python
+@dataclass
+class DeploymentResult:
+    success: bool                              # True if deployment succeeded
+    deployment_id: str                         # Unique deployment identifier
+    created_resources: Dict[str, List[str]]    # Resource IDs by type
+    failed_resources: List[FailedResource]     # Failed resource details
+    duration_seconds: float                    # Deployment duration
+    timestamp: str                             # ISO 8601 timestamp
+    orphaned_resources: List[str]              # Resources that couldn't be cleaned up
+```
+
+### Deployment Order
+
+Resources are created in dependency order:
+
+1. **Networks and Subnets**: Created first as instances need networks
+2. **Security Groups**: Created before instances that reference them
+3. **Compute Instances**: Created after networks and security groups
+4. **Volumes**: Created and attached after instances are ACTIVE
+
+### Rollback Behavior
+
+On deployment failure, resources are deleted in reverse dependency order:
+
+1. **Volumes**: Detached and deleted first
+2. **Instances**: Deleted after volumes
+3. **Security Groups**: Deleted after instances
+4. **Subnets**: Deleted after instances
+5. **Networks**: Deleted last
+
+### Error Handling
+
+The deployment engine handles:
+
+- **Authentication failures**: Returns error immediately without creating resources
+- **Quota exceeded**: Reports quota errors with resource type
+- **Network creation failures**: Rolls back and reports network errors
+- **Instance timeouts**: Rolls back if instances don't reach ACTIVE within 300s
+- **Volume attachment failures**: Rolls back and reports volume errors
+- **API rate limiting**: Implements exponential backoff (1s to 60s)
+
+### Performance Optimizations
+
+- **Resource caching**: Caches flavors, images, and networks
+- **Exponential backoff**: For status polling (2s to 10s)
+- **Concurrent operations**: Where dependencies allow
+- **Efficient polling**: Reduces API calls during status checks
+
+### Complete Example
+
+See `examples/deploy_example.py` for a complete deployment example with:
+- Credential loading
+- Configuration creation
+- Deployment execution
+- Result handling
+- Error handling
+
+```bash
+# Run the example
+python examples/deploy_example.py
+```
