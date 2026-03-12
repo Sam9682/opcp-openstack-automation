@@ -65,12 +65,12 @@ def example_network_with_application_credentials():
     
     network_specs = [
         NetworkSpec(
-            name="example-private-network",
+            name="opcp-automation-example-private-network",
             admin_state_up=True,
             external=False,
             subnets=[
                 SubnetSpec(
-                    name="example-subnet-1",
+                    name="opcp-automation-example-subnet-1",
                     cidr="192.168.1.0/24",
                     ip_version=4,
                     enable_dhcp=True,
@@ -78,7 +78,7 @@ def example_network_with_application_credentials():
                     dns_nameservers=["8.8.8.8", "8.8.4.4"]
                 ),
                 SubnetSpec(
-                    name="example-subnet-2",
+                    name="opcp-automation-example-subnet-2",
                     cidr="192.168.2.0/24",
                     ip_version=4,
                     enable_dhcp=True,
@@ -88,12 +88,12 @@ def example_network_with_application_credentials():
             ]
         ),
         NetworkSpec(
-            name="example-management-network",
+            name="opcp-automation-example-management-network",
             admin_state_up=True,
             external=False,
             subnets=[
                 SubnetSpec(
-                    name="example-mgmt-subnet",
+                    name="opcp-automation-example-mgmt-subnet",
                     cidr="10.0.0.0/24",
                     ip_version=4,
                     enable_dhcp=True,

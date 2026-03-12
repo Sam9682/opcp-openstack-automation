@@ -18,13 +18,13 @@ application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
 application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
 
 networks:
-  - name: "simple-network"
+  - name: "opcp-simple-network-training-001"
     subnets:
-      - name: "simple-subnet"
+      - name: "opcp-simple-subnet-training-001"
         cidr: "10.0.0.0/24"
 
 security_groups:
-  - name: "basic-sg"
+  - name: "opcp-basic-sg-training-001"
     description: "Basic security group"
     rules:
       - direction: "ingress"
@@ -37,8 +37,8 @@ instances:
   - name: "test-instance"
     flavor: "s1-2"
     image: "Ubuntu 22.04"
-    key_name: "my-ssh-key"
+    key_name: "opcp-automation-my-ssh-key-training-001"
     network_ids:
-      - "simple-network"
+      - "opcp-simple-network-training-001"
     security_groups:
-      - "basic-sg"
+      - "opcp-basic-sg-training-001"

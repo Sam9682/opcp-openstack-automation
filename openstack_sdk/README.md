@@ -470,7 +470,7 @@ instance_specs = [
         name="web-server-1",
         flavor="s1-2",  # Small instance
         image="Ubuntu 22.04",
-        key_name="my-ssh-key",
+        key_name="opcp-automation-my-ssh-key-training-001",
         network_ids=["network-id-123"],
         security_groups=["web-security-group"],
         user_data="""#!/bin/bash
@@ -488,7 +488,7 @@ systemctl start nginx
         name="web-server-2",
         flavor="s1-2",
         image="Ubuntu 22.04",
-        key_name="my-ssh-key",
+        key_name="opcp-automation-my-ssh-key-training-001",
         network_ids=["network-id-123"],
         security_groups=["web-security-group"],
         metadata={
@@ -513,7 +513,7 @@ instance_spec = InstanceSpec(
     name="multi-network-instance",
     flavor="s1-4",
     image="Debian 11",
-    key_name="my-ssh-key",
+    key_name="opcp-automation-my-ssh-key-training-001",
     network_ids=[
         "public-network-id",
         "private-network-id"
@@ -547,7 +547,7 @@ instance_spec = InstanceSpec(
     name="docker-host",
     flavor="s1-8",
     image="Ubuntu 22.04",
-    key_name="my-ssh-key",
+    key_name="opcp-automation-my-ssh-key-training-001",
     network_ids=["network-id"],
     security_groups=["docker-sg"],
     user_data=user_data_script,
@@ -591,7 +591,7 @@ minimal_spec = InstanceSpec(
     name="minimal-instance",
     flavor="s1-2",
     image="Ubuntu 22.04",
-    key_name="my-ssh-key",
+    key_name="opcp-automation-my-ssh-key-training-001",
     network_ids=["network-id"]
 )
 
