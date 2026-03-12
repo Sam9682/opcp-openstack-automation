@@ -130,6 +130,8 @@ python examples/security_group_example.py
 python examples/volume_example.py
 ```
 
+The examples demonstrate both direct authentication and usage of the ConnectionManager which handles automatic token refresh and proxy support.
+
 ## Configuration Format
 
 The system uses a unified configuration format (YAML or JSON) for all deployment solutions:
@@ -287,6 +289,7 @@ See `ansible/README.md` for details.
 - No hardcoded credentials
 - Secure credential handling
 - Security group configuration
+- Proxy support for HTTP and HTTPS connections
 
 ### Resource Management
 - Networks and subnets

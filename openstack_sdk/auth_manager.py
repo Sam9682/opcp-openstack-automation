@@ -1,6 +1,12 @@
 """Authentication and connection management for OVH OpenStack."""
 
 import os
+import sys
+import pathlib
+
+# Add the parent directory to Python path to allow importing openstack_sdk
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+
 import time
 from typing import Optional, Dict, Any
 from pathlib import Path
@@ -8,9 +14,9 @@ import openstack
 from openstack.connection import Connection
 from openstack.exceptions import HttpException, SDKException
 
+
 from config.models import AuthCredentials
 from utils.logger import get_logger
-
 
 class AuthenticationError(Exception):
     """Exception raised for authentication failures."""
@@ -43,6 +49,10 @@ class AuthenticationManager:
         - Traditional: OS_AUTH_URL, OS_USERNAME, OS_PASSWORD, OS_TENANT_NAME, OS_REGION_NAME
         - Application: OS_AUTH_URL, OS_APPLICATION_CREDENTIAL_ID, OS_APPLICATION_CREDENTIAL_SECRET, OS_TENANT_NAME, OS_REGION_NAME
         
+        Also supports proxy settings:
+        - HTTP_PROXY/http_proxy
+        - HTTPS_PROXY/https_proxy
+        
         Returns:
             AuthCredentials object
             
@@ -65,6 +75,10 @@ class AuthenticationManager:
         username = os.environ.get('OS_USERNAME')
         password = os.environ.get('OS_PASSWORD')
         
+        # Load proxy settings from environment variables
+        http_proxy = os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy')
+        https_proxy = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
+        
         # Validate required fields based on authentication type
         missing_vars = []
         if not auth_url:
@@ -78,6 +92,13 @@ class AuthenticationManager:
             # Traditional credentials require tenant_name
             if not tenant_name:
                 missing_vars.append('OS_TENANT_NAME or OS_PROJECT_NAME')
+        else:
+            # For application credentials, we still need to validate that we have the right combination
+            # of credentials
+            if not app_credential_id:
+                missing_vars.append('OS_APPLICATION_CREDENTIAL_ID')
+            if not app_credential_secret:
+                missing_vars.append('OS_APPLICATION_CREDENTIAL_SECRET')
             
         # Either traditional or application credentials must be provided
         if not app_credential_id and not app_credential_secret and not username:
@@ -96,9 +117,11 @@ class AuthenticationManager:
             password=password or '',
             tenant_name=tenant_name,
             region=region,
-            project_name=project_name,
+            #project_name=project_name,
             application_credential_id=app_credential_id,
-            application_credential_secret=app_credential_secret
+            application_credential_secret=app_credential_secret,
+            http_proxy=http_proxy,
+            https_proxy=https_proxy
         )
         
         auth_type = "application credentials" if app_credential_id else "traditional credentials"
@@ -173,7 +196,7 @@ class AuthenticationManager:
         if not password:
             missing_fields.append('OS_PASSWORD')
         if not tenant_name:
-            missing_fields.append('OS_TENANT_NAME or OS_PROJECT_NAME')
+            missing_fields.append('OS_TENANT_NAME')
         if not region:
             missing_fields.append('OS_REGION_NAME')
         
@@ -187,8 +210,8 @@ class AuthenticationManager:
             username=username,
             password=password,
             tenant_name=tenant_name,
-            region=region,
-            project_name=project_name
+            region=region#,
+            #project_name=project_name
         )
         
         self.logger.info(f"Loaded credentials for user '{username}' in region '{region}'")
@@ -221,33 +244,51 @@ class AuthenticationManager:
         self.logger.info(f"Attempting authentication to {credentials.auth_url}")
         
         try:
+            # Prepare connection parameters
+            conn_params = {
+                'auth_url': credentials.auth_url,
+                'region_name': credentials.region,
+                'app_name': 'ovh-openstack-deployment',
+                'app_version': '1.0'
+            }
+            
+            # For application credentials, project_name might be None, so we handle it appropriately
+            if not credentials.application_credential_secret:
+                # For application credentials, we don't necessarily need project_name in the connection params
+                # as it's handled by the credential itself
+                #if credentials.project_name:
+                #    conn_params['project_name'] = credentials.project_name
+            #else:
+                # For traditional credentials, project_name is required
+                if not credentials.project_name:
+                    raise AuthenticationError("Project name is required for traditional authentication")
+                conn_params['project_name'] = credentials.project_name
+            
+            # Add proxy settings if provided
+            if credentials.http_proxy:
+                conn_params['http_proxy'] = credentials.http_proxy
+            if credentials.https_proxy:
+                conn_params['https_proxy'] = credentials.https_proxy
+                
             # Determine authentication method based on credentials provided
             if credentials.application_credential_id and credentials.application_credential_secret:
                 self.logger.info("Using application credential authentication")
                 # Create connection with application credentials
-                conn = openstack.connect(
-                    auth_url=credentials.auth_url,
-                    application_credential_id=credentials.application_credential_id,
-                    application_credential_secret=credentials.application_credential_secret,
-                    project_name=credentials.project_name,
-                    region_name=credentials.region,
-                    app_name='ovh-openstack-deployment',
-                    app_version='1.0'
-                )
+                conn_params.update({
+                    'application_credential_id': credentials.application_credential_id,
+                    'application_credential_secret': credentials.application_credential_secret,
+                })
+                conn = openstack.connect(**conn_params)
             else:
                 self.logger.info("Using traditional username/password authentication")
                 # Create connection with traditional credentials
-                conn = openstack.connect(
-                    auth_url=credentials.auth_url,
-                    username=credentials.username,
-                    password=credentials.password,
-                    project_name=credentials.project_name,
-                    user_domain_name='Default',
-                    project_domain_name='Default',
-                    region_name=credentials.region,
-                    app_name='ovh-openstack-deployment',
-                    app_version='1.0'
-                )
+                conn_params.update({
+                    'username': credentials.username,
+                    'password': credentials.password,
+                    'user_domain_name': 'Default',
+                    'project_domain_name': 'Default',
+                })
+                conn = openstack.connect(**conn_params)
             
             # Test authentication by making a simple API call
             # This will raise an exception if authentication fails

@@ -349,8 +349,8 @@ class ConfigurationManager:
             username=config.username,
             password=config.password,
             tenant_name=config.tenant_name,
-            region=config.region,
-            project_name=config.project_name
+            region=config.region#,
+            #project_name=config.project_name
         )
 
     def _is_valid_url(self, url: str) -> bool:

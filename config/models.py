@@ -90,9 +90,11 @@ class AuthCredentials:
     password: str
     tenant_name: str
     region: str
-    project_name: str
+    #project_name: str
     application_credential_id: Optional[str] = None
     application_credential_secret: Optional[str] = None
+    http_proxy: Optional[str] = None
+    https_proxy: Optional[str] = None
 
 
 @dataclass

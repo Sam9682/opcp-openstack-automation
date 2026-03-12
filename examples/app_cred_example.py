@@ -1,4 +1,8 @@
-"""Example usage of application credentials authentication."""
+"""Example usage of application credentials authentication.
+
+This example demonstrates how to use application credentials with optional
+HTTP and HTTPS proxy support by loading settings from environment variables.
+"""
 
 import os
 import sys
@@ -38,6 +42,12 @@ def example_app_cred_from_env():
             print("✓ Using Traditional Username/Password authentication")
             print(f"✓ Username: {credentials.username}")
         
+        # Show proxy settings if configured
+        if credentials.http_proxy:
+            print(f"✓ HTTP Proxy: {credentials.http_proxy}")
+        if credentials.https_proxy:
+            print(f"✓ HTTPS Proxy: {credentials.https_proxy}")
+        
         # Authenticate and create connection
         connection = auth_manager.authenticate(credentials)
         print("✓ Authentication successful!")
@@ -61,15 +71,22 @@ def example_app_cred_with_connection_manager():
     
     # Create credentials (this would typically come from environment variables)
     # For demonstration, we'll create them manually
+    # Note: tenant_name and project_name are required parameters in AuthCredentials
+    # For application credentials, these values might be None or can be derived from the credential itself
+    tenant_name = os.environ.get('OS_TENANT_NAME') or 'demo-tenant'
+    project_name = os.environ.get('OS_PROJECT_NAME') or tenant_name
+    
     credentials = AuthCredentials(
         auth_url=os.environ.get('OS_AUTH_URL', 'https://auth.cloud.ovh.net/v3'),
         username='',  # Not used with application credentials
         password='',  # Not used with application credentials
-        #tenant_name=os.environ.get('OS_TENANT_NAME', 'your-tenant'),
+        tenant_name=tenant_name,
         region=os.environ.get('OS_REGION_NAME', 'GRA7'),
-        #project_name=os.environ.get('OS_TENANT_NAME', 'your-tenant'),
+        #project_name=project_name,
         application_credential_id=os.environ.get('OS_APPLICATION_CREDENTIAL_ID'),
-        application_credential_secret=os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET')
+        application_credential_secret=os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET'),
+        http_proxy=os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy'),
+        https_proxy=os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
     )
     
     try:
@@ -115,6 +132,9 @@ def main():
         print("  export OS_INTERFACE=public")
         print("  export OS_APPLICATION_CREDENTIAL_ID=your_id_here")
         print("  export OS_APPLICATION_CREDENTIAL_SECRET=your_credentials_here")
+        print("\nFor proxy support, you can also set:")
+        print("  export HTTP_PROXY=http://proxy.example.com:8080")
+        print("  export HTTPS_PROXY=https://proxy.example.com:8080")
         print("\nRunning examples with placeholder credentials (will fail authentication)...")
     
     # Run examples

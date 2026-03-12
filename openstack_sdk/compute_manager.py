@@ -1,4 +1,9 @@
 """Compute instance creation and management for OVH OpenStack."""
+import sys
+import pathlib
+
+# Add the parent directory to Python path to allow importing openstack_sdk
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 import time
 from typing import List, Dict, Optional, Set
