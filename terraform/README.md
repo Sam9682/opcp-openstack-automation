@@ -6,6 +6,10 @@ This directory contains the Terraform-based deployment solution for OVH OpenStac
 
 The Terraform solution provides Infrastructure as Code (IaC) capabilities for deploying and managing OVH OpenStack resources. It uses declarative configuration to define the desired state of infrastructure.
 
+## installation Ubuntu
+
+sudo snap install terraform --classic
+
 ## Requirements
 
 - Terraform >= 1.5.0
@@ -55,12 +59,10 @@ terraform destroy -var-file="terraform.tfvars"
 
 Create a `terraform.tfvars` file with your credentials:
 
-```hcl
-auth_url    = "https://auth.cloud.ovh.net/v3"
-username    = "your-username"
-password    = "your-password"
-tenant_name = "your-tenant"
-region      = "GRA7"
+```
+
+
+
 ```
 
 **Important:** Add `terraform.tfvars` to `.gitignore` to avoid committing credentials.
