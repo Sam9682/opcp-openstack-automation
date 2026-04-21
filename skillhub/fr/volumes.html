@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Volumes</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Volumes</h1>
+      <p class="lesson-meta">Difficulté : <strong>Intermédiaire</strong> · Durée estimée : <strong>20 min</strong></p>
+
+      <p>
+        Les volumes de stockage bloc fournissent un espace disque persistant qui
+        survit aux redémarrages d'instances et peut être détaché puis rattaché à
+        différentes instances. Cette leçon couvre la création, l'attachement, les
+        volumes bootables et la stratégie de polling avec backoff exponentiel.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Création de volumes</h2>
+      <p>
+        Le <code>VolumeManager</code> crée des volumes et attend qu'ils atteignent
+        le statut <code>available</code> avant de retourner.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from openstack_sdk.volume_manager import VolumeManager
+from config.models import VolumeSpec, AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+connection = conn_manager.connect()
+
+volume_manager = VolumeManager(connection)
+
+volume_specs = [
+    VolumeSpec(name="data-vol-1", size=100, volume_type="classic"),
+    VolumeSpec(name="fast-vol-1", size=50, volume_type="high-speed"),
+]
+
+volumes = volume_manager.create_and_attach_volumes(volume_specs, {})
+for vol in volumes:
+    print(f"{vol.name}  Taille={vol.size}Go  Statut={vol.status}")</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Attachement de volumes aux instances</h2>
+      <p>
+        Passez un champ <code>attach_to</code> référençant un nom d'instance. Le
+        manager vérifie que l'instance est <code>ACTIVE</code> avant l'attachement.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.compute_manager import ComputeManager
+
+compute = ComputeManager(connection)
+instances = compute.list_instances()
+instances_dict = {inst.name: inst for inst in instances}
+
+volume_specs = [
+    VolumeSpec(
+        name="web-data",
+        size=150,
+        volume_type="classic",
+        attach_to="web-server-1",
+    ),
+]
+
+volumes = volume_manager.create_and_attach_volumes(
+    volume_specs, instances_dict
+)
+for vol in volumes:
+    print(f"Attaché {vol.name} — Statut : {vol.status}")</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Volumes bootables</h2>
+      <p>
+        Un volume bootable contient une image OS et peut être utilisé comme disque
+        racine pour une instance. Définissez <code>bootable=True</code> et
+        fournissez un <code>image_id</code>.
+      </p>
+
+      <pre><code class="language-python">boot_vol = VolumeSpec(
+    name="boot-volume",
+    size=50,
+    volume_type="high-speed",
+    bootable=True,
+    image_id="image-id-123",  # Remplacez par l'ID d'image réel
+)
+
+volumes = volume_manager.create_and_attach_volumes([boot_vol], {})</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Polling de statut avec backoff exponentiel</h2>
+      <p>
+        Le gestionnaire de volumes utilise un backoff exponentiel lors du polling
+        des changements de statut. L'intervalle commence à 2 secondes et augmente
+        jusqu'à un maximum de 10 secondes. Cela réduit la charge API pendant les
+        périodes chargées.
+      </p>
+
+      <pre><code class="language-python"># Transitions d'état suivies par le manager :
+#   Creating   → Available    (délai : 60 s)
+#   Available  → Attaching    (initié par l'appel d'attachement)
+#   Attaching  → In-use       (vérification : 30 s)
+
+# Intervalles de polling (backoff exponentiel) :
+#   2s → 4s → 8s → 10s (plafonné)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Gestion des volumes</h2>
+
+      <pre><code class="language-python"># Lister tous les volumes
+for vol in volume_manager.list_volumes():
+    print(f"  {vol.name}  {vol.size}Go  {vol.status}")
+
+# Détacher un volume
+volume_manager.detach_volume("instance-id", "volume-id")
+
+# Supprimer un volume
+volume_manager.delete_volume("volume-id")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Types de volumes</h2>
+      <p>OVHcloud propose deux types de volumes :</p>
+      <ul>
+        <li><strong>classic</strong> — stockage bloc standard, adapté aux sauvegardes et archives.</li>
+        <li><strong>high-speed</strong> — stockage SSD pour les bases de données et les charges sensibles à la latence.</li>
+      </ul>
+
+      <pre><code class="language-yaml"># Dans votre config.yaml
+volumes:
+  - name: "data-volume"
+    size: 100
+    volume_type: "classic"
+    attach_to: "web-server-1"
+
+  - name: "db-volume"
+    size: 50
+    volume_type: "high-speed"
+    attach_to: "db-server-1"</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li>Les volumes fournissent un <strong>stockage bloc persistant</strong> indépendant du cycle de vie des instances.</li>
+        <li>Le manager vérifie que les instances sont <strong>ACTIVE</strong> avant l'attachement.</li>
+        <li>Les volumes bootables nécessitent <code>bootable=True</code> et un <code>image_id</code> valide.</li>
+        <li>Le <strong>backoff exponentiel</strong> (2 s → 10 s) maintient une charge API raisonnable pendant le polling.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

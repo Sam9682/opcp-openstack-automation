@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Advanced Topics</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Advanced Topics</h1>
+      <p class="lesson-meta">Difficulty: <strong>Advanced</strong> · Estimated time: <strong>25 min</strong></p>
+
+      <p>
+        You have mastered the individual building blocks. This lesson brings them
+        together with production patterns: multi-region deployments, CI/CD
+        integration, custom modules, best practices, and a comparison of the three
+        IaC approaches.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Multi-Region Deployments</h2>
+      <p>
+        OVHcloud offers multiple regions. Deploy the same stack to several regions
+        for redundancy or latency optimization.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentEngine
+from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_mgr = AuthenticationManager()
+
+regions = ["GRA7", "SBG5", "BHS5"]
+
+for region in regions:
+    credentials = auth_mgr.load_credentials_from_env()
+    # Override region per iteration
+    credentials.region = region
+
+    engine = DeploymentEngine(credentials)
+    result = engine.deploy_infrastructure(config)
+    print(f"Region {region}: {'OK' if result.success else 'FAILED'}")</code></pre>
+
+      <pre><code class="language-hcl"># Terraform — multi-region with provider aliases
+provider "openstack" {
+  alias  = "gra7"
+  region = "GRA7"
+  # ... auth fields
+}
+
+provider "openstack" {
+  alias  = "sbg5"
+  region = "SBG5"
+  # ... auth fields
+}
+
+resource "openstack_networking_network_v2" "net_gra" {
+  provider = openstack.gra7
+  name     = "app-network-gra"
+}
+
+resource "openstack_networking_network_v2" "net_sbg" {
+  provider = openstack.sbg5
+  name     = "app-network-sbg"
+}</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. CI/CD Integration</h2>
+      <p>
+        Automate deployments with a CI/CD pipeline. The example below uses a generic
+        pipeline definition — adapt it to GitHub Actions, GitLab CI, or Jenkins.
+      </p>
+
+      <pre><code class="language-yaml"># .ci/deploy.yaml — generic pipeline
+stages:
+  - validate
+  - plan
+  - deploy
+
+validate:
+  script:
+    - python -c "
+        from config import ConfigurationManager;
+        m = ConfigurationManager();
+        c = m.load_config('config.yaml');
+        v = m.validate_config(c);
+        assert v.is_valid, v.errors
+      "
+
+plan:
+  script:
+    - cd terraform
+    - terraform init
+    - terraform plan -out=tfplan
+
+deploy:
+  script:
+    - cd terraform
+    - terraform apply tfplan
+  when: manual</code></pre>
+
+      <pre><code class="language-bash"># Environment variables for the pipeline
+export OS_AUTH_URL="${OS_AUTH_URL}"
+export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
+export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"
+export OS_REGION_NAME="${OS_REGION_NAME}"
+export OS_TENANT_NAME="${OS_TENANT_NAME}"</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Custom Modules</h2>
+      <p>
+        Wrap common patterns into reusable Python functions or Terraform modules.
+      </p>
+
+      <pre><code class="language-python">"""custom_modules/web_stack.py — reusable web stack module."""
+
+from config.models import (
+    NetworkSpec, SubnetSpec, SecurityGroupSpec,
+    SecurityGroupRule, InstanceSpec, VolumeSpec,
+)
+
+
+def web_stack(name, instance_count=2, volume_size=100):
+    """Return a complete web-stack configuration."""
+    return {
+        "networks": [
+            NetworkSpec(
+                name=f"{name}-network",
+                subnets=[
+                    SubnetSpec(
+                        name=f"{name}-subnet",
+                        cidr="192.168.1.0/24",
+                        dns_nameservers=["8.8.8.8"],
+                    )
+                ],
+            )
+        ],
+        "security_groups": [
+            SecurityGroupSpec(
+                name=f"{name}-sg",
+                description=f"SG for {name}",
+                rules=[
+                    SecurityGroupRule(
+                        direction="ingress",
+                        protocol="tcp",
+                        port_range_min=80,
+                        port_range_max=80,
+                        remote_ip_prefix="0.0.0.0/0",
+                        ethertype="IPv4",
+                    ),
+                ],
+            )
+        ],
+        "instances": [
+            InstanceSpec(
+                name=f"{name}-web-{i+1}",
+                flavor="s1-4",
+                image="Ubuntu 22.04",
+                key_name="my-ssh-key",
+                network_ids=[f"{name}-network"],
+                security_groups=[f"{name}-sg"],
+            )
+            for i in range(instance_count)
+        ],
+        "volumes": [
+            VolumeSpec(
+                name=f"{name}-vol-{i+1}",
+                size=volume_size,
+                volume_type="classic",
+                attach_to=f"{name}-web-{i+1}",
+            )
+            for i in range(instance_count)
+        ],
+    }</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Best Practices</h2>
+      <ul>
+        <li><strong>Never hard-code credentials</strong> — use environment variables or application credentials.</li>
+        <li><strong>Validate before deploying</strong> — catch CIDR, port, and reference errors early.</li>
+        <li><strong>Use version control</strong> — track every config change in Git.</li>
+        <li><strong>Tag resources</strong> — metadata makes cost allocation and cleanup easier.</li>
+        <li><strong>Automate teardown</strong> — always have a cleanup path to avoid orphaned resources.</li>
+        <li><strong>Monitor deployments</strong> — log deployment IDs and durations for observability.</li>
+        <li><strong>Rotate credentials</strong> — use short-lived application credentials and rotate regularly.</li>
+      </ul>
+
+      <!-- Section 5 -->
+      <h2>5. SDK vs Terraform vs Ansible</h2>
+      <p>
+        Each approach has strengths. Choose based on your team's workflow.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>OpenStack SDK</th>
+            <th>Terraform</th>
+            <th>Ansible</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Language</td>
+            <td>Python</td>
+            <td>HCL</td>
+            <td>YAML</td>
+          </tr>
+          <tr>
+            <td>Paradigm</td>
+            <td>Imperative</td>
+            <td>Declarative</td>
+            <td>Declarative / Procedural</td>
+          </tr>
+          <tr>
+            <td>State management</td>
+            <td>Manual</td>
+            <td>Built-in state file</td>
+            <td>Stateless (idempotent)</td>
+          </tr>
+          <tr>
+            <td>Rollback</td>
+            <td>Custom (DeploymentEngine)</td>
+            <td>terraform destroy</td>
+            <td>Manual / playbook</td>
+          </tr>
+          <tr>
+            <td>Best for</td>
+            <td>Complex logic, dynamic configs</td>
+            <td>Reproducible infra, team workflows</td>
+            <td>Config management, multi-step provisioning</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-bash"># Quick comparison — deploy the same stack three ways
+
+# SDK
+python examples/deploy_example.py
+
+# Terraform
+cd terraform &amp;&amp; terraform apply -auto-approve
+
+# Ansible (when playbooks are ready)
+ansible-playbook ansible/playbook.yml -e @vars.yml</code></pre>
+
+      <h2>Summary</h2>
+      <ul>
+        <li>Deploy to <strong>multiple regions</strong> for redundancy with a simple loop or provider aliases.</li>
+        <li>Integrate with <strong>CI/CD</strong> — validate, plan, then apply with manual approval.</li>
+        <li>Build <strong>reusable modules</strong> to standardize common patterns.</li>
+        <li>Choose the right tool: <strong>SDK</strong> for flexibility, <strong>Terraform</strong> for state management, <strong>Ansible</strong> for configuration.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

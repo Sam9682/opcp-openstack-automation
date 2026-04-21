@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Configuration</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Configuration</h1>
+      <p class="lesson-meta">Difficulté : <strong>Débutant</strong> · Durée estimée : <strong>20 min</strong></p>
+
+      <p>
+        Chaque déploiement commence par un fichier de configuration qui décrit
+        l'infrastructure souhaitée. Le module <code>config/config_manager.py</code>
+        charge des fichiers YAML ou JSON, substitue les variables d'environnement
+        et valide le résultat par rapport à des modèles de données stricts.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Format de configuration YAML</h2>
+      <p>
+        YAML est le format recommandé — il est lisible par l'humain et prend en
+        charge les commentaires. Voici un exemple complet :
+      </p>
+
+      <pre><code class="language-yaml"># config.yaml — Configuration complète de déploiement
+auth_url: "${OS_AUTH_URL}"
+auth_type: "${OS_AUTH_TYPE}"
+region: "${OS_REGION_NAME}"
+project_name: "${OS_TENANT_NAME}"
+application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
+
+networks:
+  - name: "private-network"
+    admin_state_up: true
+    external: false
+    subnets:
+      - name: "private-subnet"
+        cidr: "192.168.1.0/24"
+        ip_version: 4
+        enable_dhcp: true
+        dns_nameservers:
+          - "8.8.8.8"
+          - "8.8.4.4"
+
+security_groups:
+  - name: "web-security-group"
+    description: "Security group for web servers"
+    rules:
+      - direction: "ingress"
+        protocol: "tcp"
+        port_range_min: 80
+        port_range_max: 80
+        remote_ip_prefix: "0.0.0.0/0"
+        ethertype: "IPv4"
+
+instances:
+  - name: "web-server-1"
+    flavor: "s1-4"
+    image: "Ubuntu 22.04"
+    key_name: "my-ssh-key"
+    network_ids:
+      - "private-network"
+    security_groups:
+      - "web-security-group"
+
+volumes:
+  - name: "data-volume-1"
+    size: 100
+    volume_type: "classic"
+    attach_to: "web-server-1"</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Format de configuration JSON</h2>
+      <p>
+        La même configuration peut être exprimée en JSON. Cela est utile lorsque
+        les configurations sont générées de manière programmatique.
+      </p>
+
+      <pre><code class="language-json">{
+  "auth_url": "${OS_AUTH_URL}",
+  "region": "${OS_REGION_NAME}",
+  "project_name": "${OS_TENANT_NAME}",
+  "application_credential_id": "${OS_APPLICATION_CREDENTIAL_ID}",
+  "application_credential_secret": "${OS_APPLICATION_CREDENTIAL_SECRET}",
+  "networks": [
+    {
+      "name": "private-network",
+      "subnets": [
+        {
+          "name": "private-subnet",
+          "cidr": "192.168.1.0/24"
+        }
+      ]
+    }
+  ],
+  "instances": [
+    {
+      "name": "web-server-1",
+      "flavor": "s1-4",
+      "image": "Ubuntu 22.04",
+      "key_name": "my-ssh-key",
+      "network_ids": ["private-network"]
+    }
+  ]
+}</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Substitution des variables d'environnement</h2>
+      <p>
+        Toute valeur encadrée par <code>${VAR_NAME}</code> est remplacée au
+        chargement par la variable d'environnement correspondante. Cela permet de
+        garder les secrets hors du contrôle de version.
+      </p>
+
+      <pre><code class="language-python">from config.config_manager import ConfigurationManager
+
+manager = ConfigurationManager()
+
+# Les ${OS_AUTH_URL} etc. sont remplacées par les valeurs réelles
+config = manager.load_config("examples/config.yaml")
+print(f"Auth URL: {config.auth_url}")
+print(f"Region:   {config.region}")</code></pre>
+
+      <pre><code class="language-bash"># Assurez-vous que les variables sont exportées avant le chargement
+export OS_AUTH_URL="https://auth.cloud.ovh.net/v3"
+export OS_REGION_NAME="GRA7"
+export OS_TENANT_NAME="my-project"</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Validation de la configuration</h2>
+      <p>
+        Après le chargement, validez toujours. Le validateur vérifie les champs
+        obligatoires, la notation CIDR, les plages de ports, les noms en double
+        et les références croisées entre les ressources.
+      </p>
+
+      <pre><code class="language-python">from config.config_manager import ConfigurationManager
+
+manager = ConfigurationManager()
+config = manager.load_config("examples/config.yaml")
+
+validation = manager.validate_config(config)
+
+if validation.is_valid:
+    print("La configuration est valide !")
+else:
+    print("Erreurs de validation :")
+    for error in validation.errors:
+        print(f"  - {error}")</code></pre>
+
+      <p>Les vérifications courantes incluent :</p>
+      <ul>
+        <li><code>auth_url</code> doit être une URL HTTPS valide</li>
+        <li>La notation CIDR doit être bien formée (ex. <code>192.168.1.0/24</code>)</li>
+        <li>Plages de ports : <code>port_range_min &lt;= port_range_max</code></li>
+        <li>Le champ <code>attach_to</code> d'un volume doit référencer un nom d'instance existant</li>
+        <li>Pas de noms de ressources en double au sein du même type</li>
+      </ul>
+
+      <!-- Section 5 -->
+      <h2>5. Modèles de données</h2>
+      <p>
+        La configuration est analysée en dataclasses Python typées définies dans
+        <code>config/models.py</code>. Les principaux modèles incluent :
+      </p>
+
+      <pre><code class="language-python"># Vue simplifiée des modèles de données
+from dataclasses import dataclass
+from typing import List, Optional, Dict
+
+@dataclass
+class SubnetSpec:
+    name: str
+    cidr: str
+    ip_version: int = 4
+    enable_dhcp: bool = True
+    gateway_ip: Optional[str] = None
+    dns_nameservers: List[str] = None
+
+@dataclass
+class NetworkSpec:
+    name: str
+    admin_state_up: bool = True
+    external: bool = False
+    subnets: List[SubnetSpec] = None
+
+@dataclass
+class InstanceSpec:
+    name: str
+    flavor: str
+    image: str
+    key_name: str
+    network_ids: List[str] = None
+    security_groups: List[str] = None
+    user_data: Optional[str] = None
+    metadata: Dict[str, str] = None
+
+@dataclass
+class VolumeSpec:
+    name: str
+    size: int
+    volume_type: str = "classic"
+    bootable: bool = False
+    image_id: Optional[str] = None
+    attach_to: Optional[str] = None</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li>Utilisez <strong>YAML</strong> pour les configurations écrites à la main, <strong>JSON</strong> pour celles générées automatiquement.</li>
+        <li>La syntaxe <code>${VAR_NAME}</code> garde les secrets dans les variables d'environnement.</li>
+        <li>Validez <strong>toujours</strong> avant de déployer — cela détecte les erreurs tôt.</li>
+        <li>Les <strong>modèles de données</strong> typés offrent l'auto-complétion dans l'IDE et une documentation claire.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts (l'ordre est important : données → modules → point d'entrée) -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

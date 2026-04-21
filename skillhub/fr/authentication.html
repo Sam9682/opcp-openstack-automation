@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Authentification</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Authentification</h1>
+      <p class="lesson-meta">Difficulté : <strong>Débutant</strong> · Durée estimée : <strong>15 min</strong></p>
+
+      <p>
+        Avant de pouvoir gérer une ressource OpenStack, vous avez besoin d'une
+        connexion valide et authentifiée. Le module
+        <code>openstack_sdk/auth_manager.py</code> de ce projet propose plusieurs
+        méthodes d'authentification — des simples variables d'environnement à un
+        <code>ConnectionManager</code> complet avec rafraîchissement automatique
+        du jeton.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Variables d'environnement</h2>
+      <p>
+        La manière la plus rapide de commencer est d'exporter vos identifiants
+        OVHcloud sous forme de variables d'environnement. Le SDK les lit
+        automatiquement.
+      </p>
+
+      <h3>Nom d'utilisateur / mot de passe traditionnel</h3>
+      <pre><code class="language-bash">export OS_AUTH_URL="https://auth.cloud.ovh.net/v3"
+export OS_USERNAME="${OS_USERNAME}"
+export OS_PASSWORD="${OS_PASSWORD}"
+export OS_TENANT_NAME="${OS_TENANT_NAME}"
+export OS_REGION_NAME="GRA7"</code></pre>
+
+      <h3>Identifiants d'application (recommandé)</h3>
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL="${OS_AUTH_URL}"
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="${OS_REGION_NAME}"
+export OS_INTERFACE=public
+export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
+export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"</code></pre>
+
+      <p>
+        Les identifiants d'application sont limités à un seul projet et peuvent
+        être révoqués indépendamment — c'est l'approche recommandée pour
+        l'automatisation.
+      </p>
+
+      <!-- Section 2 -->
+      <h2>2. Fichiers d'identifiants</h2>
+      <p>
+        Pour les environnements où les variables d'environnement ne sont pas
+        pratiques, vous pouvez stocker les identifiants dans un fichier clé=valeur.
+        Assurez-vous que les permissions du fichier sont restrictives.
+      </p>
+
+      <pre><code class="language-bash"># credentials.txt — gardez les permissions strictes
+chmod 600 credentials.txt</code></pre>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Load from a secure file (should have 600 permissions)
+credentials = auth_manager.load_credentials_from_file("credentials.txt")
+
+# Authenticate and obtain a connection
+connection = auth_manager.authenticate(credentials)
+print("Authenticated successfully!")</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. ConnectionManager avec rafraîchissement du jeton</h2>
+      <p>
+        Les déploiements de longue durée peuvent dépasser la validité d'un jeton
+        d'authentification unique (généralement 1 heure). Le
+        <code>ConnectionManager</code> surveille l'expiration du jeton et le
+        rafraîchit automatiquement lorsqu'il reste moins de 5 minutes.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from config.models import AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+
+# get_connection() refreshes the token transparently
+connection = conn_manager.get_connection()
+
+# Use the connection for long-running operations …
+projects = list(connection.identity.projects())
+print(f"Found {len(projects)} projects")
+
+# Always close when done
+conn_manager.close()</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Utilisation du gestionnaire de contexte</h2>
+      <p>
+        L'instruction <code>with</code> de Python garantit que la connexion est
+        fermée même si une exception survient.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+
+conn_manager = ConnectionManager(credentials)
+
+with conn_manager as connection:
+    servers = list(connection.compute.servers())
+    print(f"Running instances: {len(servers)}")
+# Connection is automatically closed here</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Identifiants d'application</h2>
+      <p>
+        Les identifiants d'application vous permettent de vous authentifier sans
+        exposer votre mot de passe principal. Vous les créez dans le tableau de
+        bord Horizon ou via la CLI.
+      </p>
+
+      <pre><code class="language-bash"># Create an application credential via the OpenStack CLI
+openstack application credential create my-automation \
+  --description "CI/CD pipeline credential" \
+  --unrestricted</code></pre>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+credentials = auth_manager.load_credentials_from_env()
+
+connection = auth_manager.authenticate(credentials)
+print("Authenticated with application credentials!")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Gestion des erreurs</h2>
+      <p>
+        Le module lève une <code>AuthenticationError</code> en cas d'échec —
+        variables manquantes, identifiants invalides ou problèmes réseau.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import (
+    AuthenticationManager,
+    AuthenticationError,
+)
+
+auth_manager = AuthenticationManager()
+
+try:
+    credentials = auth_manager.load_credentials_from_env()
+    connection = auth_manager.authenticate(credentials)
+except AuthenticationError as exc:
+    print(f"Authentication failed: {exc}")
+    # Handle gracefully — log, alert, or retry</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li>Utilisez les <strong>variables d'environnement</strong> pour le développement local rapide.</li>
+        <li>Utilisez les <strong>fichiers d'identifiants</strong> (avec <code>chmod 600</code>) lorsque les variables d'environnement ne sont pas pratiques.</li>
+        <li>Utilisez le <strong>ConnectionManager</strong> pour l'automatisation de longue durée — il gère le rafraîchissement du jeton.</li>
+        <li>Préférez les <strong>identifiants d'application</strong> au nom d'utilisateur/mot de passe pour le CI/CD.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts (l'ordre est important : données → modules → point d'entrée) -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

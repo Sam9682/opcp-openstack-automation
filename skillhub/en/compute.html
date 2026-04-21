@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Compute</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Compute</h1>
+      <p class="lesson-meta">Difficulty: <strong>Intermediate</strong> · Estimated time: <strong>25 min</strong></p>
+
+      <p>
+        Compute instances are the workhorses of your infrastructure. This lesson
+        covers instance creation, flavor and image validation, user-data injection,
+        metadata, and status polling — with both the Python SDK and Terraform.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Creating Instances with the SDK</h2>
+      <p>
+        The <code>ComputeManager</code> validates flavors and images against the
+        OVHcloud catalog, creates instances, and waits for them to reach
+        <code>ACTIVE</code> status (default timeout: 300 s).
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from openstack_sdk.compute_manager import ComputeManager
+from config.models import InstanceSpec, AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+connection = conn_manager.connect()
+
+compute = ComputeManager(connection)
+
+specs = [
+    InstanceSpec(
+        name="web-server-1",
+        flavor="s1-4",
+        image="Ubuntu 22.04",
+        key_name="my-ssh-key",
+        network_ids=["private-network"],
+        security_groups=["web-security-group"],
+        metadata={"role": "web", "env": "production"},
+    )
+]
+
+instances = compute.create_compute_instances(specs)
+for inst in instances:
+    print(f"{inst.name}  ID={inst.id}  Status={inst.status}")</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Flavor and Image Validation</h2>
+      <p>
+        Before sending a create request the manager verifies that the requested
+        flavor and image exist in the OVHcloud catalog. Results are cached to reduce
+        API calls.
+      </p>
+
+      <pre><code class="language-python"># Common OVHcloud flavors
+# s1-2  — 1 vCore,  2 GB RAM
+# s1-4  — 1 vCore,  4 GB RAM
+# s1-8  — 2 vCores, 8 GB RAM
+# b2-7  — 2 vCores, 7 GB RAM
+# b2-15 — 4 vCores, 15 GB RAM
+
+# Common images
+# Ubuntu 22.04, Ubuntu 20.04
+# Debian 11, Debian 10
+# Rocky Linux 8</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. User Data Injection</h2>
+      <p>
+        Cloud-init scripts passed via <code>user_data</code> run on first boot. Use
+        them to install packages, start services, or configure the instance.
+      </p>
+
+      <pre><code class="language-python">user_data_script = """#!/bin/bash
+apt-get update
+apt-get install -y nginx
+systemctl enable nginx
+systemctl start nginx
+"""
+
+spec = InstanceSpec(
+    name="nginx-host",
+    flavor="s1-4",
+    image="Ubuntu 22.04",
+    key_name="my-ssh-key",
+    network_ids=["private-network"],
+    security_groups=["web-security-group"],
+    user_data=user_data_script,
+)
+
+instances = compute.create_compute_instances([spec])</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Metadata</h2>
+      <p>
+        Attach arbitrary key-value metadata to instances for tagging, cost
+        allocation, or automation hooks.
+      </p>
+
+      <pre><code class="language-python">spec = InstanceSpec(
+    name="tagged-instance",
+    flavor="s1-2",
+    image="Ubuntu 22.04",
+    key_name="my-ssh-key",
+    network_ids=["private-network"],
+    metadata={
+        "project": "web-app",
+        "environment": "staging",
+        "owner": "platform-team",
+    },
+)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Status Polling</h2>
+      <p>
+        After creation the manager polls the API every 5 seconds until the instance
+        reaches <code>ACTIVE</code> or the 300-second timeout expires. If the
+        instance enters <code>ERROR</code> state the fault details are reported
+        immediately.
+      </p>
+
+      <pre><code class="language-python"># Wait for a specific instance to become ACTIVE
+instance = compute.wait_for_instance_active("instance-id", timeout=300)
+print(f"Instance is now {instance.status}")
+
+# Query instances
+inst = compute.get_instance_by_name("web-server-1")
+all_instances = compute.list_instances()
+
+# Delete when done
+compute.delete_instance("instance-id")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Compute with Terraform</h2>
+
+      <pre><code class="language-hcl">resource "openstack_compute_instance_v2" "instance" {
+  count       = var.instance_count
+  name        = "${var.network_name}-instance-${count.index + 1}"
+  flavor_name = var.instance_flavor
+  image_name  = var.instance_image
+  key_pair    = var.key_name
+
+  network {
+    uuid = openstack_networking_network_v2.private_network.id
+  }
+
+  metadata  = var.instance_metadata
+  user_data = var.instance_user_data
+
+  depends_on = [
+    openstack_networking_subnet_v2.private_subnet
+  ]
+}</code></pre>
+
+      <pre><code class="language-bash"># Apply the Terraform configuration
+cd terraform
+terraform init
+terraform plan -var="instance_count=2"
+terraform apply -auto-approve</code></pre>
+
+      <h2>Summary</h2>
+      <ul>
+        <li><code>ComputeManager</code> validates flavors and images <strong>before</strong> creation.</li>
+        <li>Inject <strong>cloud-init scripts</strong> via <code>user_data</code> for first-boot automation.</li>
+        <li>Attach <strong>metadata</strong> for tagging and cost tracking.</li>
+        <li>The SDK <strong>polls</strong> until ACTIVE (300 s timeout, 5 s interval).</li>
+        <li>Terraform provides a <strong>declarative</strong> alternative with <code>count</code>-based scaling.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

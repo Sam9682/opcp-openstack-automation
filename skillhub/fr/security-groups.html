@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Groupes de sécurité</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Groupes de sécurité</h1>
+      <p class="lesson-meta">Difficulté : <strong>Intermédiaire</strong> · Durée estimée : <strong>20 min</strong></p>
+
+      <p>
+        Les groupes de sécurité agissent comme des pare-feu virtuels pour vos
+        instances. Chaque groupe contient un ensemble de règles qui contrôlent le
+        trafic entrant (ingress) et sortant (egress). Dans cette leçon, vous
+        créerez des groupes, validerez des règles et gérerez IPv4 et IPv6.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Création d'un groupe de sécurité</h2>
+      <p>
+        Le <code>SecurityGroupManager</code> crée les groupes et leurs règles en
+        un seul appel. Les noms doivent être uniques au sein d'un déploiement.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from openstack_sdk.security_group_manager import SecurityGroupManager
+from config.models import SecurityGroupSpec, SecurityGroupRule, AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+connection = conn_manager.connect()
+
+sg_manager = SecurityGroupManager(connection)
+
+web_sg = SecurityGroupSpec(
+    name="web-server-sg",
+    description="Autoriser HTTP, HTTPS et SSH",
+    rules=[
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=22,
+            port_range_max=22,
+            remote_ip_prefix="0.0.0.0/0",
+            ethertype="IPv4",
+        ),
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=80,
+            port_range_max=80,
+            remote_ip_prefix="0.0.0.0/0",
+            ethertype="IPv4",
+        ),
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=443,
+            port_range_max=443,
+            remote_ip_prefix="0.0.0.0/0",
+            ethertype="IPv4",
+        ),
+    ],
+)
+
+created = sg_manager.create_security_groups([web_sg])
+print(f"Créé : {created[0].name} (ID : {created[0].id})")</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Validation des règles</h2>
+      <p>
+        Chaque règle est validée avant d'atteindre l'API. Le validateur vérifie :
+      </p>
+      <ul>
+        <li><strong>Direction</strong> — doit être <code>ingress</code> ou <code>egress</code></li>
+        <li><strong>Protocole</strong> — doit être <code>tcp</code>, <code>udp</code>, <code>icmp</code> ou <code>any</code></li>
+        <li><strong>Plage de ports</strong> — <code>port_range_min &lt;= port_range_max</code>, valeurs 0–65535</li>
+        <li><strong>CIDR</strong> — <code>remote_ip_prefix</code> doit être une notation valide</li>
+        <li><strong>Ethertype</strong> — doit être <code>IPv4</code> ou <code>IPv6</code></li>
+      </ul>
+
+      <pre><code class="language-python"># Le validateur de configuration détecte les erreurs de règles tôt
+from config.config_manager import ConfigurationManager
+
+manager = ConfigurationManager()
+config = manager.load_config("examples/config.yaml")
+result = manager.validate_config(config)
+
+for err in result.errors:
+    print(f"  ✗ {err}")
+# Exemple :
+#   ✗ port_range_min must be <= port_range_max in security group web-sg
+#   ✗ Invalid CIDR notation in security group rule: 999.0.0.0/8</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Restreindre l'accès à un réseau privé</h2>
+      <p>
+        Pour les serveurs de bases de données, on restreint généralement l'accès
+        au sous-réseau privé uniquement.
+      </p>
+
+      <pre><code class="language-python">db_sg = SecurityGroupSpec(
+    name="database-sg",
+    description="Base de données — réseau privé uniquement",
+    rules=[
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=5432,
+            port_range_max=5432,
+            remote_ip_prefix="192.168.1.0/24",
+            ethertype="IPv4",
+        ),
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=3306,
+            port_range_max=3306,
+            remote_ip_prefix="192.168.1.0/24",
+            ethertype="IPv4",
+        ),
+    ],
+)
+
+created = sg_manager.create_security_groups([db_sg])</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Règles ICMP et IPv6</h2>
+      <p>
+        Les règles ICMP (ping) n'utilisent pas de plages de ports. Les règles IPv6
+        utilisent <code>::/0</code> comme préfixe générique.
+      </p>
+
+      <pre><code class="language-python"># Autoriser le ping depuis la plage 10.0.0.0/8
+icmp_rule = SecurityGroupRule(
+    direction="ingress",
+    protocol="icmp",
+    remote_ip_prefix="10.0.0.0/8",
+    ethertype="IPv4",
+)
+
+# Autoriser HTTPS en IPv6
+ipv6_rule = SecurityGroupRule(
+    direction="ingress",
+    protocol="tcp",
+    port_range_min=443,
+    port_range_max=443,
+    remote_ip_prefix="::/0",
+    ethertype="IPv6",
+)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Recherche et suppression de groupes</h2>
+
+      <pre><code class="language-python"># Rechercher par nom
+sg = sg_manager.get_security_group_by_name("web-server-sg")
+if sg:
+    print(f"Trouvé : {sg.name} (ID : {sg.id})")
+
+# Lister tous les groupes
+for group in sg_manager.list_security_groups():
+    print(f"  - {group.name}")
+
+# Supprimer quand ce n'est plus nécessaire
+sg_manager.delete_security_group(sg.id)</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li>Les groupes de sécurité sont des <strong>pare-feu virtuels</strong> avec des règles ingress/egress.</li>
+        <li>Les règles sont <strong>validées</strong> pour la direction, le protocole, les ports et le CIDR avant la création.</li>
+        <li>Restreignez l'accès aux bases de données aux <strong>sous-réseaux privés</strong> pour une défense en profondeur.</li>
+        <li>Utilisez des règles <strong>IPv6</strong> en complément d'IPv4 pour les environnements double pile.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

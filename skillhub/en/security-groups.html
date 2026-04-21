@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Security Groups</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Security Groups</h1>
+      <p class="lesson-meta">Difficulty: <strong>Intermediate</strong> · Estimated time: <strong>20 min</strong></p>
+
+      <p>
+        Security groups act as virtual firewalls for your instances. Each group
+        contains a set of rules that control inbound (ingress) and outbound (egress)
+        traffic. In this lesson you will create groups, validate rules, and handle
+        both IPv4 and IPv6.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Creating a Security Group</h2>
+      <p>
+        The <code>SecurityGroupManager</code> creates groups and their rules in a
+        single call. Names must be unique within a deployment.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from openstack_sdk.security_group_manager import SecurityGroupManager
+from config.models import SecurityGroupSpec, SecurityGroupRule, AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+connection = conn_manager.connect()
+
+sg_manager = SecurityGroupManager(connection)
+
+web_sg = SecurityGroupSpec(
+    name="web-server-sg",
+    description="Allow HTTP, HTTPS, and SSH",
+    rules=[
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=22,
+            port_range_max=22,
+            remote_ip_prefix="0.0.0.0/0",
+            ethertype="IPv4",
+        ),
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=80,
+            port_range_max=80,
+            remote_ip_prefix="0.0.0.0/0",
+            ethertype="IPv4",
+        ),
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=443,
+            port_range_max=443,
+            remote_ip_prefix="0.0.0.0/0",
+            ethertype="IPv4",
+        ),
+    ],
+)
+
+created = sg_manager.create_security_groups([web_sg])
+print(f"Created: {created[0].name} (ID: {created[0].id})")</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Rule Validation</h2>
+      <p>
+        Every rule is validated before it reaches the API. The validator checks:
+      </p>
+      <ul>
+        <li><strong>Direction</strong> — must be <code>ingress</code> or <code>egress</code></li>
+        <li><strong>Protocol</strong> — must be <code>tcp</code>, <code>udp</code>, <code>icmp</code>, or <code>any</code></li>
+        <li><strong>Port range</strong> — <code>port_range_min &lt;= port_range_max</code>, values 0–65535</li>
+        <li><strong>CIDR</strong> — <code>remote_ip_prefix</code> must be valid notation</li>
+        <li><strong>Ethertype</strong> — must be <code>IPv4</code> or <code>IPv6</code></li>
+      </ul>
+
+      <pre><code class="language-python"># The config validator catches rule errors early
+from config.config_manager import ConfigurationManager
+
+manager = ConfigurationManager()
+config = manager.load_config("examples/config.yaml")
+result = manager.validate_config(config)
+
+for err in result.errors:
+    print(f"  ✗ {err}")
+# Example:
+#   ✗ port_range_min must be <= port_range_max in security group web-sg
+#   ✗ Invalid CIDR notation in security group rule: 999.0.0.0/8</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Restricting Access to a Private Network</h2>
+      <p>
+        For database servers you typically restrict access to your private subnet
+        only.
+      </p>
+
+      <pre><code class="language-python">db_sg = SecurityGroupSpec(
+    name="database-sg",
+    description="Database — private network only",
+    rules=[
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=5432,
+            port_range_max=5432,
+            remote_ip_prefix="192.168.1.0/24",
+            ethertype="IPv4",
+        ),
+        SecurityGroupRule(
+            direction="ingress",
+            protocol="tcp",
+            port_range_min=3306,
+            port_range_max=3306,
+            remote_ip_prefix="192.168.1.0/24",
+            ethertype="IPv4",
+        ),
+    ],
+)
+
+created = sg_manager.create_security_groups([db_sg])</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. ICMP and IPv6 Rules</h2>
+      <p>
+        ICMP rules (ping) do not use port ranges. IPv6 rules use <code>::/0</code>
+        as the wildcard prefix.
+      </p>
+
+      <pre><code class="language-python"># Allow ping from the 10.0.0.0/8 range
+icmp_rule = SecurityGroupRule(
+    direction="ingress",
+    protocol="icmp",
+    remote_ip_prefix="10.0.0.0/8",
+    ethertype="IPv4",
+)
+
+# Allow HTTPS over IPv6
+ipv6_rule = SecurityGroupRule(
+    direction="ingress",
+    protocol="tcp",
+    port_range_min=443,
+    port_range_max=443,
+    remote_ip_prefix="::/0",
+    ethertype="IPv6",
+)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Querying and Deleting Groups</h2>
+
+      <pre><code class="language-python"># Look up by name
+sg = sg_manager.get_security_group_by_name("web-server-sg")
+if sg:
+    print(f"Found: {sg.name} (ID: {sg.id})")
+
+# List all groups
+for group in sg_manager.list_security_groups():
+    print(f"  - {group.name}")
+
+# Delete when no longer needed
+sg_manager.delete_security_group(sg.id)</code></pre>
+
+      <h2>Summary</h2>
+      <ul>
+        <li>Security groups are <strong>virtual firewalls</strong> with ingress/egress rules.</li>
+        <li>Rules are <strong>validated</strong> for direction, protocol, ports, and CIDR before creation.</li>
+        <li>Restrict database access to <strong>private subnets</strong> for defense in depth.</li>
+        <li>Use <strong>IPv6</strong> rules alongside IPv4 for dual-stack environments.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

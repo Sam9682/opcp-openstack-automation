@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Terraform</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Terraform</h1>
+      <p class="lesson-meta">Difficulty: <strong>Intermediate</strong> · Estimated time: <strong>30 min</strong></p>
+
+      <p>
+        Terraform provides a declarative approach to infrastructure. You describe the
+        desired state in HCL files and Terraform figures out the create/update/delete
+        operations needed to reach it. This lesson walks through the project's
+        Terraform configuration.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Provider Setup</h2>
+      <p>
+        The OpenStack provider connects Terraform to your OVHcloud project. Sensitive
+        values come from variables (never hard-coded).
+      </p>
+
+      <pre><code class="language-hcl">provider "openstack" {
+  auth_url                      = var.auth_url
+  application_credential_id     = var.application_credential_id
+  application_credential_secret = var.application_credential_secret
+  tenant_name                   = var.tenant_name
+  region                        = var.region
+}</code></pre>
+
+      <pre><code class="language-bash"># Initialize the provider
+cd terraform
+terraform init</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Network Resources</h2>
+
+      <pre><code class="language-hcl"># Private network
+resource "openstack_networking_network_v2" "private_network" {
+  name           = var.network_name
+  admin_state_up = true
+}
+
+# Subnet with CIDR validation
+resource "openstack_networking_subnet_v2" "private_subnet" {
+  name            = "${var.network_name}-subnet"
+  network_id      = openstack_networking_network_v2.private_network.id
+  cidr            = var.subnet_cidr
+  ip_version      = 4
+  dns_nameservers = var.dns_nameservers
+  enable_dhcp     = var.enable_dhcp
+}</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Compute Instances</h2>
+      <p>
+        Use <code>count</code> to create multiple identical instances. Each instance
+        depends on the subnet being ready.
+      </p>
+
+      <pre><code class="language-hcl">resource "openstack_compute_instance_v2" "instance" {
+  count       = var.instance_count
+  name        = "${var.network_name}-instance-${count.index + 1}"
+  flavor_name = var.instance_flavor
+  image_name  = var.instance_image
+  key_pair    = var.key_name
+
+  network {
+    uuid = openstack_networking_network_v2.private_network.id
+  }
+
+  metadata  = var.instance_metadata
+  user_data = var.instance_user_data
+
+  depends_on = [
+    openstack_networking_subnet_v2.private_subnet
+  ]
+}</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Volumes and Attachments</h2>
+
+      <pre><code class="language-hcl"># Block storage volumes
+resource "openstack_blockstorage_volume_v3" "volume" {
+  count       = var.volume_count
+  name        = "${var.network_name}-volume-${count.index + 1}"
+  size        = var.volume_size
+  volume_type = var.volume_type
+  image_id    = var.volume_bootable ? var.volume_image_id : null
+}
+
+# Attach volumes to instances (1:1 mapping)
+resource "openstack_compute_volume_attach_v2" "volume_attachment" {
+  count       = min(var.volume_count, var.instance_count)
+  instance_id = openstack_compute_instance_v2.instance[count.index].id
+  volume_id   = openstack_blockstorage_volume_v3.volume[count.index].id
+
+  depends_on = [
+    openstack_compute_instance_v2.instance,
+    openstack_blockstorage_volume_v3.volume
+  ]
+}</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Variables</h2>
+      <p>
+        Variables keep your configuration flexible. Use <code>validation</code>
+        blocks to catch errors at plan time.
+      </p>
+
+      <pre><code class="language-hcl">variable "subnet_cidr" {
+  description = "CIDR for the subnet"
+  type        = string
+  default     = "192.168.1.0/24"
+
+  validation {
+    condition     = can(cidrhost(var.subnet_cidr, 0))
+    error_message = "Must be valid CIDR notation."
+  }
+}
+
+variable "volume_size" {
+  description = "Volume size in GB"
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.volume_size > 0
+    error_message = "Volume size must be positive."
+  }
+}
+
+variable "instance_flavor" {
+  description = "Instance flavor (e.g. s1-2, s1-4)"
+  type        = string
+  default     = "s1-2"
+}</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Outputs</h2>
+      <p>
+        Outputs expose key resource attributes after <code>terraform apply</code>.
+      </p>
+
+      <pre><code class="language-hcl">output "network_id" {
+  description = "ID of the private network"
+  value       = openstack_networking_network_v2.private_network.id
+}
+
+output "instance_ips" {
+  description = "IP addresses of all instances"
+  value       = openstack_compute_instance_v2.instance[*].access_ip_v4
+}
+
+output "deployment_summary" {
+  value = {
+    network   = openstack_networking_network_v2.private_network.name
+    instances = openstack_compute_instance_v2.instance[*].name
+    volumes   = openstack_blockstorage_volume_v3.volume[*].name
+  }
+}</code></pre>
+
+      <!-- Section 7 -->
+      <h2>7. State Management</h2>
+      <p>
+        Terraform stores the mapping between your config and real resources in a
+        state file. For team use, store state remotely.
+      </p>
+
+      <pre><code class="language-bash"># Plan — preview changes without applying
+terraform plan -var-file="terraform.tfvars"
+
+# Apply — create / update resources
+terraform apply -auto-approve
+
+# Destroy — tear down everything
+terraform destroy -auto-approve
+
+# Show current state
+terraform show</code></pre>
+
+      <pre><code class="language-hcl"># terraform.tfvars — variable values
+auth_url                      = "${OS_AUTH_URL}"
+application_credential_id     = "${OS_APPLICATION_CREDENTIAL_ID}"
+application_credential_secret = "${OS_APPLICATION_CREDENTIAL_SECRET}"
+tenant_name                   = "${OS_TENANT_NAME}"
+region                        = "${OS_REGION_NAME}"
+instance_image                = "Ubuntu 22.04"
+key_name                      = "my-ssh-key"
+instance_count                = 2
+volume_count                  = 2</code></pre>
+
+      <h2>Summary</h2>
+      <ul>
+        <li>The <strong>OpenStack provider</strong> connects Terraform to OVHcloud.</li>
+        <li>Use <strong>variables</strong> with validation blocks for safe, reusable configs.</li>
+        <li><code>count</code> enables <strong>scaling</strong> instances and volumes.</li>
+        <li><strong>Outputs</strong> expose IPs, IDs, and summaries after apply.</li>
+        <li>Manage <strong>state</strong> carefully — use remote backends for teams.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

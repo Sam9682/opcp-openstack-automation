@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Compute</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Compute</h1>
+      <p class="lesson-meta">Difficulté : <strong>Intermédiaire</strong> · Durée estimée : <strong>25 min</strong></p>
+
+      <p>
+        Les instances de calcul sont les piliers de votre infrastructure. Cette leçon
+        couvre la création d'instances, la validation des flavors et images,
+        l'injection de user-data, les métadonnées et le polling de statut — avec
+        le SDK Python et Terraform.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Création d'instances avec le SDK</h2>
+      <p>
+        Le <code>ComputeManager</code> valide les flavors et les images par rapport
+        au catalogue OVHcloud, crée les instances et attend qu'elles atteignent le
+        statut <code>ACTIVE</code> (délai par défaut : 300 s).
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from openstack_sdk.compute_manager import ComputeManager
+from config.models import InstanceSpec, AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+connection = conn_manager.connect()
+
+compute = ComputeManager(connection)
+
+specs = [
+    InstanceSpec(
+        name="web-server-1",
+        flavor="s1-4",
+        image="Ubuntu 22.04",
+        key_name="my-ssh-key",
+        network_ids=["private-network"],
+        security_groups=["web-security-group"],
+        metadata={"role": "web", "env": "production"},
+    )
+]
+
+instances = compute.create_compute_instances(specs)
+for inst in instances:
+    print(f"{inst.name}  ID={inst.id}  Statut={inst.status}")</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Validation des flavors et images</h2>
+      <p>
+        Avant d'envoyer une requête de création, le manager vérifie que le flavor
+        et l'image demandés existent dans le catalogue OVHcloud. Les résultats sont
+        mis en cache pour réduire les appels API.
+      </p>
+
+      <pre><code class="language-python"># Flavors OVHcloud courants
+# s1-2  — 1 vCore,  2 Go RAM
+# s1-4  — 1 vCore,  4 Go RAM
+# s1-8  — 2 vCores, 8 Go RAM
+# b2-7  — 2 vCores, 7 Go RAM
+# b2-15 — 4 vCores, 15 Go RAM
+
+# Images courantes
+# Ubuntu 22.04, Ubuntu 20.04
+# Debian 11, Debian 10
+# Rocky Linux 8</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Injection de user-data</h2>
+      <p>
+        Les scripts cloud-init passés via <code>user_data</code> s'exécutent au
+        premier démarrage. Utilisez-les pour installer des paquets, démarrer des
+        services ou configurer l'instance.
+      </p>
+
+      <pre><code class="language-python">user_data_script = """#!/bin/bash
+apt-get update
+apt-get install -y nginx
+systemctl enable nginx
+systemctl start nginx
+"""
+
+spec = InstanceSpec(
+    name="nginx-host",
+    flavor="s1-4",
+    image="Ubuntu 22.04",
+    key_name="my-ssh-key",
+    network_ids=["private-network"],
+    security_groups=["web-security-group"],
+    user_data=user_data_script,
+)
+
+instances = compute.create_compute_instances([spec])</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Métadonnées</h2>
+      <p>
+        Attachez des métadonnées clé-valeur arbitraires aux instances pour le
+        marquage, l'allocation des coûts ou les hooks d'automatisation.
+      </p>
+
+      <pre><code class="language-python">spec = InstanceSpec(
+    name="tagged-instance",
+    flavor="s1-2",
+    image="Ubuntu 22.04",
+    key_name="my-ssh-key",
+    network_ids=["private-network"],
+    metadata={
+        "project": "web-app",
+        "environment": "staging",
+        "owner": "platform-team",
+    },
+)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Polling de statut</h2>
+      <p>
+        Après la création, le manager interroge l'API toutes les 5 secondes jusqu'à
+        ce que l'instance atteigne <code>ACTIVE</code> ou que le délai de 300
+        secondes expire. Si l'instance passe en état <code>ERROR</code>, les détails
+        de l'erreur sont signalés immédiatement.
+      </p>
+
+      <pre><code class="language-python"># Attendre qu'une instance spécifique devienne ACTIVE
+instance = compute.wait_for_instance_active("instance-id", timeout=300)
+print(f"L'instance est maintenant {instance.status}")
+
+# Rechercher des instances
+inst = compute.get_instance_by_name("web-server-1")
+all_instances = compute.list_instances()
+
+# Supprimer quand c'est terminé
+compute.delete_instance("instance-id")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Compute avec Terraform</h2>
+
+      <pre><code class="language-hcl">resource "openstack_compute_instance_v2" "instance" {
+  count       = var.instance_count
+  name        = "${var.network_name}-instance-${count.index + 1}"
+  flavor_name = var.instance_flavor
+  image_name  = var.instance_image
+  key_pair    = var.key_name
+
+  network {
+    uuid = openstack_networking_network_v2.private_network.id
+  }
+
+  metadata  = var.instance_metadata
+  user_data = var.instance_user_data
+
+  depends_on = [
+    openstack_networking_subnet_v2.private_subnet
+  ]
+}</code></pre>
+
+      <pre><code class="language-bash"># Appliquer la configuration Terraform
+cd terraform
+terraform init
+terraform plan -var="instance_count=2"
+terraform apply -auto-approve</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li><code>ComputeManager</code> valide les flavors et images <strong>avant</strong> la création.</li>
+        <li>Injectez des <strong>scripts cloud-init</strong> via <code>user_data</code> pour l'automatisation au premier démarrage.</li>
+        <li>Attachez des <strong>métadonnées</strong> pour le marquage et le suivi des coûts.</li>
+        <li>Le SDK <strong>interroge</strong> jusqu'à ACTIVE (délai de 300 s, intervalle de 5 s).</li>
+        <li>Terraform offre une alternative <strong>déclarative</strong> avec mise à l'échelle via <code>count</code>.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

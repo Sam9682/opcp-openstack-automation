@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Authentication</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Authentication</h1>
+      <p class="lesson-meta">Difficulty: <strong>Beginner</strong> · Estimated time: <strong>15 min</strong></p>
+
+      <p>
+        Before you can manage any OpenStack resource you need a valid, authenticated
+        connection. The <code>openstack_sdk/auth_manager.py</code> module in this
+        project provides several ways to authenticate — from simple environment
+        variables to a full <code>ConnectionManager</code> with automatic token
+        refresh.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Environment Variables</h2>
+      <p>
+        The quickest way to get started is to export your OVHcloud credentials as
+        environment variables. The SDK reads them automatically.
+      </p>
+
+      <h3>Traditional username / password</h3>
+      <pre><code class="language-bash">export OS_AUTH_URL="https://auth.cloud.ovh.net/v3"
+export OS_USERNAME="${OS_USERNAME}"
+export OS_PASSWORD="${OS_PASSWORD}"
+export OS_TENANT_NAME="${OS_TENANT_NAME}"
+export OS_REGION_NAME="GRA7"</code></pre>
+
+      <h3>Application credentials (recommended)</h3>
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL="${OS_AUTH_URL}"
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="${OS_REGION_NAME}"
+export OS_INTERFACE=public
+export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
+export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"</code></pre>
+
+      <p>
+        Application credentials are scoped to a single project and can be revoked
+        independently — they are the preferred approach for automation.
+      </p>
+
+      <!-- Section 2 -->
+      <h2>2. Credential Files</h2>
+      <p>
+        For environments where environment variables are inconvenient you can store
+        credentials in a key=value file. Make sure the file permissions are
+        restrictive.
+      </p>
+
+      <pre><code class="language-bash"># credentials.txt — keep permissions tight
+chmod 600 credentials.txt</code></pre>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Load from a secure file (should have 600 permissions)
+credentials = auth_manager.load_credentials_from_file("credentials.txt")
+
+# Authenticate and obtain a connection
+connection = auth_manager.authenticate(credentials)
+print("Authenticated successfully!")</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. ConnectionManager with Token Refresh</h2>
+      <p>
+        Long-running deployments can outlive a single authentication token (typically
+        1 hour). The <code>ConnectionManager</code> monitors token expiry and
+        refreshes automatically when fewer than 5 minutes remain.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+from config.models import AuthCredentials
+
+credentials = AuthCredentials(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+)
+
+conn_manager = ConnectionManager(credentials)
+
+# get_connection() refreshes the token transparently
+connection = conn_manager.get_connection()
+
+# Use the connection for long-running operations …
+projects = list(connection.identity.projects())
+print(f"Found {len(projects)} projects")
+
+# Always close when done
+conn_manager.close()</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Context Manager Usage</h2>
+      <p>
+        Python's <code>with</code> statement guarantees the connection is closed even
+        if an exception occurs.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+
+conn_manager = ConnectionManager(credentials)
+
+with conn_manager as connection:
+    servers = list(connection.compute.servers())
+    print(f"Running instances: {len(servers)}")
+# Connection is automatically closed here</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Application Credentials</h2>
+      <p>
+        Application credentials let you authenticate without exposing your main
+        password. You create them in the Horizon dashboard or via the CLI.
+      </p>
+
+      <pre><code class="language-bash"># Create an application credential via the OpenStack CLI
+openstack application credential create my-automation \
+  --description "CI/CD pipeline credential" \
+  --unrestricted</code></pre>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+credentials = auth_manager.load_credentials_from_env()
+
+connection = auth_manager.authenticate(credentials)
+print("Authenticated with application credentials!")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Error Handling</h2>
+      <p>
+        The module raises <code>AuthenticationError</code> for any failure — missing
+        variables, invalid credentials, or network issues.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import (
+    AuthenticationManager,
+    AuthenticationError,
+)
+
+auth_manager = AuthenticationManager()
+
+try:
+    credentials = auth_manager.load_credentials_from_env()
+    connection = auth_manager.authenticate(credentials)
+except AuthenticationError as exc:
+    print(f"Authentication failed: {exc}")
+    # Handle gracefully — log, alert, or retry</code></pre>
+
+      <h2>Summary</h2>
+      <ul>
+        <li>Use <strong>environment variables</strong> for quick local development.</li>
+        <li>Use <strong>credential files</strong> (with <code>chmod 600</code>) when env vars are impractical.</li>
+        <li>Use <strong>ConnectionManager</strong> for long-running automation — it handles token refresh.</li>
+        <li>Prefer <strong>application credentials</strong> over username/password for CI/CD.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

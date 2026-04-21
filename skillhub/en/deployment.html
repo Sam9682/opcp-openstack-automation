@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Deployment Engine</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Deployment Engine</h1>
+      <p class="lesson-meta">Difficulty: <strong>Advanced</strong> · Estimated time: <strong>30 min</strong></p>
+
+      <p>
+        The <code>DeploymentEngine</code> orchestrates the entire infrastructure
+        lifecycle — networks, security groups, instances, and volumes — in the
+        correct dependency order. It tracks every resource, rolls back on failure,
+        and handles API rate limits with exponential backoff.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. Full Orchestration</h2>
+      <p>
+        A single <code>deploy_infrastructure()</code> call creates all resources in
+        dependency order: networks first, then security groups, then instances, and
+        finally volumes attached to those instances.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentEngine
+from openstack_sdk.auth_manager import AuthenticationManager
+from config.models import (
+    DeploymentConfig, NetworkSpec, SubnetSpec,
+    SecurityGroupSpec, SecurityGroupRule,
+    InstanceSpec, VolumeSpec,
+)
+
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+
+config = DeploymentConfig(
+    auth_url="${OS_AUTH_URL}",
+    username="${OS_USERNAME}",
+    password="${OS_PASSWORD}",
+    tenant_name="${OS_TENANT_NAME}",
+    region="${OS_REGION_NAME}",
+    project_name="${OS_TENANT_NAME}",
+    networks=[
+        NetworkSpec(
+            name="app-network",
+            subnets=[
+                SubnetSpec(
+                    name="app-subnet",
+                    cidr="192.168.1.0/24",
+                    dns_nameservers=["8.8.8.8", "8.8.4.4"],
+                )
+            ],
+        )
+    ],
+    security_groups=[
+        SecurityGroupSpec(
+            name="web-sg",
+            description="Web traffic",
+            rules=[
+                SecurityGroupRule(
+                    direction="ingress",
+                    protocol="tcp",
+                    port_range_min=80,
+                    port_range_max=80,
+                    remote_ip_prefix="0.0.0.0/0",
+                    ethertype="IPv4",
+                )
+            ],
+        )
+    ],
+    instances=[
+        InstanceSpec(
+            name="web-server",
+            flavor="s1-2",
+            image="Ubuntu 22.04",
+            key_name="my-ssh-key",
+            network_ids=[],
+            security_groups=["web-sg"],
+            metadata={"role": "web"},
+        )
+    ],
+    volumes=[
+        VolumeSpec(
+            name="data-volume",
+            size=100,
+            volume_type="classic",
+            attach_to="web-server",
+        )
+    ],
+)
+
+engine = DeploymentEngine(credentials)
+result = engine.deploy_infrastructure(config)
+
+if result.success:
+    print(f"Deployment {result.deployment_id} succeeded")
+    print(f"Duration: {result.duration_seconds:.1f}s")
+    for rtype, ids in result.created_resources.items():
+        print(f"  {rtype}: {len(ids)} resource(s)")
+else:
+    print(f"Deployment {result.deployment_id} failed")
+    for f in result.failed_resources:
+        print(f"  {f.resource_type}: {f.error_message}")</code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Deployment Tracking</h2>
+      <p>
+        Every deployment receives a unique <code>deployment_id</code>. The result
+        object contains created resource IDs, failed resources, duration, and any
+        orphaned resources that could not be cleaned up.
+      </p>
+
+      <pre><code class="language-python"># Save the deployment ID for later reference
+with open("deployment_id.txt", "w") as f:
+    f.write(result.deployment_id)
+
+# Inspect created resources
+print(result.created_resources)
+# {'networks': ['net-abc'], 'instances': ['srv-123'], ...}</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Automatic Rollback</h2>
+      <p>
+        If any resource fails to create, the engine automatically rolls back all
+        previously created resources in reverse dependency order. This prevents
+        orphaned infrastructure.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentError
+
+try:
+    result = engine.deploy_infrastructure(config)
+
+    if not result.success and result.orphaned_resources:
+        print("Orphaned resources requiring manual cleanup:")
+        for orphan in result.orphaned_resources:
+            print(f"  - {orphan}")
+except DeploymentError as exc:
+    print(f"Deployment error: {exc}")</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Manual Cleanup</h2>
+      <p>
+        You can also clean up specific resources by type and ID.
+      </p>
+
+      <pre><code class="language-python">resource_ids = {
+    "instances": ["instance-id-1", "instance-id-2"],
+    "volumes": ["volume-id-1"],
+    "networks": ["network-id-1"],
+}
+
+results = engine.cleanup_resources(resource_ids)
+
+for key, success in results.items():
+    status = "ok" if success else "FAILED"
+    print(f"  {key}: {status}")</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Rate Limiting</h2>
+      <p>
+        The engine uses exponential backoff when the OpenStack API returns rate-limit
+        errors (HTTP 429). This ensures deployments complete even under heavy API
+        load without overwhelming the control plane.
+      </p>
+
+      <pre><code class="language-python"># Rate limiting is handled internally:
+#   1st retry  → wait 1 s
+#   2nd retry  → wait 2 s
+#   3rd retry  → wait 4 s
+#   …up to a configurable maximum
+
+# Resource caching also reduces API calls:
+# - Flavors, images, and networks are cached after first lookup
+# - Subsequent lookups hit the cache instead of the API</code></pre>
+
+      <h2>Summary</h2>
+      <ul>
+        <li>The engine deploys resources in <strong>dependency order</strong>: networks → security groups → instances → volumes.</li>
+        <li>Every deployment gets a unique <strong>deployment_id</strong> for tracking.</li>
+        <li>On failure, <strong>automatic rollback</strong> removes previously created resources.</li>
+        <li>Use <code>cleanup_resources()</code> for <strong>manual teardown</strong>.</li>
+        <li><strong>Exponential backoff</strong> handles API rate limits gracefully.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

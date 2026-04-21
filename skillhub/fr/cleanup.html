@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Nettoyage</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Nettoyage</h1>
+      <p class="lesson-meta">Difficulté : <strong>Débutant</strong> · Durée estimée : <strong>15 min</strong></p>
+
+      <p>
+        Tout au long de cette formation, vous avez créé des réseaux, des groupes de
+        sécurité, des instances et des volumes. Cette dernière leçon vous guide pour
+        renommer chaque ressource avec un préfixe cohérent, puis les supprimer
+        afin de laisser votre projet OVHcloud propre.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. La convention de nommage</h2>
+      <p>
+        Nous utilisons le préfixe <code>lab-</code> pour identifier chaque ressource
+        créée pendant les labs. Cela permet de les lister et de les supprimer
+        facilement sans toucher aux ressources de production.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Type de ressource</th>
+            <th>Nom original (exemple)</th>
+            <th>Renommé en</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Réseau</td>
+            <td>app-network</td>
+            <td>lab-network</td>
+          </tr>
+          <tr>
+            <td>Sous-réseau</td>
+            <td>app-subnet</td>
+            <td>lab-subnet</td>
+          </tr>
+          <tr>
+            <td>Groupe de sécurité</td>
+            <td>web-server-sg</td>
+            <td>lab-sg-web</td>
+          </tr>
+          <tr>
+            <td>Instance</td>
+            <td>web-server-1</td>
+            <td>lab-instance-web-1</td>
+          </tr>
+          <tr>
+            <td>Volume</td>
+            <td>data-vol-1</td>
+            <td>lab-volume-data-1</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Section 2 -->
+      <h2>2. Renommer les ressources avec le SDK</h2>
+      <p>
+        Le SDK OpenStack permet de modifier l'attribut <code>name</code> de la
+        plupart des types de ressources. Le script ci-dessous renomme chaque
+        ressource dont le nom correspond à un nom de lab connu.
+      </p>
+
+      <pre><code class="language-python">"""cleanup_rename.py — Renommer toutes les ressources lab avec le préfixe lab-*."""
+from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
+
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+conn = ConnectionManager(credentials).connect()
+
+PREFIX = "lab-"
+
+# ── Correspondance : nom original → nouveau nom ───────────────
+NETWORK_RENAMES = {
+    "app-network":          "lab-network",
+    "private-network":      "lab-network-private",
+    "multi-subnet-network": "lab-network-multi",
+}
+
+SUBNET_RENAMES = {
+    "app-subnet":      "lab-subnet",
+    "private-subnet":  "lab-subnet-private",
+    "frontend-subnet": "lab-subnet-frontend",
+    "backend-subnet":  "lab-subnet-backend",
+}
+
+SG_RENAMES = {
+    "web-server-sg":       "lab-sg-web",
+    "web-security-group":  "lab-sg-web-group",
+    "web-sg":              "lab-sg-web-deploy",
+}
+
+INSTANCE_RENAMES = {
+    "web-server-1": "lab-instance-web-1",
+    "web-server-2": "lab-instance-web-2",
+    "web-server-3": "lab-instance-web-3",
+}
+
+VOLUME_RENAMES = {
+    "data-vol-1":    "lab-volume-data-1",
+    "fast-vol-1":    "lab-volume-fast-1",
+    "web-data":      "lab-volume-web-data",
+    "data-volume-1": "lab-volume-data-v1",
+    "data-volume-2": "lab-volume-data-v2",
+    "data-volume-3": "lab-volume-data-v3",
+}
+
+# ── Fonctions de renommage ─────────────────────────────────────
+def rename_networks(conn, renames):
+    for net in conn.network.networks():
+        if net.name in renames:
+            print(f"  Réseau : {net.name} → {renames[net.name]}")
+            conn.network.update_network(net.id, name=renames[net.name])
+
+def rename_subnets(conn, renames):
+    for sub in conn.network.subnets():
+        if sub.name in renames:
+            print(f"  Sous-réseau : {sub.name} → {renames[sub.name]}")
+            conn.network.update_subnet(sub.id, name=renames[sub.name])
+
+def rename_security_groups(conn, renames):
+    for sg in conn.network.security_groups():
+        if sg.name in renames:
+            print(f"  Groupe de sécurité : {sg.name} → {renames[sg.name]}")
+            conn.network.update_security_group(sg.id, name=renames[sg.name])
+
+def rename_instances(conn, renames):
+    for srv in conn.compute.servers():
+        if srv.name in renames:
+            print(f"  Instance : {srv.name} → {renames[srv.name]}")
+            conn.compute.update_server(srv.id, name=renames[srv.name])
+
+def rename_volumes(conn, renames):
+    for vol in conn.block_storage.volumes():
+        if vol.name in renames:
+            print(f"  Volume : {vol.name} → {renames[vol.name]}")
+            conn.block_storage.update_volume(vol.id, name=renames[vol.name])
+
+print("Renommage des ressources lab …")
+rename_networks(conn, NETWORK_RENAMES)
+rename_subnets(conn, SUBNET_RENAMES)
+rename_security_groups(conn, SG_RENAMES)
+rename_instances(conn, INSTANCE_RENAMES)
+rename_volumes(conn, VOLUME_RENAMES)
+print("Terminé — toutes les ressources lab utilisent le préfixe lab-*.")</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Lister les ressources par préfixe</h2>
+      <p>
+        Avant de supprimer quoi que ce soit, vérifiez que seules les ressources lab
+        sont ciblées.
+      </p>
+
+      <pre><code class="language-python">"""cleanup_list.py — Lister chaque ressource dont le nom commence par lab-."""
+PREFIX = "lab-"
+
+print("=== Réseaux ===")
+for net in conn.network.networks():
+    if net.name and net.name.startswith(PREFIX):
+        print(f"  {net.name}  (ID : {net.id})")
+
+print("\n=== Sous-réseaux ===")
+for sub in conn.network.subnets():
+    if sub.name and sub.name.startswith(PREFIX):
+        print(f"  {sub.name}  (ID : {sub.id})")
+
+print("\n=== Groupes de sécurité ===")
+for sg in conn.network.security_groups():
+    if sg.name and sg.name.startswith(PREFIX):
+        print(f"  {sg.name}  (ID : {sg.id})")
+
+print("\n=== Instances ===")
+for srv in conn.compute.servers():
+    if srv.name and srv.name.startswith(PREFIX):
+        print(f"  {srv.name}  (ID : {srv.id})  Statut : {srv.status}")
+
+print("\n=== Volumes ===")
+for vol in conn.block_storage.volumes():
+    if vol.name and vol.name.startswith(PREFIX):
+        print(f"  {vol.name}  (ID : {vol.id})  Statut : {vol.status}")</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Supprimer toutes les ressources lab (SDK)</h2>
+      <p>
+        Les ressources doivent être supprimées dans l'<strong>ordre inverse des
+        dépendances</strong> : d'abord les volumes (détacher puis supprimer), puis
+        les instances, les groupes de sécurité, les sous-réseaux et enfin les
+        réseaux.
+      </p>
+
+      <pre><code class="language-python">"""cleanup_delete.py — Supprimer toutes les ressources lab-* dans l'ordre sûr."""
+import time
+
+PREFIX = "lab-"
+
+# ── Étape 1 : Détacher et supprimer les volumes ───────────────
+print("Étape 1/5 — Suppression des volumes …")
+for vol in conn.block_storage.volumes():
+    if not (vol.name and vol.name.startswith(PREFIX)):
+        continue
+    # Détacher si en cours d'utilisation
+    if vol.status == "in-use" and hasattr(vol, "attachments"):
+        for att in vol.attachments:
+            server_id = att.get("server_id")
+            if server_id:
+                print(f"  Détachement de {vol.name} du serveur {server_id}")
+                conn.compute.delete_volume_attachment(vol.id, server_id)
+        time.sleep(3)  # attendre le détachement
+    print(f"  Suppression du volume : {vol.name}")
+    conn.block_storage.delete_volume(vol.id, ignore_missing=True)
+
+# ── Étape 2 : Supprimer les instances ─────────────────────────
+print("Étape 2/5 — Suppression des instances …")
+for srv in conn.compute.servers():
+    if srv.name and srv.name.startswith(PREFIX):
+        print(f"  Suppression de l'instance : {srv.name}")
+        conn.compute.delete_server(srv.id, ignore_missing=True)
+
+# Attendre que les instances disparaissent avant de toucher aux réseaux
+time.sleep(10)
+
+# ── Étape 3 : Supprimer les groupes de sécurité ───────────────
+print("Étape 3/5 — Suppression des groupes de sécurité …")
+for sg in conn.network.security_groups():
+    if sg.name and sg.name.startswith(PREFIX):
+        print(f"  Suppression du groupe de sécurité : {sg.name}")
+        conn.network.delete_security_group(sg.id, ignore_missing=True)
+
+# ── Étape 4 : Supprimer les sous-réseaux ──────────────────────
+print("Étape 4/5 — Suppression des sous-réseaux …")
+for sub in conn.network.subnets():
+    if sub.name and sub.name.startswith(PREFIX):
+        print(f"  Suppression du sous-réseau : {sub.name}")
+        conn.network.delete_subnet(sub.id, ignore_missing=True)
+
+# ── Étape 5 : Supprimer les réseaux ───────────────────────────
+print("Étape 5/5 — Suppression des réseaux …")
+for net in conn.network.networks():
+    if net.name and net.name.startswith(PREFIX):
+        print(f"  Suppression du réseau : {net.name}")
+        conn.network.delete_network(net.id, ignore_missing=True)
+
+print("\nNettoyage terminé — toutes les ressources lab-* ont été supprimées.")</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Utiliser le nettoyage du DeploymentEngine</h2>
+      <p>
+        Si vous avez utilisé le <code>DeploymentEngine</code> pendant la leçon
+        Déploiement, vous pouvez passer les IDs de ressources retournés directement
+        à <code>cleanup_resources()</code>.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentEngine
+from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+
+engine = DeploymentEngine(credentials)
+
+# Utilisez les IDs de ressources de votre résultat de déploiement
+resource_ids = {
+    "volumes":         ["&lt;volume-id-1&gt;", "&lt;volume-id-2&gt;"],
+    "instances":       ["&lt;instance-id-1&gt;", "&lt;instance-id-2&gt;"],
+    "security_groups": ["&lt;sg-id-1&gt;"],
+    "subnets":         ["&lt;subnet-id-1&gt;"],
+    "networks":        ["&lt;network-id-1&gt;"],
+}
+
+results = engine.cleanup_resources(resource_ids)
+for resource, success in results.items():
+    status = "supprimé" if success else "ÉCHOUÉ"
+    print(f"  {resource} : {status}")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Nettoyage Terraform</h2>
+      <p>
+        Si vous avez créé des ressources avec Terraform, une seule commande supprime
+        tout. Terraform lit son fichier d'état et supprime les ressources dans le bon
+        ordre automatiquement.
+      </p>
+
+      <pre><code class="language-bash">cd terraform
+terraform destroy -auto-approve</code></pre>
+
+      <p>
+        Vérifiez que l'état est vide ensuite :
+      </p>
+
+      <pre><code class="language-bash">terraform state list
+# Ne devrait rien retourner</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li>Renommez les ressources avec un préfixe <strong>lab-*</strong> pour les identifier facilement.</li>
+        <li>Supprimez toujours dans l'<strong>ordre inverse des dépendances</strong> : volumes → instances → groupes de sécurité → sous-réseaux → réseaux.</li>
+        <li>Utilisez <code>DeploymentEngine.cleanup_resources()</code> quand vous avez les IDs de ressources d'un déploiement précédent.</li>
+        <li>Pour les ressources Terraform, <code>terraform destroy</code> gère l'ordre pour vous.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

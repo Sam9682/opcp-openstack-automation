@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Page Not Found</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .error-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+      padding: 2rem;
+    }
+    .error-code {
+      font-size: 6rem;
+      font-weight: 700;
+      color: #4361ee;
+      margin: 0;
+      line-height: 1;
+    }
+    .error-message {
+      font-size: 1.5rem;
+      color: #333;
+      margin: 1rem 0 0.5rem;
+    }
+    .error-description {
+      color: #666;
+      max-width: 480px;
+      margin: 0 auto 2rem;
+    }
+    .error-links {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .error-links a {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s;
+    }
+    .error-links a.primary {
+      background: #4361ee;
+      color: #fff;
+    }
+    .error-links a.primary:hover { background: #3a56d4; }
+    .error-links a.secondary {
+      background: #e9ecef;
+      color: #333;
+    }
+    .error-links a.secondary:hover { background: #dee2e6; }
+    .error-redirect-note {
+      margin-top: 2rem;
+      font-size: 0.875rem;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="error-page" role="main">
+    <p class="error-code">404</p>
+    <h1 class="error-message">Page Not Found / Page introuvable</h1>
+    <p class="error-description">
+      The page you are looking for does not exist or has been moved.<br>
+      La page que vous recherchez n'existe pas ou a été déplacée.
+    </p>
+
+    <div class="error-links">
+      <a href="en/index.html" class="primary" aria-label="Go to English home page">English</a>
+      <a href="fr/index.html" class="secondary" aria-label="Aller à la page d'accueil en français">Français</a>
+    </div>
+
+    <p class="error-redirect-note" id="redirect-note"></p>
+  </div>
+
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <script>
+    // Auto-redirect to root language selector after 5 seconds
+    (function () {
+      var seconds = 5;
+      var note = document.getElementById('redirect-note');
+      function tick() {
+        if (seconds <= 0) {
+          window.location.href = 'index.html';
+          return;
+        }
+        note.textContent = 'Redirecting to language selector in ' + seconds + 's\u2026 / Redirection dans ' + seconds + 's\u2026';
+        seconds--;
+        setTimeout(tick, 1000);
+      }
+      tick();
+    })();
+  </script>
+</body>
+</html>
