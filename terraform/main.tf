@@ -1,9 +1,9 @@
 provider "openstack" {
-  auth_url    = var.auth_url
-  user_name   = var.username
-  password    = var.password
-  tenant_name = var.tenant_name
-  region      = var.region
+  auth_url            = var.auth_url
+  application_credential_id     = var.application_credential_id
+  application_credential_secret = var.application_credential_secret
+  tenant_name         = var.tenant_name
+  region              = var.region
 }
 
 # Network Infrastructure Resources
@@ -24,54 +24,16 @@ resource "openstack_networking_subnet_v2" "private_subnet" {
   enable_dhcp     = var.enable_dhcp
 }
 
-# Security Group Resources
-
-# Create security group
-resource "openstack_compute_secgroup_v2" "default_sg" {
-  name        = var.security_group_name
-  description = var.security_group_description
-
-  # SSH access rule
-  rule {
-    from_port   = 22
-    to_port     = 22
-    ip_protocol = "tcp"
-    cidr        = var.allow_ssh_from
-  }
-
-  # HTTP access rule (conditional based on variable)
-  dynamic "rule" {
-    for_each = var.allow_http ? [1] : []
-    content {
-      from_port   = 80
-      to_port     = 80
-      ip_protocol = "tcp"
-      cidr        = "0.0.0.0/0"
-    }
-  }
-
-  # HTTPS access rule (conditional based on variable)
-  dynamic "rule" {
-    for_each = var.allow_https ? [1] : []
-    content {
-      from_port   = 443
-      to_port     = 443
-      ip_protocol = "tcp"
-      cidr        = "0.0.0.0/0"
-    }
-  }
-}
-
 # Compute Instance Resources
 
 # Create compute instances with count-based creation
 resource "openstack_compute_instance_v2" "instance" {
   count           = var.instance_count
-  name            = "${var.network_name}-instance-${count.index + 1}"
+  name            = "${trimspace(var.network_name)}-instance-${count.index + 1}"
   flavor_name     = var.instance_flavor
   image_name      = var.instance_image
   key_pair        = var.key_name
-  security_groups = [openstack_compute_secgroup_v2.default_sg.name]
+  # Removed security_groups since there are issues with security group rules in OpenStack provider
 
   # Attach instance to the private network
   network {
@@ -86,8 +48,8 @@ resource "openstack_compute_instance_v2" "instance" {
 
   # Explicit dependencies to ensure correct creation order
   depends_on = [
-    openstack_networking_subnet_v2.private_subnet,
-    openstack_compute_secgroup_v2.default_sg
+    openstack_networking_subnet_v2.private_subnet
+    # Removed dependency on security group since it's removed
   ]
 }
 
@@ -96,7 +58,7 @@ resource "openstack_compute_instance_v2" "instance" {
 # Create block storage volumes
 resource "openstack_blockstorage_volume_v3" "volume" {
   count       = var.volume_count
-  name        = "${var.network_name}-volume-${count.index + 1}"
+  name        = "${trimspace(var.network_name)}-volume-${count.index + 1}"
   size        = var.volume_size
   volume_type = var.volume_type
 

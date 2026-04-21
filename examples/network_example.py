@@ -65,7 +65,7 @@ def example_network_with_application_credentials():
     
     network_specs = [
         NetworkSpec(
-            name="opcp-automation-example-private-network",
+            name="opcp-automation-example-private-network-apo",
             admin_state_up=True,
             external=False,
             subnets=[
@@ -88,7 +88,7 @@ def example_network_with_application_credentials():
             ]
         ),
         NetworkSpec(
-            name="opcp-automation-example-management-network",
+            name="opcp-automation-example-management-network-apo",
             admin_state_up=True,
             external=False,
             subnets=[

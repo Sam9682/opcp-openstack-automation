@@ -85,6 +85,19 @@ pip install -r requirements.txt
    source examples/set_app_cred_env.sh
    ```
 
+4. Shai genAI installation to help you code and debug:
+
+```bash
+# Install the latest release with the following command:
+curl -fsSL https://raw.githubusercontent.com/ovh/shai/main/install.sh | sh
+
+# The shai binary will be installed in $HOME/.local/bin
+# Then configure the Authentifaction for Shai
+shai auth
+
+# For Coding help, Use ● ovhcloud - Qwen3-Coder-30B-A3B-Instruct
+```
+
 ### Configuration
 
 Create a configuration file based on the examples:

@@ -104,16 +104,11 @@ def main():
             InstanceSpec(
                 name="opcp-automation-web-server-1",
                 flavor="scale-1",  # Small instance flavor
-                image="Ubuntu 24.04 GOR",  # Ubuntu 22.04 image
-                key_name="opcp-automation-my-ssh-key-training-001",  # Replace with your SSH key name
+                image="7e995f9c-c6fc-4d26-97ab-6c224d69280c",  # Ubuntu 22.04 image
+                key_name="lab-key",  # Replace with your SSH key name
                 network_ids=["f96825f7-5c9f-4079-a393-b6f94628ee1e"],  # Replace with your network ID
                 security_groups=["opcp-automation-web-server-sg"],  # Replace with your security group
-                user_data="""#!/bin/bash
-echo "Hello from opcp-automation-web-server-1" > /tmp/hello.txt
-apt-get update
-apt-get install -y nginx
-systemctl start nginx
-""",
+                user_data="",
                 metadata={
                     "project": "opcp-automation-example",
                     "environment": "dev",
@@ -123,16 +118,11 @@ systemctl start nginx
             InstanceSpec(
                 name="opcp-automation-web-server-2",
                 flavor="scale-1",
-                image="Ubuntu 24.04 GOR",
-                key_name="opcp-automation-my-ssh-key-training-001",
+                image="7e995f9c-c6fc-4d26-97ab-6c224d69280c",
+                key_name="lab-key",
                 network_ids=["f96825f7-5c9f-4079-a393-b6f94628ee1e"],
                 security_groups=["opcp-automation-web-server-sg"],
-                user_data="""#!/bin/bash
-echo "Hello from opcp-automation-web-server-2" > /tmp/hello.txt
-apt-get update
-apt-get install -y nginx
-systemctl start nginx
-""",
+                user_data="",
                 metadata={
                     "project": "opcp-automation-example",
                     "environment": "dev",

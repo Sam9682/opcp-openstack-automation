@@ -21,21 +21,21 @@ output "subnet_cidr" {
 }
 
 # Security Group Outputs
-
-output "security_group_id" {
-  description = "The ID of the created security group"
-  value       = openstack_compute_secgroup_v2.default_sg.id
-}
-
-output "security_group_name" {
-  description = "The name of the created security group"
-  value       = openstack_compute_secgroup_v2.default_sg.name
-}
-
-output "security_group_rules" {
-  description = "The rules configured in the security group"
-  value       = openstack_compute_secgroup_v2.default_sg.rule
-}
+#
+#output "security_group_id" {
+#  description = "The ID of the created security group"
+#  value       = openstack_networking_secgroup_v2.default_sg.id
+#}
+#
+#output "security_group_name" {
+#  description = "The name of the created security group"
+#  value       = openstack_networking_secgroup_v2.default_sg.name
+#}
+#
+#output "security_group_rules" {
+#  description = "The rules configured in the security group"
+#  value       = openstack_networking_secgroup_v2.default_sg.rule
+#}
 
 # Compute Instance Outputs
 
@@ -111,10 +111,10 @@ output "deployment_summary" {
       id   = openstack_networking_subnet_v2.private_subnet.id
       cidr = openstack_networking_subnet_v2.private_subnet.cidr
     }
-    security_group = {
-      id   = openstack_compute_secgroup_v2.default_sg.id
-      name = openstack_compute_secgroup_v2.default_sg.name
-    }
+    #security_group = {
+    #  id   = openstack_networking_secgroup_v2.default_sg.id
+    #  name = openstack_networking_secgroup_v2.default_sg.name
+    #}
     instances = {
       count = length(openstack_compute_instance_v2.instance)
       ids   = openstack_compute_instance_v2.instance[*].id

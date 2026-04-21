@@ -22,21 +22,34 @@
 # You can find these values in your OVH Control Panel under "Public Cloud" > 
 # "Users & Roles" > "OpenStack users"
 
+# Application credential authentication
+# Using application credentials instead of username/password
+# Export these environment variables before running Terraform:
+# export OS_AUTH_TYPE=v3applicationcredential
+# export OS_AUTH_URL=https://keystone.your_domain_here/v3
+# export OS_IDENTITY_API_VERSION=3
+# export OS_REGION_NAME="demo"
+# export OS_INTERFACE=public
+# export OS_APPLICATION_CREDENTIAL_ID=your_creds_here
+# export OS_APPLICATION_CREDENTIAL_SECRET=your_secret_here
+# export HTTPS_PROXY=http://your_proxy_here:your_proxy_port_here
+# export HTTP_PROXY=http://your_proxy_here:your_proxy_port_here
+# export NO_PROXY="sso.corp.your_domain_here.com,*.corp.your_domain_here.com"
+
 # The authentication URL for OVH OpenStack API
 # Common values:
 #   - https://auth.cloud.ovh.net/v3 (OVH Public Cloud)
-auth_url = "https://auth.cloud.ovh.net/v3"
-
-# Your OpenStack username (typically starts with "user-" followed by numbers)
-username = "user-xxxxxxxxxxxx"
-
-# Your OpenStack password (generate from OVH Control Panel)
-# SECURITY: Keep this secret! Never commit to version control!
-password = "your-secure-password-here"
+auth_url = "https://keystone.demo.bmp.ovhgoldorack.ovh/v3"
 
 # The tenant/project name (also called project ID in OVH)
 # Find this in OVH Control Panel under your project settings
 tenant_name = "your-project-id-here"
+
+# Application credential authentication
+# Using application credentials instead of username/password
+# Set these values in your environment or uncomment and set them here:
+# application_credential_id = "your_application_credential_id"
+# application_credential_secret = "your_application_credential_secret"
 
 # The OVH OpenStack region where resources will be created
 # Available regions:
@@ -46,7 +59,7 @@ tenant_name = "your-project-id-here"
 #   - DE1 (Frankfurt, Germany)
 #   - UK1 (London, UK)
 #   - WAW1 (Warsaw, Poland)
-region = "GRA7"
+region = "demo"
 
 # -----------------------------------------------------------------------------
 # Instance Configuration
@@ -66,18 +79,28 @@ instance_count = 3
 #   - b2-7:  2 vCores, 7 GB RAM,  50 GB disk
 #   - b2-15: 4 vCores, 15 GB RAM, 100 GB disk
 # Default: "s1-2"
-instance_flavor = "s1-4"
+instance_flavor = "scale-1"
 
 # The image name or ID for compute instances
 # Common images:
-#   - "Ubuntu 22.04"
-#   - "Ubuntu 20.04"
-#   - "Debian 11"
-#   - "Debian 12"
-#   - "CentOS 7"
-#   - "Rocky Linux 9"
+#|  CentOS 8 BMPOD                                                 | active |
+#|  CentOS 9 BMPOD                                                 | active |
+#|  CleverCloudHV                                                  | active |
+#|  CleverCloudHV20251204                                          | active |
+#|  Debian 11 BMPOD                                                | active |
+#|  Debian 11 LVM BMPOD                                            | active |
+#|  Debian 12 BMPOD                                                | active |
+#|  Debian 12 BMPOD v2                                             | active |
+#|  Debian 12 LVM BMPOD                                            | active |
+#|  Debian 12 SNC_Storage_GS                                       | active |
+#|  Debian 13                                                      | active |
+#|  Debian 13 - generic                                            | active |
+#|  Debian 13 BMPOD                                                | active |
+#|  Ubuntu 22.04 BMPOD                                             | active |
+#|  Ubuntu 24.04 BMPOD                                             | active |
+#|  Ubuntu 24.04 GOR                                               | active |
 # You can list available images with: openstack image list
-instance_image = "Ubuntu 22.04"
+instance_image = "Debian 13"
 
 # The SSH key name for instance access (REQUIRED)
 # This must be an SSH key already uploaded to your OVH OpenStack project
@@ -135,8 +158,8 @@ volume_count = 3
 # OVH volume types:
 #   - "classic"    (Standard performance, lower cost)
 #   - "high-speed" (High performance SSD, higher cost)
-# Default: "classic"
-volume_type = "classic"
+# Default: "public_standard"
+volume_type = "public_standard"
 
 # Whether volumes should be bootable
 # Set to true if you want to create bootable volumes

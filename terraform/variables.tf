@@ -4,22 +4,34 @@ variable "auth_url" {
   sensitive   = false
 }
 
-variable "username" {
-  description = "The username for OVH OpenStack authentication"
-  type        = string
-  sensitive   = true
-}
+# variable "username" {
+#   description = "The username for OVH OpenStack authentication"
+#   type        = string
+#   sensitive   = true
+# }
 
-variable "password" {
-  description = "The password for OVH OpenStack authentication"
-  type        = string
-  sensitive   = true
-}
+# variable "password" {
+#   description = "The password for OVH OpenStack authentication"
+#   type        = string
+#   sensitive   = true
+# }
 
 variable "tenant_name" {
   description = "The tenant/project name for OVH OpenStack"
   type        = string
   sensitive   = false
+}
+
+variable "application_credential_id" {
+  description = "The application credential ID for OVH OpenStack authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "application_credential_secret" {
+  description = "The application credential secret for OVH OpenStack authentication"
+  type        = string
+  sensitive   = true
 }
 
 variable "region" {
