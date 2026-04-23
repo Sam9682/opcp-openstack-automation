@@ -64,7 +64,7 @@
       id: 'compute',
       slug: 'compute',
       titleEN: 'Compute',
-      titleFR: 'Calcul',
+      titleFR: 'Compute',
       difficulty: 'intermediate',
       estimatedMinutes: 25,
       prerequisites: ['network', 'secgroup']
@@ -113,6 +113,15 @@
       difficulty: 'beginner',
       estimatedMinutes: 15,
       prerequisites: ['advanced']
+    },
+    {
+      id: 'sdk-cheat-sheet',
+      slug: 'sdk-cheat-sheet',
+      titleEN: 'SDK & API Cheat Sheet',
+      titleFR: 'SDK & API Cheat Sheet',
+      difficulty: 'intermediate',
+      estimatedMinutes: 10,
+      prerequisites: ['cleanup']
     }
   ];
 

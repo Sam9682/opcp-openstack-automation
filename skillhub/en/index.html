@@ -59,6 +59,31 @@
         <li>Terraform 1.x installed (for Terraform lessons)</li>
       </ul>
 
+      <h2>Identify Your Resources — <code>STUDENT_ID</code></h2>
+      <p>
+        During the labs every resource you create (instances, networks, volumes, security groups…)
+        will be <strong>tagged with your student identifier</strong>. This makes it easy to find
+        and clean up all your resources once the training is over.
+      </p>
+      <p>Before you start, export the <code>STUDENT_ID</code> environment variable in your terminal:</p>
+
+      <pre><code class="language-bash">export STUDENT_ID=slepetre</code></pre>
+
+      <p>
+        Replace <code>slepetre</code> with your own identifier (e.g. your username or trigram).
+        The variable must be set in <strong>every terminal session</strong> you use for the labs.
+        You can add the line to your <code>~/.bashrc</code> to make it persistent:
+      </p>
+
+      <pre><code class="language-bash">echo 'export STUDENT_ID=slepetre' >> ~/.bashrc
+source ~/.bashrc</code></pre>
+
+      <p>
+        All scripts and Terraform configurations in this training reference <code>STUDENT_ID</code>
+        to prefix or tag the resources they create. When the labs are finished, you can filter
+        resources by this tag and delete them in a single pass.
+      </p>
+
       <h2>Project Overview</h2>
       <p>
         The <em>opcp-openstack-automation</em> repository provides a layered Python SDK

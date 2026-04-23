@@ -59,11 +59,36 @@
         <li>Terraform 1.x installé (pour les leçons Terraform)</li>
       </ul>
 
+      <h2>Identifiez vos ressources — <code>STUDENT_ID</code></h2>
+      <p>
+        Pendant les labs, chaque ressource que vous créez (instances, réseaux, volumes, groupes de sécurité…)
+        sera <strong>taguée avec votre identifiant étudiant</strong>. Cela permet de retrouver
+        et de nettoyer facilement toutes vos ressources une fois la formation terminée.
+      </p>
+      <p>Avant de commencer, exportez la variable d'environnement <code>STUDENT_ID</code> dans votre terminal :</p>
+
+      <pre><code class="language-bash">export STUDENT_ID=slepetre</code></pre>
+
+      <p>
+        Remplacez <code>slepetre</code> par votre propre identifiant (par exemple votre nom d'utilisateur ou trigramme).
+        La variable doit être définie dans <strong>chaque session de terminal</strong> utilisée pour les labs.
+        Vous pouvez ajouter la ligne à votre <code>~/.bashrc</code> pour la rendre persistante :
+      </p>
+
+      <pre><code class="language-bash">echo 'export STUDENT_ID=slepetre' >> ~/.bashrc
+source ~/.bashrc</code></pre>
+
+      <p>
+        Tous les scripts et configurations Terraform de cette formation utilisent <code>STUDENT_ID</code>
+        pour préfixer ou taguer les ressources créées. Une fois les labs terminés, vous pourrez
+        filtrer les ressources par ce tag et les supprimer en une seule passe.
+      </p>
+
       <h2>Aperçu du projet</h2>
       <p>
         Le dépôt <em>opcp-openstack-automation</em> fournit un SDK Python en couches
         qui encapsule les API OpenStack dans des managers simples et composables —
-        authentification, réseau, groupes de sécurité, calcul, volumes et un moteur
+        authentification, réseau, groupes de sécurité, compute, volumes et un moteur
         de déploiement qui les orchestre tous. En complément du SDK, vous trouverez
         des configurations Terraform et des playbooks Ansible qui atteignent les
         mêmes objectifs de manière déclarative.

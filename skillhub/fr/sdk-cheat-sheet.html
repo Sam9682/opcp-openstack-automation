@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — SDK &amp; API Cheat Sheet</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>SDK &amp; API Cheat Sheet</h1>
+      <p class="lesson-meta">Difficulté : <strong>Intermédiaire</strong> · Durée estimée : <strong>10 min</strong></p>
+
+      <p>
+        Page de référence rapide pour chaque appel principal du SDK OpenStack utilisé
+        dans les labs. Chaque section correspond à l'un des managers du projet et
+        montre la méthode <code>openstacksdk</code> sous-jacente avec un court exemple.
+      </p>
+
+      <!-- ───────────────────────── Authentification ───────────────────────── -->
+      <h2>1. Authentification</h2>
+      <p>Géré par <code>openstack_sdk/auth_manager.py</code>.</p>
+
+      <table>
+        <thead><tr><th>Action</th><th>Appel SDK</th></tr></thead>
+        <tbody>
+          <tr><td>Connexion</td><td><code>openstack.connect(**params)</code></td></tr>
+          <tr><td>Valider le token</td><td><code>conn.authorize()</code></td></tr>
+          <tr><td>Fermer la connexion</td><td><code>conn.close()</code></td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-python">import openstack
+
+conn = openstack.connect(
+    auth_url="https://auth.cloud.ovh.net/v3",
+    project_name="my-project",
+    username="user",
+    password="secret",
+    region_name="GRA7",
+    user_domain_name="Default",
+    project_domain_name="Default",
+)
+conn.authorize()   # valide le token
+# … utiliser conn …
+conn.close()</code></pre>
+
+      <h3>Application Credentials</h3>
+      <pre><code class="language-python">conn = openstack.connect(
+    auth_url="https://auth.cloud.ovh.net/v3",
+    region_name="GRA7",
+    application_credential_id="APP_CRED_ID",
+    application_credential_secret="APP_CRED_SECRET",
+)</code></pre>
+
+      <!-- ───────────────────────── Réseau ───────────────────────── -->
+      <h2>2. Réseau</h2>
+      <p>Géré par <code>openstack_sdk/network_manager.py</code>.</p>
+
+      <table>
+        <thead><tr><th>Action</th><th>Appel SDK</th></tr></thead>
+        <tbody>
+          <tr><td>Créer un réseau</td><td><code>conn.network.create_network()</code></td></tr>
+          <tr><td>Créer un sous-réseau</td><td><code>conn.network.create_subnet()</code></td></tr>
+          <tr><td>Obtenir un réseau</td><td><code>conn.network.get_network(id)</code></td></tr>
+          <tr><td>Lister les réseaux</td><td><code>conn.network.networks()</code></td></tr>
+          <tr><td>Lister les sous-réseaux</td><td><code>conn.network.subnets()</code></td></tr>
+          <tr><td>Supprimer un réseau</td><td><code>conn.network.delete_network(id)</code></td></tr>
+          <tr><td>Supprimer un sous-réseau</td><td><code>conn.network.delete_subnet(id)</code></td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-python"># Créer un réseau privé + sous-réseau
+network = conn.network.create_network(
+    name="my-network",
+    admin_state_up=True,
+)
+
+subnet = conn.network.create_subnet(
+    name="my-subnet",
+    network_id=network.id,
+    cidr="192.168.1.0/24",
+    ip_version=4,
+    enable_dhcp=True,
+    dns_nameservers=["213.186.33.99"],
+    gateway_ip="192.168.1.1",
+)
+
+# Lister tous les réseaux
+for net in conn.network.networks():
+    print(net.name, net.id, net.status)</code></pre>
+
+      <!-- ───────────────────────── Groupes de sécurité ───────────────────────── -->
+      <h2>3. Groupes de sécurité</h2>
+      <p>Géré par <code>openstack_sdk/security_group_manager.py</code>.</p>
+
+      <table>
+        <thead><tr><th>Action</th><th>Appel SDK</th></tr></thead>
+        <tbody>
+          <tr><td>Créer un groupe</td><td><code>conn.network.create_security_group()</code></td></tr>
+          <tr><td>Créer une règle</td><td><code>conn.network.create_security_group_rule()</code></td></tr>
+          <tr><td>Lister les groupes</td><td><code>conn.network.security_groups()</code></td></tr>
+          <tr><td>Supprimer un groupe</td><td><code>conn.network.delete_security_group(id)</code></td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-python"># Créer un groupe de sécurité avec règles SSH + HTTP
+sg = conn.network.create_security_group(
+    name="web-sg",
+    description="Autoriser SSH et HTTP",
+)
+
+# Autoriser SSH (port 22)
+conn.network.create_security_group_rule(
+    security_group_id=sg.id,
+    direction="ingress",
+    ethertype="IPv4",
+    protocol="tcp",
+    port_range_min=22,
+    port_range_max=22,
+    remote_ip_prefix="0.0.0.0/0",
+)
+
+# Autoriser HTTP (port 80)
+conn.network.create_security_group_rule(
+    security_group_id=sg.id,
+    direction="ingress",
+    ethertype="IPv4",
+    protocol="tcp",
+    port_range_min=80,
+    port_range_max=80,
+    remote_ip_prefix="0.0.0.0/0",
+)</code></pre>
+
+      <!-- ───────────────────────── Compute ───────────────────────── -->
+      <h2>4. Compute</h2>
+      <p>Géré par <code>openstack_sdk/compute_manager.py</code>.</p>
+
+      <table>
+        <thead><tr><th>Action</th><th>Appel SDK</th></tr></thead>
+        <tbody>
+          <tr><td>Trouver un flavor</td><td><code>conn.compute.find_flavor(name)</code></td></tr>
+          <tr><td>Trouver une image</td><td><code>conn.compute.find_image(name)</code></td></tr>
+          <tr><td>Créer un serveur</td><td><code>conn.compute.create_server()</code></td></tr>
+          <tr><td>Obtenir un serveur</td><td><code>conn.compute.get_server(id)</code></td></tr>
+          <tr><td>Lister les serveurs</td><td><code>conn.compute.servers()</code></td></tr>
+          <tr><td>Supprimer un serveur</td><td><code>conn.compute.delete_server(id)</code></td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-python"># Résoudre le flavor et l'image par nom
+flavor = conn.compute.find_flavor("s1-2")
+image  = conn.compute.find_image("Ubuntu 22.04")
+
+# Lancer une instance
+server = conn.compute.create_server(
+    name="my-instance",
+    flavor_id=flavor.id,
+    image_id=image.id,
+    key_name="my-keypair",
+    networks=[{"uuid": network.id}],
+    security_groups=[{"name": "web-sg"}],
+    metadata={"student_id": "slepetre"},
+    user_data="#!/bin/bash\napt update",
+)
+
+# Attendre le statut ACTIVE
+import time
+while True:
+    srv = conn.compute.get_server(server.id)
+    if srv.status == "ACTIVE":
+        break
+    time.sleep(5)</code></pre>
+
+      <!-- ───────────────────────── Volumes ───────────────────────── -->
+      <h2>5. Volumes (Block Storage)</h2>
+      <p>Géré par <code>openstack_sdk/volume_manager.py</code>.</p>
+
+      <table>
+        <thead><tr><th>Action</th><th>Appel SDK</th></tr></thead>
+        <tbody>
+          <tr><td>Créer un volume</td><td><code>conn.block_storage.create_volume()</code></td></tr>
+          <tr><td>Obtenir un volume</td><td><code>conn.block_storage.get_volume(id)</code></td></tr>
+          <tr><td>Lister les volumes</td><td><code>conn.block_storage.volumes()</code></td></tr>
+          <tr><td>Supprimer un volume</td><td><code>conn.block_storage.delete_volume(id)</code></td></tr>
+          <tr><td>Attacher un volume</td><td><code>conn.compute.create_volume_attachment()</code></td></tr>
+          <tr><td>Détacher un volume</td><td><code>conn.compute.delete_volume_attachment()</code></td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-python"># Créer un volume de 10 Go
+volume = conn.block_storage.create_volume(
+    name="data-vol",
+    size=10,
+    volume_type="classic",
+)
+
+# Attendre qu'il soit disponible
+while conn.block_storage.get_volume(volume.id).status != "available":
+    time.sleep(2)
+
+# Attacher à une instance
+conn.compute.create_volume_attachment(
+    server=server,
+    volume_id=volume.id,
+)
+
+# Détacher plus tard
+conn.compute.delete_volume_attachment(volume.id, server.id)</code></pre>
+
+      <!-- ───────────────────────── Moteur de déploiement ───────────────────────── -->
+      <h2>6. Moteur de déploiement</h2>
+      <p>Géré par <code>openstack_sdk/deployment_engine.py</code>. Orchestre tous les managers dans l'ordre des dépendances.</p>
+
+      <table>
+        <thead><tr><th>Action</th><th>Méthode</th></tr></thead>
+        <tbody>
+          <tr><td>Déploiement complet</td><td><code>engine.deploy_infrastructure(config)</code></td></tr>
+          <tr><td>Rollback</td><td><code>engine.rollback_resources(resources, conn)</code></td></tr>
+          <tr><td>Nettoyage manuel</td><td><code>engine.cleanup_resources(resource_ids)</code></td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentEngine
+from config.config_manager import ConfigManager
+
+config_mgr = ConfigManager()
+config = config_mgr.load_config("config.yaml")
+
+engine = DeploymentEngine(credentials)
+result = engine.deploy_infrastructure(config)
+
+if result.success:
+    print(f"Déployé en {result.duration_seconds:.1f}s")
+    print(f"Ressources : {result.created_resources}")
+else:
+    print(f"Échec : {result.failed_resources}")
+    print(f"Orphelins : {result.orphaned_resources}")</code></pre>
+
+      <!-- ───────────────────────── Nettoyage ───────────────────────── -->
+      <h2>7. Nettoyage — Tout supprimer</h2>
+      <p>Les ressources doivent être supprimées dans l'ordre inverse des dépendances : volumes → instances → groupes de sécurité → sous-réseaux → réseaux.</p>
+
+      <pre><code class="language-python"># Suppression rapide des ressources connues
+engine.cleanup_resources({
+    "volumes":         ["vol-id-1"],
+    "instances":       ["srv-id-1"],
+    "security_groups": ["sg-id-1"],
+    "subnets":         ["sub-id-1"],
+    "networks":        ["net-id-1"],
+})</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li><code>openstack.connect()</code> — point d'entrée pour toute opération.</li>
+        <li><code>conn.network.*</code> — réseaux, sous-réseaux, groupes de sécurité et règles.</li>
+        <li><code>conn.compute.*</code> — flavors, images, serveurs, attachements de volumes.</li>
+        <li><code>conn.block_storage.*</code> — cycle de vie des volumes.</li>
+        <li><code>DeploymentEngine</code> — orchestre tout ce qui précède avec rollback.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>
