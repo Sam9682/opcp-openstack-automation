@@ -1,7 +1,7 @@
 services:
   skillhub:
     image: nginx:alpine
-    container_name: skillhub
+    container_name: skillhub-opcp-automation
     ports:
       - "8081:80"
     volumes:
