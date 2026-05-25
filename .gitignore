@@ -63,6 +63,14 @@ logs/
 *.key
 *secrets*
 .env
+.env.prod
+
+# SSL certificates
+ssl/privkey.pem
+ssl/fullchain.pem
+
+# Generated nginx config
+conf/nginx.conf
 
 # OS
 Thumbs.db
