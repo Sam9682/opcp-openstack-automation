@@ -1,1 +1,0 @@
-./shared/deployApp.sh

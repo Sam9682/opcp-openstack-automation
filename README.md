@@ -92,7 +92,7 @@ pip install -r requirements.txt
 curl -fsSL https://raw.githubusercontent.com/ovh/shai/main/install.sh | sh
 
 # The shai binary will be installed in $HOME/.local/bin
-# Then configure the Authentifaction for Shai
+# Then configure the Authentication for Shai
 shai auth
 
 # For Coding help, Use ● ovhcloud - Qwen3-Coder-30B-A3B-Instruct
@@ -141,6 +141,11 @@ python examples/compute_example.py
 python examples/network_example.py
 python examples/security_group_example.py
 python examples/volume_example.py
+```
+
+You can also run the demonstration script to see how the configuration management works:
+```bash
+python demo.py
 ```
 
 The examples demonstrate both direct authentication and usage of the ConnectionManager which handles automatic token refresh and proxy support.
