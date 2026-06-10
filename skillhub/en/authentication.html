@@ -60,7 +60,26 @@ export https_proxy=http://1.2.3.4:9999/
 # Use OPCP certificate for HTTPS web access
 export OS_CACERT=./demo4.pem</code></pre>
 
-      <h3>User account — Keycloak credentials (OIDC)</h3>
+      <h3>Service account — Keystone application credentials (recommended)</h3>
+      <p>
+        Application credentials are scoped to a single project and can be revoked
+        independently. This is the approach used in the scope of Infrastructure as
+        Code and automation throughout this training.
+      </p>
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL=https://keystone.demo.com/v3
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="crx"
+export OS_INTERFACE=public
+export OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
+export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
+
+      <h3>User account — Keycloak credentials (OIDC) — optional</h3>
+      <p>
+        This method is optional and only needed if you authenticate with a personal
+        user account via Keycloak (OIDC). For Infrastructure as Code, prefer
+        application credentials above.
+      </p>
       <pre><code class="language-bash">export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
 export OS_AUTH_URL="https://keystone.demo.com"
@@ -73,20 +92,6 @@ export OS_DISCOVERY_ENDPOINT="https://admin.keycloak.demo.com/realms/master/.wel
 export OS_USERNAME="username"
 export OS_PASSWORD="password"
 export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
-
-      <h3>Service account — Keystone application credentials (recommended)</h3>
-      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
-export OS_AUTH_URL=https://keystone.demo.com/v3
-export OS_IDENTITY_API_VERSION=3
-export OS_REGION_NAME="crx"
-export OS_INTERFACE=public
-export OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
-export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
-
-      <p>
-        Application credentials are scoped to a single project and can be revoked
-        independently — they are the preferred approach for automation.
-      </p>
 
       <h3>Simulator mode (for SkillHub labs)</h3>
       <p>

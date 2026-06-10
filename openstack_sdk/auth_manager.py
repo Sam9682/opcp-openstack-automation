@@ -79,32 +79,22 @@ class AuthenticationManager:
         http_proxy = os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy')
         https_proxy = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
         
-        # Validate required fields based on authentication type
+        # Validate: require the minimal set for application credentials
         missing_vars = []
         if not auth_url:
             missing_vars.append('OS_AUTH_URL')
+        if not os.environ.get('OS_AUTH_TYPE'):
+            missing_vars.append('OS_AUTH_TYPE')
+        if not os.environ.get('OS_IDENTITY_API_VERSION'):
+            missing_vars.append('OS_IDENTITY_API_VERSION')
         if not region:
             missing_vars.append('OS_REGION_NAME')
-            
-        # For application credentials, tenant_name is not required as it's embedded in the credential
-        # For traditional credentials, tenant_name is required
-        if not app_credential_id and not app_credential_secret:
-            # Traditional credentials require tenant_name
-            if not tenant_name:
-                missing_vars.append('OS_TENANT_NAME or OS_PROJECT_NAME')
-        else:
-            # For application credentials, we still need to validate that we have the right combination
-            # of credentials
-            if not app_credential_id:
-                missing_vars.append('OS_APPLICATION_CREDENTIAL_ID')
-            if not app_credential_secret:
-                missing_vars.append('OS_APPLICATION_CREDENTIAL_SECRET')
-            
-        # Either traditional or application credentials must be provided
-        if not app_credential_id and not app_credential_secret and not username:
-            missing_vars.extend(['OS_USERNAME or OS_APPLICATION_CREDENTIAL_ID'])
-        if not app_credential_secret and not password:
-            missing_vars.extend(['OS_PASSWORD or OS_APPLICATION_CREDENTIAL_SECRET'])
+        if not os.environ.get('OS_INTERFACE'):
+            missing_vars.append('OS_INTERFACE')
+        if not app_credential_id:
+            missing_vars.append('OS_APPLICATION_CREDENTIAL_ID')
+        if not app_credential_secret:
+            missing_vars.append('OS_APPLICATION_CREDENTIAL_SECRET')
             
         if missing_vars:
             raise AuthenticationError(
@@ -112,16 +102,26 @@ class AuthenticationManager:
             )
         
         self._credentials = AuthCredentials(
-            auth_url=auth_url,
+            auth_url=auth_url or '',
             username=username or '',
             password=password or '',
-            tenant_name=tenant_name,
-            region=region,
-            #project_name=project_name,
+            tenant_name=tenant_name or '',
+            region=region or '',
             application_credential_id=app_credential_id,
             application_credential_secret=app_credential_secret,
             http_proxy=http_proxy,
-            https_proxy=https_proxy
+            https_proxy=https_proxy,
+            auth_type=os.environ.get('OS_AUTH_TYPE'),
+            project_id=os.environ.get('OS_PROJECT_ID'),
+            identity_api_version=os.environ.get('OS_IDENTITY_API_VERSION'),
+            interface=os.environ.get('OS_INTERFACE'),
+            protocol=os.environ.get('OS_PROTOCOL'),
+            identity_provider=os.environ.get('OS_IDENTITY_PROVIDER'),
+            client_id=os.environ.get('OS_CLIENT_ID'),
+            client_secret=os.environ.get('OS_CLIENT_SECRET'),
+            discovery_endpoint=os.environ.get('OS_DISCOVERY_ENDPOINT'),
+            cloud=os.environ.get('OS_CLOUD'),
+            cacert=os.environ.get('OS_CACERT'),
         )
         
         auth_type = "application credentials" if app_credential_id else "traditional credentials"
@@ -179,39 +179,38 @@ class AuthenticationManager:
         except Exception as e:
             raise AuthenticationError(f"Failed to read credentials file: {e}")
         
-        # Extract required fields
-        auth_url = credentials_dict.get('OS_AUTH_URL')
-        username = credentials_dict.get('OS_USERNAME')
-        password = credentials_dict.get('OS_PASSWORD')
-        tenant_name = credentials_dict.get('OS_TENANT_NAME') or credentials_dict.get('OS_PROJECT_NAME')
-        region = credentials_dict.get('OS_REGION_NAME')
+        # Extract fields
+        auth_url = credentials_dict.get('OS_AUTH_URL', '')
+        username = credentials_dict.get('OS_USERNAME', '')
+        password = credentials_dict.get('OS_PASSWORD', '')
+        tenant_name = credentials_dict.get('OS_TENANT_NAME') or credentials_dict.get('OS_PROJECT_NAME', '')
+        region = credentials_dict.get('OS_REGION_NAME', '')
         project_name = tenant_name
         
-        # Validate required fields
-        missing_fields = []
-        if not auth_url:
-            missing_fields.append('OS_AUTH_URL')
-        if not username:
-            missing_fields.append('OS_USERNAME')
-        if not password:
-            missing_fields.append('OS_PASSWORD')
-        if not tenant_name:
-            missing_fields.append('OS_TENANT_NAME')
-        if not region:
-            missing_fields.append('OS_REGION_NAME')
-        
-        if missing_fields:
-            raise AuthenticationError(
-                f"Missing required fields in credentials file: {', '.join(missing_fields)}"
-            )
+        # No strict validation — fields depend on auth type
+        # (v3oidcpassword, v3applicationcredential, password, etc.)
         
         self._credentials = AuthCredentials(
             auth_url=auth_url,
             username=username,
             password=password,
             tenant_name=tenant_name,
-            region=region#,
-            #project_name=project_name
+            region=region,
+            application_credential_id=credentials_dict.get('OS_APPLICATION_CREDENTIAL_ID'),
+            application_credential_secret=credentials_dict.get('OS_APPLICATION_CREDENTIAL_SECRET'),
+            http_proxy=credentials_dict.get('http_proxy'),
+            https_proxy=credentials_dict.get('https_proxy'),
+            auth_type=credentials_dict.get('OS_AUTH_TYPE'),
+            project_id=credentials_dict.get('OS_PROJECT_ID'),
+            identity_api_version=credentials_dict.get('OS_IDENTITY_API_VERSION'),
+            interface=credentials_dict.get('OS_INTERFACE'),
+            protocol=credentials_dict.get('OS_PROTOCOL'),
+            identity_provider=credentials_dict.get('OS_IDENTITY_PROVIDER'),
+            client_id=credentials_dict.get('OS_CLIENT_ID'),
+            client_secret=credentials_dict.get('OS_CLIENT_SECRET'),
+            discovery_endpoint=credentials_dict.get('OS_DISCOVERY_ENDPOINT'),
+            cloud=credentials_dict.get('OS_CLOUD'),
+            cacert=credentials_dict.get('OS_CACERT'),
         )
         
         self.logger.info(f"Loaded credentials for user '{username}' in region '{region}'")

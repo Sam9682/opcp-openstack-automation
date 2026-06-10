@@ -44,8 +44,8 @@ def example_volume_with_application_credentials():
         logger.error(f"Failed to load credentials: {e}")
         print("\nPlease set the following environment variables:")
         print("  - OS_AUTH_URL")
-        print("  - OS_USERNAME (for traditional) or OS_APPLICATION_CREDENTIAL_ID (for app creds)")
-        print("  - OS_PASSWORD (for traditional) or OS_APPLICATION_CREDENTIAL_SECRET (for app creds)")
+        print("  - OS_APPLICATION_CREDENTIAL_ID")
+        print("  - OS_APPLICATION_CREDENTIAL_SECRET")
         print("  - OS_TENANT_NAME (or OS_PROJECT_NAME)")
         print("  - OS_REGION_NAME")
         print("\nFor application credentials:")
@@ -186,12 +186,12 @@ def main():
     
     # Load credentials from environment or file
     auth_config = {
-        'auth_url': os.environ.get('OS_AUTH_URL', 'https://auth.cloud.ovh.net/v3'),
-        'username': os.environ.get('OS_USERNAME', 'your-username'),
-        'password': os.environ.get('OS_PASSWORD', 'your-password'),
-        'tenant_name': os.environ.get('OS_TENANT_NAME', 'your-tenant'),
-        'region': os.environ.get('OS_REGION_NAME', 'GRA7'),
-        'project_name': os.environ.get('OS_PROJECT_NAME', 'your-project')
+        'auth_url': os.environ.get('OS_AUTH_URL', 'https://keystone.demo.com/v3'),
+        'region': os.environ.get('OS_REGION_NAME', 'RegionOne'),
+        'application_credential_id': os.environ.get('OS_APPLICATION_CREDENTIAL_ID'),
+        'application_credential_secret': os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET'),
+        'auth_type': os.environ.get('OS_AUTH_TYPE', 'v3applicationcredential'),
+        'interface': os.environ.get('OS_INTERFACE', 'public'),
     }
     
     try:

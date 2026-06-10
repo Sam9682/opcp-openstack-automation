@@ -71,10 +71,8 @@ def example_app_cred_with_connection_manager():
     
     # Create credentials (this would typically come from environment variables)
     # For demonstration, we'll create them manually
-    # Note: tenant_name and project_name are required parameters in AuthCredentials
-    # For application credentials, these values might be None or can be derived from the credential itself
-    tenant_name = os.environ.get('OS_TENANT_NAME') or 'demo-tenant'
-    project_name = os.environ.get('OS_PROJECT_NAME') or tenant_name
+    # Note: For application credentials, username/password/tenant are not needed
+    tenant_name = os.environ.get('OS_TENANT_NAME', '')
     
     credentials = AuthCredentials(
         auth_url=os.environ.get('OS_AUTH_URL', 'https://auth.cloud.ovh.net/v3'),
@@ -115,9 +113,8 @@ def main():
     print("Application Credentials Examples")
     print("=" * 70)
     
-    # Check if application credential environment variables are set
     # For application credentials, OS_TENANT_NAME is not required as it's embedded in the credential
-    required_vars = ['OS_AUTH_URL', 'OS_APPLICATION_CREDENTIAL_ID', 'OS_APPLICATION_CREDENTIAL_SECRET', 'OS_REGION_NAME']
+    required_vars = ['OS_AUTH_URL', 'OS_APPLICATION_CREDENTIAL_ID', 'OS_APPLICATION_CREDENTIAL_SECRET', 'OS_REGION_NAME', 'OS_AUTH_TYPE', 'OS_INTERFACE', 'OS_IDENTITY_API_VERSION']
     missing_vars = [var for var in required_vars if not os.environ.get(var)]
     
     if missing_vars:

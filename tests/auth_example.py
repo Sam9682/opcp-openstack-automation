@@ -91,12 +91,12 @@ def example_connection_manager():
     
     # Create credentials
     credentials = AuthCredentials(
-        auth_url=os.environ.get('OS_AUTH_URL', 'https://auth.cloud.ovh.net/v3'),
-        username=os.environ.get('OS_USERNAME', 'your-username'),
-        password=os.environ.get('OS_PASSWORD', 'your-password'),
-        tenant_name=os.environ.get('OS_TENANT_NAME', 'your-tenant'),
-        region=os.environ.get('OS_REGION_NAME', 'GRA7'),
-        project_name=os.environ.get('OS_TENANT_NAME', 'your-tenant')
+        auth_url=os.environ.get('OS_AUTH_URL', 'https://keystone.demo.com/v3'),
+        region=os.environ.get('OS_REGION_NAME', 'RegionOne'),
+        application_credential_id=os.environ.get('OS_APPLICATION_CREDENTIAL_ID'),
+        application_credential_secret=os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET'),
+        auth_type=os.environ.get('OS_AUTH_TYPE', 'v3applicationcredential'),
+        interface=os.environ.get('OS_INTERFACE', 'public'),
     )
     
     try:
@@ -129,12 +129,12 @@ def example_context_manager():
     
     # Create credentials
     credentials = AuthCredentials(
-        auth_url=os.environ.get('OS_AUTH_URL', 'https://auth.cloud.ovh.net/v3'),
-        username=os.environ.get('OS_USERNAME', 'your-username'),
-        password=os.environ.get('OS_PASSWORD', 'your-password'),
-        tenant_name=os.environ.get('OS_TENANT_NAME', 'your-tenant'),
-        region=os.environ.get('OS_REGION_NAME', 'GRA7'),
-        project_name=os.environ.get('OS_TENANT_NAME', 'your-tenant')
+        auth_url=os.environ.get('OS_AUTH_URL', 'https://keystone.demo.com/v3'),
+        region=os.environ.get('OS_REGION_NAME', 'RegionOne'),
+        application_credential_id=os.environ.get('OS_APPLICATION_CREDENTIAL_ID'),
+        application_credential_secret=os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET'),
+        auth_type=os.environ.get('OS_AUTH_TYPE', 'v3applicationcredential'),
+        interface=os.environ.get('OS_INTERFACE', 'public'),
     )
     
     try:
@@ -201,7 +201,7 @@ def main():
     print("=" * 70)
     
     # Check if environment variables are set
-    required_vars = ['OS_AUTH_URL', 'OS_USERNAME', 'OS_PASSWORD', 'OS_TENANT_NAME', 'OS_REGION_NAME']
+    required_vars = ['OS_AUTH_TYPE', 'OS_AUTH_URL', 'OS_IDENTITY_API_VERSION', 'OS_REGION_NAME', 'OS_INTERFACE', 'OS_APPLICATION_CREDENTIAL_ID', 'OS_APPLICATION_CREDENTIAL_SECRET']
     missing_vars = [var for var in required_vars if not os.environ.get(var)]
     
     if missing_vars:
@@ -209,12 +209,14 @@ def main():
         for var in missing_vars:
             print(f"  - {var}")
         print("\nSet these variables to run the examples with real credentials.")
-        print("\nFor traditional credentials:")
-        print("  export OS_AUTH_URL=https://auth.cloud.ovh.net/v3")
-        print("  export OS_USERNAME=your-username")
-        print("  export OS_PASSWORD=your-password")
-        print("  export OS_TENANT_NAME=your-tenant")
-        print("  export OS_REGION_NAME=GRA7")
+        print("\nRequired variables:")
+        print("  export OS_AUTH_TYPE=v3applicationcredential")
+        print("  export OS_AUTH_URL=https://keystone.demo.com/v3")
+        print("  export OS_IDENTITY_API_VERSION=3")
+        print("  export OS_REGION_NAME=RegionOne")
+        print("  export OS_INTERFACE=public")
+        print("  export OS_APPLICATION_CREDENTIAL_ID=your-credential-id")
+        print("  export OS_APPLICATION_CREDENTIAL_SECRET=your-credential-secret")
         print("\nRunning examples with placeholder credentials (will fail authentication)...")
     
     # Run examples

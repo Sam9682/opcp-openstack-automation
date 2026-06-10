@@ -85,16 +85,27 @@ class DeploymentConfig:
 @dataclass
 class AuthCredentials:
     """Authentication credentials for OVH OpenStack."""
-    auth_url: str
-    username: str
-    password: str
-    tenant_name: str
-    region: str
+    auth_url: str = ""
+    username: str = ""
+    password: str = ""
+    tenant_name: str = ""
+    region: str = ""
     #project_name: str
     application_credential_id: Optional[str] = None
     application_credential_secret: Optional[str] = None
     http_proxy: Optional[str] = None
     https_proxy: Optional[str] = None
+    auth_type: Optional[str] = None
+    project_id: Optional[str] = None
+    identity_api_version: Optional[str] = None
+    interface: Optional[str] = None
+    protocol: Optional[str] = None
+    identity_provider: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    discovery_endpoint: Optional[str] = None
+    cloud: Optional[str] = None
+    cacert: Optional[str] = None
 
 
 @dataclass

@@ -148,14 +148,13 @@ def main():
     except Exception as e:
         logger.error(f"✗ Failed to load credentials: {e}")
         logger.info("\nPlease set the following environment variables:")
-        logger.info("  OS_AUTH_URL       - OpenStack authentication URL")
-        logger.info("  OS_USERNAME       - Your username")
-        logger.info("  OS_PASSWORD       - Your password")
-        logger.info("  OS_TENANT_NAME    - Your tenant/project name")
-        logger.info("  OS_REGION_NAME    - OVH region (e.g., GRA7, SBG5, BHS5)")
-        logger.info("\nAlternatively, use application credentials:")
-        logger.info("  OS_APPLICATION_CREDENTIAL_ID")
-        logger.info("  OS_APPLICATION_CREDENTIAL_SECRET")
+        logger.info("  OS_AUTH_TYPE                      - e.g. v3applicationcredential")
+        logger.info("  OS_AUTH_URL                       - OpenStack authentication URL")
+        logger.info("  OS_IDENTITY_API_VERSION           - e.g. 3")
+        logger.info("  OS_REGION_NAME                    - Region (e.g., RegionOne)")
+        logger.info("  OS_INTERFACE                      - e.g. public")
+        logger.info("  OS_APPLICATION_CREDENTIAL_ID      - Your application credential ID")
+        logger.info("  OS_APPLICATION_CREDENTIAL_SECRET  - Your application credential secret")
         return 1
     
     # Step 2: Create deployment configuration

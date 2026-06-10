@@ -19,50 +19,55 @@ class TestAuthenticationManager:
     
     def test_load_credentials_from_env_success(self):
         """Test successful credential loading from environment variables."""
-        # Set up environment variables
         env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_USERNAME': 'test-user',
-            'OS_PASSWORD': 'test-password',
-            'OS_TENANT_NAME': 'test-tenant',
-            'OS_REGION_NAME': 'GRA7'
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_AUTH_URL': 'https://keystone.demo.com/v3',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_REGION_NAME': 'RegionOne',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_ID': 'test-app-cred-id',
+            'OS_APPLICATION_CREDENTIAL_SECRET': 'test-app-cred-secret',
         }
         
-        with patch.dict(os.environ, env_vars, clear=False):
+        with patch.dict(os.environ, env_vars, clear=True):
             auth_manager = AuthenticationManager()
             credentials = auth_manager.load_credentials_from_env()
             
-            assert credentials.auth_url == 'https://auth.cloud.ovh.net/v3'
-            assert credentials.username == 'test-user'
-            assert credentials.password == 'test-password'
-            assert credentials.tenant_name == 'test-tenant'
-            assert credentials.region == 'GRA7'
-            assert credentials.project_name == 'test-tenant'
+            assert credentials.auth_url == 'https://keystone.demo.com/v3'
+            assert credentials.region == 'RegionOne'
+            assert credentials.application_credential_id == 'test-app-cred-id'
+            assert credentials.application_credential_secret == 'test-app-cred-secret'
+            assert credentials.auth_type == 'v3applicationcredential'
+            assert credentials.interface == 'public'
     
     def test_load_credentials_from_env_with_project_name(self):
-        """Test credential loading using OS_PROJECT_NAME instead of OS_TENANT_NAME."""
+        """Test credential loading with OS_PROJECT_NAME populates tenant_name."""
         env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_USERNAME': 'test-user',
-            'OS_PASSWORD': 'test-password',
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_AUTH_URL': 'https://keystone.demo.com/v3',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_REGION_NAME': 'RegionOne',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_ID': 'test-app-cred-id',
+            'OS_APPLICATION_CREDENTIAL_SECRET': 'test-app-cred-secret',
             'OS_PROJECT_NAME': 'test-project',
-            'OS_REGION_NAME': 'GRA7'
         }
         
-        with patch.dict(os.environ, env_vars, clear=False):
+        with patch.dict(os.environ, env_vars, clear=True):
             auth_manager = AuthenticationManager()
             credentials = auth_manager.load_credentials_from_env()
             
             assert credentials.tenant_name == 'test-project'
-            assert credentials.project_name == 'test-project'
     
     def test_load_credentials_from_env_missing_auth_url(self):
         """Test error when OS_AUTH_URL is missing."""
         env_vars = {
-            'OS_USERNAME': 'test-user',
-            'OS_PASSWORD': 'test-password',
-            'OS_TENANT_NAME': 'test-tenant',
-            'OS_REGION_NAME': 'GRA7'
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_REGION_NAME': 'RegionOne',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_ID': 'test-app-cred-id',
+            'OS_APPLICATION_CREDENTIAL_SECRET': 'test-app-cred-secret',
         }
         
         with patch.dict(os.environ, env_vars, clear=True):
@@ -73,13 +78,15 @@ class TestAuthenticationManager:
             
             assert 'OS_AUTH_URL' in str(exc_info.value)
     
-    def test_load_credentials_from_env_missing_username(self):
-        """Test error when OS_USERNAME is missing."""
+    def test_load_credentials_from_env_missing_app_credential_id(self):
+        """Test error when OS_APPLICATION_CREDENTIAL_ID is missing."""
         env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_PASSWORD': 'test-password',
-            'OS_TENANT_NAME': 'test-tenant',
-            'OS_REGION_NAME': 'GRA7'
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_AUTH_URL': 'https://keystone.demo.com/v3',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_REGION_NAME': 'RegionOne',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_SECRET': 'test-app-cred-secret',
         }
         
         with patch.dict(os.environ, env_vars, clear=True):
@@ -88,15 +95,17 @@ class TestAuthenticationManager:
             with pytest.raises(AuthenticationError) as exc_info:
                 auth_manager.load_credentials_from_env()
             
-            assert 'OS_USERNAME' in str(exc_info.value)
+            assert 'OS_APPLICATION_CREDENTIAL_ID' in str(exc_info.value)
     
-    def test_load_credentials_from_env_missing_password(self):
-        """Test error when OS_PASSWORD is missing."""
+    def test_load_credentials_from_env_missing_app_credential_secret(self):
+        """Test error when OS_APPLICATION_CREDENTIAL_SECRET is missing."""
         env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_USERNAME': 'test-user',
-            'OS_TENANT_NAME': 'test-tenant',
-            'OS_REGION_NAME': 'GRA7'
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_AUTH_URL': 'https://keystone.demo.com/v3',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_REGION_NAME': 'RegionOne',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_ID': 'test-app-cred-id',
         }
         
         with patch.dict(os.environ, env_vars, clear=True):
@@ -105,32 +114,17 @@ class TestAuthenticationManager:
             with pytest.raises(AuthenticationError) as exc_info:
                 auth_manager.load_credentials_from_env()
             
-            assert 'OS_PASSWORD' in str(exc_info.value)
-    
-    def test_load_credentials_from_env_missing_tenant(self):
-        """Test error when both OS_TENANT_NAME and OS_PROJECT_NAME are missing."""
-        env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_USERNAME': 'test-user',
-            'OS_PASSWORD': 'test-password',
-            'OS_REGION_NAME': 'GRA7'
-        }
-        
-        with patch.dict(os.environ, env_vars, clear=True):
-            auth_manager = AuthenticationManager()
-            
-            with pytest.raises(AuthenticationError) as exc_info:
-                auth_manager.load_credentials_from_env()
-            
-            assert 'OS_TENANT_NAME or OS_PROJECT_NAME' in str(exc_info.value)
+            assert 'OS_APPLICATION_CREDENTIAL_SECRET' in str(exc_info.value)
     
     def test_load_credentials_from_env_missing_region(self):
         """Test error when OS_REGION_NAME is missing."""
         env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_USERNAME': 'test-user',
-            'OS_PASSWORD': 'test-password',
-            'OS_TENANT_NAME': 'test-tenant'
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_AUTH_URL': 'https://keystone.demo.com/v3',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_ID': 'test-app-cred-id',
+            'OS_APPLICATION_CREDENTIAL_SECRET': 'test-app-cred-secret',
         }
         
         with patch.dict(os.environ, env_vars, clear=True):
@@ -143,24 +137,24 @@ class TestAuthenticationManager:
     
     def test_load_credentials_from_file_success(self):
         """Test successful credential loading from file."""
-        # Create temporary credentials file
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
-            f.write("OS_AUTH_URL=https://auth.cloud.ovh.net/v3\n")
-            f.write("OS_USERNAME=test-user\n")
-            f.write("OS_PASSWORD=test-password\n")
-            f.write("OS_TENANT_NAME=test-tenant\n")
-            f.write("OS_REGION_NAME=GRA7\n")
+            f.write("OS_AUTH_TYPE=v3applicationcredential\n")
+            f.write("OS_AUTH_URL=https://keystone.demo.com/v3\n")
+            f.write("OS_IDENTITY_API_VERSION=3\n")
+            f.write("OS_REGION_NAME=RegionOne\n")
+            f.write("OS_INTERFACE=public\n")
+            f.write("OS_APPLICATION_CREDENTIAL_ID=test-app-cred-id\n")
+            f.write("OS_APPLICATION_CREDENTIAL_SECRET=test-app-cred-secret\n")
             temp_file = f.name
         
         try:
             auth_manager = AuthenticationManager()
             credentials = auth_manager.load_credentials_from_file(temp_file)
             
-            assert credentials.auth_url == 'https://auth.cloud.ovh.net/v3'
-            assert credentials.username == 'test-user'
-            assert credentials.password == 'test-password'
-            assert credentials.tenant_name == 'test-tenant'
-            assert credentials.region == 'GRA7'
+            assert credentials.auth_url == 'https://keystone.demo.com/v3'
+            assert credentials.region == 'RegionOne'
+            assert credentials.application_credential_id == 'test-app-cred-id'
+            assert credentials.application_credential_secret == 'test-app-cred-secret'
         finally:
             os.unlink(temp_file)
     
@@ -168,19 +162,22 @@ class TestAuthenticationManager:
         """Test credential loading from file with comments."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
             f.write("# This is a comment\n")
-            f.write("OS_AUTH_URL=https://auth.cloud.ovh.net/v3\n")
+            f.write("OS_AUTH_TYPE=v3applicationcredential\n")
             f.write("# Another comment\n")
-            f.write("OS_USERNAME=test-user\n")
-            f.write("OS_PASSWORD=test-password\n")
-            f.write("OS_TENANT_NAME=test-tenant\n")
-            f.write("OS_REGION_NAME=GRA7\n")
+            f.write("OS_AUTH_URL=https://keystone.demo.com/v3\n")
+            f.write("OS_IDENTITY_API_VERSION=3\n")
+            f.write("OS_REGION_NAME=RegionOne\n")
+            f.write("OS_INTERFACE=public\n")
+            f.write("OS_APPLICATION_CREDENTIAL_ID=test-app-cred-id\n")
+            f.write("OS_APPLICATION_CREDENTIAL_SECRET=test-app-cred-secret\n")
             temp_file = f.name
         
         try:
             auth_manager = AuthenticationManager()
             credentials = auth_manager.load_credentials_from_file(temp_file)
             
-            assert credentials.username == 'test-user'
+            assert credentials.auth_url == 'https://keystone.demo.com/v3'
+            assert credentials.application_credential_id == 'test-app-cred-id'
         finally:
             os.unlink(temp_file)
     
@@ -193,21 +190,19 @@ class TestAuthenticationManager:
         
         assert 'not found' in str(exc_info.value).lower()
     
-    def test_load_credentials_from_file_missing_fields(self):
-        """Test error when credentials file is missing required fields."""
+    def test_load_credentials_from_file_partial_fields(self):
+        """Test that credentials file with partial fields loads without error."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
             f.write("OS_AUTH_URL=https://auth.cloud.ovh.net/v3\n")
             f.write("OS_USERNAME=test-user\n")
-            # Missing password, tenant, and region
+            # Only partial fields — no longer raises an error
             temp_file = f.name
         
         try:
             auth_manager = AuthenticationManager()
-            
-            with pytest.raises(AuthenticationError) as exc_info:
-                auth_manager.load_credentials_from_file(temp_file)
-            
-            assert 'Missing required fields' in str(exc_info.value)
+            credentials = auth_manager.load_credentials_from_file(temp_file)
+            assert credentials.auth_url == "https://auth.cloud.ovh.net/v3"
+            assert credentials.username == "test-user"
         finally:
             os.unlink(temp_file)
     
@@ -219,14 +214,16 @@ class TestAuthenticationManager:
     def test_get_credentials_returns_loaded_credentials(self):
         """Test that get_credentials returns loaded credentials."""
         env_vars = {
-            'OS_AUTH_URL': 'https://auth.cloud.ovh.net/v3',
-            'OS_USERNAME': 'test-user',
-            'OS_PASSWORD': 'test-password',
-            'OS_TENANT_NAME': 'test-tenant',
-            'OS_REGION_NAME': 'GRA7'
+            'OS_AUTH_TYPE': 'v3applicationcredential',
+            'OS_AUTH_URL': 'https://keystone.demo.com/v3',
+            'OS_IDENTITY_API_VERSION': '3',
+            'OS_REGION_NAME': 'RegionOne',
+            'OS_INTERFACE': 'public',
+            'OS_APPLICATION_CREDENTIAL_ID': 'test-app-cred-id',
+            'OS_APPLICATION_CREDENTIAL_SECRET': 'test-app-cred-secret',
         }
         
-        with patch.dict(os.environ, env_vars, clear=False):
+        with patch.dict(os.environ, env_vars, clear=True):
             auth_manager = AuthenticationManager()
             loaded_creds = auth_manager.load_credentials_from_env()
             retrieved_creds = auth_manager.get_credentials()
@@ -241,12 +238,12 @@ class TestAuthenticationManager:
         mock_connect.return_value = mock_conn
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         auth_manager = AuthenticationManager()
@@ -267,12 +264,12 @@ class TestAuthenticationManager:
         mock_connect.return_value = mock_conn
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='bad-user',
-            password='bad-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='bad-cred-id',
+            application_credential_secret='bad-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         auth_manager = AuthenticationManager()
@@ -291,12 +288,12 @@ class TestAuthenticationManager:
         mock_connect.side_effect = SDKException("Connection failed")
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         auth_manager = AuthenticationManager()
@@ -317,12 +314,12 @@ class TestConnectionManager:
         mock_authenticate.return_value = mock_conn
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)
@@ -342,12 +339,12 @@ class TestConnectionManager:
         mock_time.return_value = 1000.0
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)
@@ -373,12 +370,12 @@ class TestConnectionManager:
         mock_authenticate.return_value = mock_conn
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         # First call: current time = 1000
@@ -402,12 +399,12 @@ class TestConnectionManager:
         mock_authenticate.side_effect = [mock_conn1, mock_conn2]
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)
@@ -426,12 +423,12 @@ class TestConnectionManager:
         mock_authenticate.return_value = mock_conn
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)
@@ -448,12 +445,12 @@ class TestConnectionManager:
         mock_authenticate.return_value = mock_conn
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)
@@ -470,12 +467,12 @@ class TestConnectionManager:
         mock_time.return_value = 1000.0
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)
@@ -489,12 +486,12 @@ class TestConnectionManager:
         mock_time.return_value = 1000.0
         
         credentials = AuthCredentials(
-            auth_url='https://auth.cloud.ovh.net/v3',
-            username='test-user',
-            password='test-password',
-            tenant_name='test-tenant',
-            region='GRA7',
-            project_name='test-tenant'
+            auth_url='https://keystone.demo.com/v3',
+            region='RegionOne',
+            application_credential_id='test-app-cred-id',
+            application_credential_secret='test-app-cred-secret',
+            auth_type='v3applicationcredential',
+            interface='public',
         )
         
         conn_manager = ConnectionManager(credentials)

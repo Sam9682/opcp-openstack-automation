@@ -120,25 +120,27 @@ source .venv/bin/activate
 pip install openstacksdk</code></pre>
 
       <h2>Complete Environment Variables Example</h2>
-      <p>Here is a full example of the environment variables needed to authenticate against OpenStack:</p>
+      <p>Here are the <strong>required</strong> environment variables to run the scripts and tests:</p>
 
-      <pre><code class="language-bash">export OS_CACERT=./demo4.pem
-export http_proxy=http://1.2.3.4:9999/
-export OS_INTERFACE=public
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL=https://keystone.demo.com/v3
 export OS_IDENTITY_API_VERSION=3
-export OS_AUTH_URL="https://keystone.demo.com"
-export OS_AUTH_TYPE="v3oidcpassword"
-export OS_PROTOCOL="openid"
-export OS_IDENTITY_PROVIDER="keycloak-admin"
-export OS_CLIENT_ID="your-keycloak-client"
-export OS_CLIENT_SECRET="11111111111111111111111111111111"
-export OS_DISCOVERY_ENDPOINT="https://admin.keycloak.demo.com/realms/master/.well-known/openid-configuration"
-export OS_USERNAME="username"
-export OS_PASSWORD="password"
-export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
+export OS_REGION_NAME="crx"
+export OS_INTERFACE=public
+export OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
+export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
+
+      <p>Optionally, if a proxy or custom certificate is needed:</p>
+
+      <pre><code class="language-bash"># Optional — only if proxy is required
+export http_proxy=http://1.2.3.4:9999/
+export https_proxy=http://1.2.3.4:9999/
+
+# Optional — only if a custom CA certificate is needed
+export OS_CACERT=./demo4.pem</code></pre>
 
       <p>
-        Adapt the values above to match your own environment (URLs, credentials, project ID).
+        Adapt the values above to match your own environment (URLs, credentials, region).
         You can place these exports in a file (e.g. <code>openrc.sh</code>) and source it
         at the beginning of each session: <code>source openrc.sh</code>.
       </p>
@@ -156,10 +158,13 @@ import os
 import sys
 
 required_vars = [
+    "OS_AUTH_TYPE",
     "OS_AUTH_URL",
-    "OS_USERNAME",
-    "OS_PASSWORD",
-    "OS_PROJECT_ID",
+    "OS_IDENTITY_API_VERSION",
+    "OS_REGION_NAME",
+    "OS_INTERFACE",
+    "OS_APPLICATION_CREDENTIAL_ID",
+    "OS_APPLICATION_CREDENTIAL_SECRET",
 ]
 
 missing = [v for v in required_vars if not os.environ.get(v)]
@@ -172,7 +177,7 @@ if missing:
 
 print("All required environment variables are set.")
 print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
-print(f"Project  : {os.environ['OS_PROJECT_ID']}")
+print(f"Region   : {os.environ['OS_REGION_NAME']}")
 print("You are ready to begin!")</code></pre>
 
       <p>Then run the script from the <code>./tests</code> folder:</p>
