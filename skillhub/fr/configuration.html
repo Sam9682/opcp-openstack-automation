@@ -147,7 +147,7 @@ volumes:
 manager = ConfigurationManager()
 
 # Les ${OS_AUTH_URL} etc. sont remplacées par les valeurs réelles
-config = manager.load_config("examples/config.yaml")
+config = manager.load_config("tests/config.yaml")
 print(f"Auth URL: {config.auth_url}")
 print(f"Region:   {config.region}")</code></pre>
 
@@ -167,7 +167,7 @@ export OS_TENANT_NAME="my-project"</code></pre>
       <pre><code class="language-python">from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config("examples/config.yaml")
+config = manager.load_config("tests/config.yaml")
 
 validation = manager.validate_config(config)
 

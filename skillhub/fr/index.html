@@ -104,8 +104,7 @@ cd opcp-openstack-automation</code></pre>
         Les labs de cette formation s'appuient sur deux répertoires à l'intérieur du dépôt :
       </p>
       <ul>
-        <li><code>./examples</code> — exemples de code prêts à l'emploi référencés dans les leçons SkillHub</li>
-        <li><code>./tests</code> — tests unitaires et d'intégration pour valider votre travail</li>
+        <li><code>./tests</code> — tests unitaires et d'intégration, ainsi que les exemples de code référencés dans les leçons SkillHub</li>
       </ul>
 
       <h2>Installer le SDK OpenStack</h2>
@@ -146,7 +145,7 @@ export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
       </p>
 
       <h2>Démarrage rapide — Validez votre configuration</h2>
-      <p>Créez un fichier appelé <code>test1.py</code> dans le dossier <code>./examples</code> avec le contenu suivant :</p>
+      <p>Créez un fichier appelé <code>test1.py</code> dans le dossier <code>./tests</code> avec le contenu suivant :</p>
 
       <pre><code class="language-bash">cd tests
 nano test1.py</code></pre>
@@ -184,7 +183,7 @@ print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
 print(f"Project  : {os.environ['OS_PROJECT_ID']}")
 print("You are ready to begin!")</code></pre>
 
-      <p>Ensuite, exécutez le script depuis le dossier <code>./examples</code> :</p>
+      <p>Ensuite, exécutez le script depuis le dossier <code>./tests</code> :</p>
 
       <pre><code class="language-bash">python test1.py</code></pre>
 

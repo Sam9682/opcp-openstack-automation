@@ -128,7 +128,7 @@ network_spec = NetworkSpec(
       <pre><code class="language-python">from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config("examples/config.yaml")
+config = manager.load_config("tests/config.yaml")
 
 result = manager.validate_config(config)
 if not result.is_valid:

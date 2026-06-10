@@ -119,7 +119,7 @@ print(f"Created: {created[0].name} (ID: {created[0].id})")</code></pre>
 from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config("examples/config.yaml")
+config = manager.load_config("tests/config.yaml")
 result = manager.validate_config(config)
 
 for err in result.errors:
