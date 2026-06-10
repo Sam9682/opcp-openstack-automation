@@ -88,6 +88,22 @@ export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         independently — they are the preferred approach for automation.
       </p>
 
+      <h3>Simulator mode (for SkillHub labs)</h3>
+      <p>
+        A simulator is available to run the SkillHub labs without a real OpenStack
+        environment. If you want to use the simulator, set the following environment
+        variables instead:
+      </p>
+
+      <pre><code class="language-bash">export OS_CLOUD=simulator
+export OS_AUTH_URL=http://opcp-psmc.com:443/identity/v3
+export OS_APPLICATION_CREDENTIAL_ID=simulator-app-credential
+export OS_APPLICATION_CREDENTIAL_SECRET=simulator-secret
+export OS_REGION_NAME=RegionOne
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=3
+export OS_AUTH_TYPE=v3applicationcredential</code></pre>
+
       <!-- Section 2 -->
       <h2>2. Credential Files</h2>
       <p>
