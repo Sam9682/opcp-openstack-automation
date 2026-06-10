@@ -94,6 +94,43 @@ source ~/.bashrc</code></pre>
         mêmes objectifs de manière déclarative.
       </p>
 
+      <h2>Installer le SDK OpenStack</h2>
+      <p>Sous Ubuntu, installez le SDK OpenStack avec pip :</p>
+
+      <pre><code class="language-bash">pip install openstacksdk</code></pre>
+
+      <p>
+        Si vous préférez isoler les dépendances, utilisez d'abord un environnement virtuel :
+      </p>
+
+      <pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+pip install openstacksdk</code></pre>
+
+      <h2>Exemple complet de variables d'environnement</h2>
+      <p>Voici un exemple complet des variables d'environnement nécessaires pour s'authentifier auprès d'OpenStack :</p>
+
+      <pre><code class="language-bash">export OS_CACERT=./demo4.pem
+export http_proxy=http://1.2.3.4:9999/
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=3
+export OS_AUTH_URL="https://keystone.demo.com"
+export OS_AUTH_TYPE="v3oidcpassword"
+export OS_PROTOCOL="openid"
+export OS_IDENTITY_PROVIDER="keycloak-admin"
+export OS_CLIENT_ID="your-keycloak-client"
+export OS_CLIENT_SECRET="11111111111111111111111111111111"
+export OS_DISCOVERY_ENDPOINT="https://admin.keycloak.demo.com/realms/master/.well-known/openid-configuration"
+export OS_USERNAME="username"
+export OS_PASSWORD="password"
+export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
+
+      <p>
+        Adaptez les valeurs ci-dessus à votre propre environnement (URLs, identifiants, ID de projet).
+        Vous pouvez placer ces exports dans un fichier (par ex. <code>openrc.sh</code>) et le sourcer
+        au début de chaque session : <code>source openrc.sh</code>.
+      </p>
+
       <h2>Démarrage rapide — Validez votre configuration</h2>
       <p>Exécutez ce petit script pour confirmer que votre environnement est prêt :</p>
 
@@ -105,7 +142,7 @@ required_vars = [
     "OS_AUTH_URL",
     "OS_USERNAME",
     "OS_PASSWORD",
-    "OS_PROJECT_NAME",
+    "OS_PROJECT_ID",
 ]
 
 missing = [v for v in required_vars if not os.environ.get(v)]
@@ -118,7 +155,7 @@ if missing:
 
 print("All required environment variables are set.")
 print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
-print(f"Project  : {os.environ['OS_PROJECT_NAME']}")
+print(f"Project  : {os.environ['OS_PROJECT_ID']}")
 print("You are ready to begin!")</code></pre>
 
       <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">

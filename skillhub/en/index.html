@@ -93,6 +93,43 @@ source ~/.bashrc</code></pre>
         and Ansible playbooks that achieve the same goals declaratively.
       </p>
 
+      <h2>Install the OpenStack SDK</h2>
+      <p>On Ubuntu, install the OpenStack SDK with pip:</p>
+
+      <pre><code class="language-bash">pip install openstacksdk</code></pre>
+
+      <p>
+        If you prefer to isolate dependencies, use a virtual environment first:
+      </p>
+
+      <pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+pip install openstacksdk</code></pre>
+
+      <h2>Complete Environment Variables Example</h2>
+      <p>Here is a full example of the environment variables needed to authenticate against OpenStack:</p>
+
+      <pre><code class="language-bash">export OS_CACERT=./demo4.pem
+export http_proxy=http://1.2.3.4:9999/
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=3
+export OS_AUTH_URL="https://keystone.demo.com"
+export OS_AUTH_TYPE="v3oidcpassword"
+export OS_PROTOCOL="openid"
+export OS_IDENTITY_PROVIDER="keycloak-admin"
+export OS_CLIENT_ID="your-keycloak-client"
+export OS_CLIENT_SECRET="11111111111111111111111111111111"
+export OS_DISCOVERY_ENDPOINT="https://admin.keycloak.demo.com/realms/master/.well-known/openid-configuration"
+export OS_USERNAME="username"
+export OS_PASSWORD="password"
+export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
+
+      <p>
+        Adapt the values above to match your own environment (URLs, credentials, project ID).
+        You can place these exports in a file (e.g. <code>openrc.sh</code>) and source it
+        at the beginning of each session: <code>source openrc.sh</code>.
+      </p>
+
       <h2>Quick Start — Validate Your Setup</h2>
       <p>Run this small script to confirm your environment is ready:</p>
 
@@ -104,7 +141,7 @@ required_vars = [
     "OS_AUTH_URL",
     "OS_USERNAME",
     "OS_PASSWORD",
-    "OS_PROJECT_NAME",
+    "OS_PROJECT_ID",
 ]
 
 missing = [v for v in required_vars if not os.environ.get(v)]
@@ -117,7 +154,7 @@ if missing:
 
 print("All required environment variables are set.")
 print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
-print(f"Project  : {os.environ['OS_PROJECT_NAME']}")
+print(f"Project  : {os.environ['OS_PROJECT_ID']}")
 print("You are ready to begin!")</code></pre>
 
       <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
