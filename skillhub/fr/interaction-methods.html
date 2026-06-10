@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Méthodes d'interaction</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Méthodes d'interaction avec OPCP OpenStack</h1>
+
+      <p>
+        OpenStack propose plusieurs façons de gérer votre infrastructure. Selon votre
+        cas d'usage — opérations manuelles rapides, scripting ou infrastructure-as-code
+        complète — vous pouvez choisir l'approche la plus adaptée.
+      </p>
+
+      <!-- Option A -->
+      <h2>Option A — API REST (cURL / HTTP)</h2>
+      <p>
+        Chaque service OpenStack expose une API REST standard. Vous pouvez interagir
+        directement avec elle en utilisant <code>curl</code> ou tout client HTTP.
+        C'est l'approche de plus bas niveau et elle vous donne un contrôle total sur
+        chaque requête.
+      </p>
+
+      <pre><code class="language-bash"># 1. S'authentifier et obtenir un token
+TOKEN=$(curl -si -X POST "$OS_AUTH_URL/auth/tokens" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "auth": {
+      "identity": {
+        "methods": ["application_credential"],
+        "application_credential": {
+          "id": "'"$OS_APPLICATION_CREDENTIAL_ID"'",
+          "secret": "'"$OS_APPLICATION_CREDENTIAL_SECRET"'"
+        }
+      }
+    }
+  }' | grep -i "X-Subject-Token" | awk '{print $2}' | tr -d '\r')
+
+# 2. Lister les serveurs via l'API Compute
+curl -s -H "X-Auth-Token: $TOKEN" \
+  "$NOVA_ENDPOINT/servers" | python3 -m json.tool</code></pre>
+
+      <!-- Option B -->
+      <h2>Option B — CLI OpenStack</h2>
+      <p>
+        Le client en ligne de commande <code>openstack</code> encapsule les API REST
+        dans des commandes simples et lisibles. C'est l'approche recommandée pour les
+        opérations quotidiennes et celle utilisée tout au long de cette formation.
+      </p>
+
+      <pre><code class="language-bash"># Installer la CLI
+pip3 install python-openstackclient
+
+# Exemples
+openstack server list
+openstack network create my-network
+openstack volume create --size 10 my-volume
+openstack endpoint list</code></pre>
+
+      <!-- Option C -->
+      <h2>Option C — SDK OpenStack (Python)</h2>
+      <p>
+        La bibliothèque Python <code>openstacksdk</code> fournit une interface de
+        haut niveau pour tous les services OpenStack. Elle est idéale pour écrire des
+        scripts personnalisés et de l'automatisation.
+      </p>
+
+      <pre><code class="language-bash"># Installer le SDK
+pip3 install openstacksdk</code></pre>
+
+      <pre><code class="language-python">import openstack
+
+# Se connecter via les variables d'environnement (OS_*)
+conn = openstack.connect()
+
+# Lister les serveurs baremetal
+for server in conn.baremetal.nodes():
+    print(f"Node: {server.name} — State: {server.provision_state}")
+
+# Lister les endpoints depuis le catalogue de services
+for service in conn.identity.services():
+    endpoints = conn.identity.endpoints(service_id=service.id)
+    for ep in endpoints:
+        print(f"{service.type} [{ep.interface}]: {ep.url}")</code></pre>
+
+      <!-- Option D -->
+      <h2>Option D — Terraform</h2>
+      <p>
+        Terraform vous permet de décrire votre infrastructure entière sous forme de
+        code dans des fichiers déclaratifs <code>.tf</code>. Il gère l'ordonnancement
+        des dépendances, le suivi de l'état et les workflows plan/apply.
+      </p>
+
+      <pre><code class="language-bash"># Initialiser et appliquer une configuration Terraform
+terraform init
+terraform plan
+terraform apply</code></pre>
+
+      <p>Exemple <code>main.tf</code> :</p>
+
+      <pre><code class="language-hcl"># Configurer le fournisseur OpenStack
+terraform {
+  required_providers {
+    openstack = {
+      source = "terraform-provider-openstack/openstack"
+    }
+  }
+}
+
+resource "openstack_networking_network_v2" "my_network" {
+  name           = "my-network"
+  admin_state_up = true
+}
+
+resource "openstack_compute_instance_v2" "my_instance" {
+  name        = "my-instance"
+  flavor_name = "scale-1"
+  image_name  = "Ubuntu 24.04 BMPOD"
+
+  network {
+    uuid = openstack_networking_network_v2.my_network.id
+  }
+}</code></pre>
+
+      <!-- Option E -->
+      <h2>Option E — Ansible</h2>
+      <p>
+        Ansible utilise des playbooks YAML pour automatiser les opérations OpenStack.
+        Il est particulièrement adapté à la gestion de configuration et à
+        l'orchestration de déploiements multi-étapes.
+      </p>
+
+      <pre><code class="language-bash"># Installer la collection Ansible pour OpenStack
+ansible-galaxy collection install openstack.cloud</code></pre>
+
+      <p>Exemple de playbook :</p>
+
+      <pre><code class="language-yaml">- name: Provisionner des ressources OpenStack
+  hosts: localhost
+  tasks:
+    - name: Créer un réseau
+      openstack.cloud.network:
+        name: my-network
+        state: present
+
+    - name: Créer une instance
+      openstack.cloud.server:
+        name: my-instance
+        flavor: scale-1
+        image: "Ubuntu 24.04 BMPOD"
+        network: my-network
+        state: present
+        wait: true</code></pre>
+
+      <!-- Tableau comparatif -->
+      <h2>Quelle approche choisir ?</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Approche</th>
+            <th>Idéale pour</th>
+            <th>Courbe d'apprentissage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>API REST (cURL)</td>
+            <td>Débogage, compréhension du protocole</td>
+            <td>Élevée</td>
+          </tr>
+          <tr>
+            <td>CLI OpenStack</td>
+            <td>Opérations quotidiennes, tâches rapides</td>
+            <td>Faible</td>
+          </tr>
+          <tr>
+            <td>SDK OpenStack</td>
+            <td>Scripts Python personnalisés, automatisation</td>
+            <td>Moyenne</td>
+          </tr>
+          <tr>
+            <td>Terraform</td>
+            <td>Infrastructure as Code, environnements reproductibles</td>
+            <td>Moyenne</td>
+          </tr>
+          <tr>
+            <td>Ansible</td>
+            <td>Gestion de configuration, orchestration</td>
+            <td>Moyenne</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Dans cette formation, nous utilisons principalement la <strong>CLI
+        OpenStack</strong> pour sa simplicité, mais n'hésitez pas à reproduire les
+        exercices avec n'importe laquelle des approches ci-dessus.
+      </p>
+
+      <!-- Résumé -->
+      <h2>Résumé</h2>
+      <ul>
+        <li>OpenStack est composé de services indépendants (Nova, Neutron, Cinder, Keystone, Glance).</li>
+        <li>Vous pouvez accéder à l'infrastructure via l'API REST, la CLI OpenStack, le SDK Python, Terraform ou Ansible.</li>
+        <li>La CLI est le point de départ le plus simple ; Terraform et Ansible sont mieux adaptés à l'infrastructure as code.</li>
+        <li>Toutes les approches s'authentifient avec les mêmes variables d'environnement <code>OS_*</code> ou les identifiants d'application.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts (l'ordre est important : données → modules → point d'entrée) -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>
