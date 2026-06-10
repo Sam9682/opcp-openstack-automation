@@ -97,7 +97,7 @@ source ~/.bashrc</code></pre>
       <h2>Cloner le dépôt</h2>
       <p>Commencez par cloner le dépôt du projet :</p>
 
-      <pre><code class="language-bash">git clone git@github.com:Sam9682/opcp-openstack-automation.git
+      <pre><code class="language-bash">git clone https://github.com/Sam9682/opcp-openstack-automation.git
 cd opcp-openstack-automation</code></pre>
 
       <p>
@@ -146,17 +146,29 @@ export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
       </p>
 
       <h2>Démarrage rapide — Validez votre configuration</h2>
-      <p>Exécutez ce petit script pour confirmer que votre environnement est prêt :</p>
+      <p>Créez un fichier appelé <code>test1.py</code> dans le dossier <code>./tests</code> avec le contenu suivant :</p>
+
+      <pre><code class="language-bash">cd tests
+nano test1.py</code></pre>
+
+      <p>Collez le code suivant dans <code>test1.py</code> :</p>
 
       <pre><code class="language-python">"""Quick setup validation for opcp-openstack-automation."""
 import os
 import sys
 
 required_vars = [
+    "OS_INTERFACE",
+    "OS_IDENTITY_API_VERSION",
     "OS_AUTH_URL",
+    "OS_AUTH_TYPE",
+    "OS_PROTOCOL",
+    "OS_IDENTITY_PROVIDER",
+    "OS_CLIENT_ID",
+    "OS_CLIENT_SECRET",
+    "OS_DISCOVERY_ENDPOINT",
     "OS_USERNAME",
     "OS_PASSWORD",
-    "OS_PROJECT_ID",
 ]
 
 missing = [v for v in required_vars if not os.environ.get(v)]
@@ -171,6 +183,16 @@ print("All required environment variables are set.")
 print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
 print(f"Project  : {os.environ['OS_PROJECT_ID']}")
 print("You are ready to begin!")</code></pre>
+
+      <p>Ensuite, exécutez le script depuis le dossier <code>./tests</code> :</p>
+
+      <pre><code class="language-bash">python test1.py</code></pre>
+
+      <p>
+        Si tout est correctement configuré, vous devriez voir un message de confirmation
+        affichant votre Auth URL et votre Project ID. Si une variable est manquante,
+        le script vous indiquera lesquelles définir.
+      </p>
 
       <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
         ✓ Marquer comme terminé

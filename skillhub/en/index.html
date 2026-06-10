@@ -96,7 +96,7 @@ source ~/.bashrc</code></pre>
       <h2>Clone the Repository</h2>
       <p>Start by cloning the project repository:</p>
 
-      <pre><code class="language-bash">git clone git@github.com:Sam9682/opcp-openstack-automation.git
+      <pre><code class="language-bash">git clone https://github.com/Sam9682/opcp-openstack-automation.git
 cd opcp-openstack-automation</code></pre>
 
       <p>
@@ -145,7 +145,12 @@ export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
       </p>
 
       <h2>Quick Start — Validate Your Setup</h2>
-      <p>Run this small script to confirm your environment is ready:</p>
+      <p>Create a file called <code>test1.py</code> in the <code>./tests</code> folder with the following content:</p>
+
+      <pre><code class="language-bash">cd tests
+nano test1.py</code></pre>
+
+      <p>Paste the following code into <code>test1.py</code>:</p>
 
       <pre><code class="language-python">"""Quick setup validation for opcp-openstack-automation."""
 import os
@@ -170,6 +175,16 @@ print("All required environment variables are set.")
 print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
 print(f"Project  : {os.environ['OS_PROJECT_ID']}")
 print("You are ready to begin!")</code></pre>
+
+      <p>Then run the script from the <code>./tests</code> folder:</p>
+
+      <pre><code class="language-bash">python test1.py</code></pre>
+
+      <p>
+        If everything is configured correctly, you should see a confirmation message
+        listing your Auth URL and Project ID. If any variable is missing, the script
+        will tell you which ones to set.
+      </p>
 
       <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
         ✓ Mark as Complete
