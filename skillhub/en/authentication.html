@@ -48,25 +48,40 @@
       <!-- Section 1 -->
       <h2>1. Environment Variables</h2>
       <p>
-        The quickest way to get started is to export your OVHcloud credentials as
+        The quickest way to get started is to export your credentials as
         environment variables. The SDK reads them automatically.
       </p>
 
-      <h3>Traditional username / password</h3>
-      <pre><code class="language-bash">export OS_AUTH_URL="https://auth.cloud.ovh.net/v3"
-export OS_USERNAME="${OS_USERNAME}"
-export OS_PASSWORD="${OS_PASSWORD}"
-export OS_TENANT_NAME="${OS_TENANT_NAME}"
-export OS_REGION_NAME="GRA7"</code></pre>
+      <h3>Proxy and certificate (if required)</h3>
+      <pre><code class="language-bash"># If a proxy is required
+export http_proxy=http://1.2.3.4:9999/
+export https_proxy=http://1.2.3.4:9999/
 
-      <h3>Application credentials (recommended)</h3>
-      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
-export OS_AUTH_URL="${OS_AUTH_URL}"
+# Use OPCP certificate for HTTPS web access
+export OS_CACERT=./demo4.pem</code></pre>
+
+      <h3>User account — Keycloak credentials (OIDC)</h3>
+      <pre><code class="language-bash">export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
-export OS_REGION_NAME="${OS_REGION_NAME}"
+export OS_AUTH_URL="https://keystone.demo.com"
+export OS_AUTH_TYPE="v3oidcpassword"
+export OS_PROTOCOL="openid"
+export OS_IDENTITY_PROVIDER="keycloak-admin"
+export OS_CLIENT_ID="your-keycloak-client"
+export OS_CLIENT_SECRET="11111111111111111111111111111111"
+export OS_DISCOVERY_ENDPOINT="https://admin.keycloak.demo.com/realms/master/.well-known/openid-configuration"
+export OS_USERNAME="username"
+export OS_PASSWORD="password"
+export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
+
+      <h3>Service account — Keystone application credentials (recommended)</h3>
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL=https://keystone.demo.com/v3
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="crx"
 export OS_INTERFACE=public
-export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
-export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"</code></pre>
+export OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
+export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
 
       <p>
         Application credentials are scoped to a single project and can be revoked

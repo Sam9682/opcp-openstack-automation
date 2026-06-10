@@ -50,25 +50,39 @@
       <h2>1. Variables d'environnement</h2>
       <p>
         La manière la plus rapide de commencer est d'exporter vos identifiants
-        OVHcloud sous forme de variables d'environnement. Le SDK les lit
-        automatiquement.
+        sous forme de variables d'environnement. Le SDK les lit automatiquement.
       </p>
 
-      <h3>Nom d'utilisateur / mot de passe traditionnel</h3>
-      <pre><code class="language-bash">export OS_AUTH_URL="https://auth.cloud.ovh.net/v3"
-export OS_USERNAME="${OS_USERNAME}"
-export OS_PASSWORD="${OS_PASSWORD}"
-export OS_TENANT_NAME="${OS_TENANT_NAME}"
-export OS_REGION_NAME="GRA7"</code></pre>
+      <h3>Proxy et certificat (si nécessaire)</h3>
+      <pre><code class="language-bash"># Si un proxy est requis
+export http_proxy=http://1.2.3.4:9999/
+export https_proxy=http://1.2.3.4:9999/
 
-      <h3>Identifiants d'application (recommandé)</h3>
-      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
-export OS_AUTH_URL="${OS_AUTH_URL}"
+# Utiliser le certificat OPCP pour l'accès web en HTTPS
+export OS_CACERT=./demo4.pem</code></pre>
+
+      <h3>Compte utilisateur — identifiants Keycloak (OIDC)</h3>
+      <pre><code class="language-bash">export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
-export OS_REGION_NAME="${OS_REGION_NAME}"
+export OS_AUTH_URL="https://keystone.demo.com"
+export OS_AUTH_TYPE="v3oidcpassword"
+export OS_PROTOCOL="openid"
+export OS_IDENTITY_PROVIDER="keycloak-admin"
+export OS_CLIENT_ID="your-keycloak-client"
+export OS_CLIENT_SECRET="11111111111111111111111111111111"
+export OS_DISCOVERY_ENDPOINT="https://admin.keycloak.demo.com/realms/master/.well-known/openid-configuration"
+export OS_USERNAME="username"
+export OS_PASSWORD="password"
+export OS_PROJECT_ID="22222222222222222222222222222222"</code></pre>
+
+      <h3>Compte de service — identifiants d'application Keystone (recommandé)</h3>
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL=https://keystone.demo.com/v3
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="crx"
 export OS_INTERFACE=public
-export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
-export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"</code></pre>
+export OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
+export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
 
       <p>
         Les identifiants d'application sont limités à un seul projet et peuvent
