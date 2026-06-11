@@ -251,17 +251,12 @@ class AuthenticationManager:
                 'app_version': '1.0'
             }
             
-            # For application credentials, project_name might be None, so we handle it appropriately
-            if not credentials.application_credential_secret:
-                # For application credentials, we don't necessarily need project_name in the connection params
-                # as it's handled by the credential itself
-                #if credentials.project_name:
-                #    conn_params['project_name'] = credentials.project_name
-            #else:
-                # For traditional credentials, project_name is required
-                if not credentials.project_name:
-                    raise AuthenticationError("Project name is required for traditional authentication")
-                conn_params['project_name'] = credentials.project_name
+            # For application credentials, project_name/project_id might be None
+            # as it's embedded in the credential itself
+            if credentials.project_id:
+                conn_params['project_id'] = credentials.project_id
+            elif credentials.tenant_name:
+                conn_params['project_name'] = credentials.tenant_name
             
             # Add proxy settings if provided
             if credentials.http_proxy:

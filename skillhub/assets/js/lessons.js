@@ -25,13 +25,22 @@
       prerequisites: []
     },
     {
+      id: 'interaction-methods',
+      slug: 'interaction-methods',
+      titleEN: 'Interaction Methods',
+      titleFR: 'Méthodes d\'interaction',
+      difficulty: 'beginner',
+      estimatedMinutes: 10,
+      prerequisites: ['intro']
+    },
+    {
       id: 'auth',
       slug: 'authentication',
       titleEN: 'Authentication',
       titleFR: 'Authentification',
       difficulty: 'beginner',
       estimatedMinutes: 15,
-      prerequisites: ['intro']
+      prerequisites: ['interaction-methods']
     },
     {
       id: 'config',
