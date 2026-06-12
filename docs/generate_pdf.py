@@ -302,7 +302,7 @@ p {
     <h1>OPCP OpenStack<br>Automation</h1>
     <div class="subtitle">Automatisez votre infrastructure Cloud<br>avec les SkillHub Labs</div>
     <div class="tagline">
-        SDK Python &bull; Terraform &bull; Ansible &bull; CLI &bull; API REST<br>
+        SDK Python &bull; Terraform &bull; CLI &bull; API REST<br>
         Formation interactive et progressive en une journée
     </div>
     <div class="brand">PSMC OVHcloud</div>
@@ -313,17 +313,16 @@ p {
     <h2>Automatisez avec confiance</h2>
     <p class="intro-text">
         Allez au-delà de la découverte : maîtrisez l'automatisation de votre
-        infrastructure OpenStack avec 5 approches complémentaires. Notre programme
+        infrastructure OpenStack avec plusieures approches complémentaires. Notre programme
         SkillHub Labs vous guide pas à pas, du premier script à l'orchestration
         multi-ressources complète.
     </p>
 
     <h3>Ce que vous allez accomplir</h3>
     <ul class="benefits">
-        <li>Déployer des infrastructures complètes en quelques commandes</li>
+        <li>Déployer des infrastructures en quelques commandes</li>
         <li>Maîtriser le SDK Python OpenStack et ses managers spécialisés</li>
         <li>Créer des configurations Terraform déclaratives et reproductibles</li>
-        <li>Orchestrer des déploiements multi-étapes avec Ansible</li>
         <li>Comprendre et utiliser l'API REST et la CLI OpenStack</li>
     </ul>
 
@@ -331,7 +330,7 @@ p {
         <h4>Format optimisé : 1 journée</h4>
         <p style="margin:0; font-size: 14px; color: #555;">
             Un programme intensif mais progressif, conçu pour vous rendre autonome
-            sur l'automatisation OpenStack. Inclut un simulateur pour pratiquer
+            sur l'automatisation OpenStack. En option, utilisation d'un simulateur pour pratiquer
             sans risque.
         </p>
     </div>
@@ -353,7 +352,7 @@ p {
             <div class="timeline-badge">2</div>
             <div class="timeline-content">
                 <h4>Méthodes d'Interaction — ~1h</h4>
-                <p>Découverte des 5 approches : API REST, CLI, SDK Python, Terraform et Ansible. Comparaison et cas d'usage.</p>
+                <p>Découverte des 4 approches : API REST, CLI, SDK Python, Terraform. Comparaison et cas d'usage.</p>
             </div>
         </div>
         <div class="timeline-item">
@@ -379,7 +378,7 @@ p {
             <ul>
                 <li>Interface web interactive</li>
                 <li>Contenu bilingue (FR/EN)</li>
-                <li>12 modules structurés</li>
+                <li>10 modules structurés</li>
                 <li>Progression et validation</li>
             </ul>
         </div>
@@ -388,7 +387,7 @@ p {
             <ul>
                 <li>Scripts Python exécutables</li>
                 <li>Exemples pour chaque module</li>
-                <li>Simulateur intégré</li>
+                <li>Simulateur en option</li>
                 <li>Tests automatisés</li>
             </ul>
         </div>
@@ -397,7 +396,7 @@ p {
 
 <!-- PAGE 4: MODULES -->
 <div class="page">
-    <h2>12 modules SkillHub pour une maîtrise complète</h2>
+    <h2>10 modules SkillHub pour une maîtrise complète</h2>
     <p class="intro-text">
         Chaque module combine théorie, exemples de code et exercices pratiques.
         Progressez à votre rythme avec le simulateur ou un environnement réel.
@@ -412,7 +411,7 @@ p {
         <div class="module-card">
             <div class="module-number">2</div>
             <h4>Méthodes d'interaction</h4>
-            <p>REST, CLI, SDK, Terraform, Ansible</p>
+            <p>REST, CLI, SDK, Terraform</p>
         </div>
         <div class="module-card">
             <div class="module-number">3</div>
@@ -464,7 +463,7 @@ p {
         </div>
         <div class="feature-card">
             <h4>Développeurs Cloud</h4>
-            <p>Vous voulez piloter l'infrastructure par le code avec Python, Terraform ou Ansible.</p>
+            <p>Vous voulez piloter l'infrastructure par le code avec Python, Terraform.</p>
         </div>
         <div class="feature-card">
             <h4>Ingénieurs SRE</h4>
@@ -481,9 +480,9 @@ p {
 <div class="page">
     <h2>Vos acquis à l'issue de la formation</h2>
     <ul class="benefits">
-        <li>Maîtrise des 5 méthodes d'interaction avec OpenStack</li>
+        <li>Maîtrise des 4 méthodes d'interaction avec OpenStack</li>
         <li>Autonomie sur le SDK Python et ses managers spécialisés</li>
-        <li>Capacité à déployer via Terraform et orchestrer via Ansible</li>
+        <li>Capacité à déployer via Terraform</li>
         <li>Scripts d'automatisation fonctionnels et reproductibles</li>
         <li>Bonnes pratiques d'authentification et de sécurité</li>
     </ul>
