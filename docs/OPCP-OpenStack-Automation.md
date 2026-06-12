@@ -18,7 +18,6 @@ Cette formation vous permet de :
 - Administrateurs système souhaitant automatiser leurs opérations OpenStack
 - Développeurs et ingénieurs IT intéressés par l'automatisation cloud
 - Professionnels souhaitant maîtriser les outils d'automatisation OpenStack
-- Étudiants en informatique ou en administration système
 
 ### Profil Attendu
 - Niveau technique intermédiaire
@@ -60,8 +59,8 @@ Avant de commencer, assurez-vous de disposer des éléments suivants :
 - Validation automatique des connaissances
 
 ### 2. Labs - Environnement de Pratique
-- Containerisation complète avec Docker
 - Connexion à un environnement OpenStack réel
+- En option, containerisation complète avec Docker/Podman
 - Exercices pratiques avec validation automatique
 - Gestion sécurisée des ressources
 
@@ -110,5 +109,10 @@ Avant de commencer, assurez-vous de disposer des éléments suivants :
 - Communauté d'utilisateurs
 
 ### Contact
-Pour toute question ou assistance, contactez notre équipe technique PSMC OVH.
+Pour toute question ou assistance, contactez notre équipe technique PSMC OVH psmc@ovhcloud.com.
+
+
+---
+
+*PS : Pour plus d'informations techniques, consultez le dépôt GitHub officiel.*
 

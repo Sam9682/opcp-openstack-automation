@@ -43,6 +43,10 @@ The `auth_manager` module provides secure authentication and connection manageme
 #### 1. Load Credentials from Environment Variables
 
 ```python
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import AuthenticationManager
 
 # Create authentication manager
@@ -65,7 +69,12 @@ connection.close()
 #### 2. Load Credentials from File
 
 ```python
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import AuthenticationManager
+
 
 auth_manager = AuthenticationManager()
 
@@ -153,6 +162,10 @@ export OS_REGION_NAME=GRA7
 The authentication module raises `AuthenticationError` for authentication failures:
 
 ```python
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import AuthenticationManager, AuthenticationError
 
 auth_manager = AuthenticationManager()
