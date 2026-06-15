@@ -144,7 +144,12 @@ print("Authenticated successfully!")</code></pre>
         refreshes automatically when fewer than 5 minutes remain.
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager
 from config.models import AuthCredentials
 
 credentials = AuthCredentials(
@@ -174,7 +179,12 @@ conn_manager.close()</code></pre>
         if an exception occurs.
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager
 
 conn_manager = ConnectionManager(credentials)
 
@@ -218,7 +228,13 @@ print("Authenticated with application credentials!")</code></pre>
         variables, invalid credentials, or network issues.
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import (
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from openstack_sdk.auth_manager import (
     AuthenticationManager,
     AuthenticationError,
 )

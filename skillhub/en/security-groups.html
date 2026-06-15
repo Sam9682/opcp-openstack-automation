@@ -51,7 +51,12 @@
         single call. Names must be unique within a deployment.
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.security_group_manager import SecurityGroupManager
 from config.models import SecurityGroupSpec, SecurityGroupRule, AuthCredentials
 

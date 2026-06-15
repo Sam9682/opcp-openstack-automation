@@ -98,6 +98,10 @@
       </p>
 
       <pre><code class="language-python">"""cleanup_rename.py — Rename all lab resources to the lab-* pattern."""
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
 
 auth_mgr = AuthenticationManager()

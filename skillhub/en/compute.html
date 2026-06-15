@@ -51,7 +51,12 @@
         <code>ACTIVE</code> status (default timeout: 300 s).
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.compute_manager import ComputeManager
 from config.models import InstanceSpec, AuthCredentials
 

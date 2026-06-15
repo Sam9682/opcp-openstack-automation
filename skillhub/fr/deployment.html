@@ -59,6 +59,7 @@ import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from openstack_sdk.deployment_engine import DeploymentEngine
 from openstack_sdk.auth_manager import AuthenticationManager
 from config.models import (
