@@ -142,7 +142,12 @@ volumes:
         garder les secrets hors du contrôle de version.
       </p>
 
-      <pre><code class="language-python">from config.config_manager import ConfigurationManager
+      <pre><code class="language-python">import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
 
@@ -164,7 +169,12 @@ export OS_TENANT_NAME="my-project"</code></pre>
         et les références croisées entre les ressources.
       </p>
 
-      <pre><code class="language-python">from config.config_manager import ConfigurationManager
+      <pre><code class="language-python">import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
 config = manager.load_config("tests/config.yaml")

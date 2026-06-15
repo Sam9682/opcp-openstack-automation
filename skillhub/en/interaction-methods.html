@@ -69,6 +69,14 @@ TOKEN=$(curl -si -X POST "$OS_AUTH_URL/auth/tokens" \
 curl -s -H "X-Auth-Token: $TOKEN" \
   "$NOVA_ENDPOINT/servers" | python3 -m json.tool</code></pre>
 
+      <p>
+        To discover the available service endpoints (the base URLs used in your API
+        calls), you can list them with the OpenStack CLI:
+      </p>
+
+      <pre><code class="language-bash"># List all service endpoints with their URLs
+openstack endpoint list -c URL -c 'Service Name'</code></pre>
+
       <!-- Option B -->
       <h2>Option B — OpenStack CLI</h2>
       <p>

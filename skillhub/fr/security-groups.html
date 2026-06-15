@@ -116,6 +116,11 @@ print(f"Créé : {created[0].name} (ID : {created[0].id})")</code></pre>
       </ul>
 
       <pre><code class="language-python"># Le validateur de configuration détecte les erreurs de règles tôt
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
