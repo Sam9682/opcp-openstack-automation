@@ -1,5 +1,8 @@
 # Python dependencies for OVH OpenStack Deployment Automation
 
+# Flask web framework for SkillHub website
+Flask>=3.0.0
+
 # OpenStack SDK for programmatic deployment
 openstacksdk>=1.0.0
 

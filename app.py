@@ -11,7 +11,7 @@ def main():
     # Run application
     app.run(
         host='0.0.0.0', 
-        port=5000, 
+        port=PORT, 
         debug=os.environ.get('FLASK_ENV') == 'development'
     )
 
