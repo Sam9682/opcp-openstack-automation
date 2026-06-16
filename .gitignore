@@ -69,3 +69,4 @@ Thumbs.db
 
 # credentials
 credentials/*
+./tests/opcp-openstack-automation-ssh-key*

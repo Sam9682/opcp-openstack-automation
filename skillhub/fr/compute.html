@@ -52,8 +52,14 @@
         statut <code>ACTIVE</code> (délai par défaut : 300 s).
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.compute_manager import ComputeManager
+from openstack_sdk.network_manager import NetworkManager
 from config.models import InstanceSpec, AuthCredentials
 from openstack_sdk.auth_manager import AuthenticationManager
 
@@ -65,22 +71,69 @@ credentials = auth_manager.load_credentials_from_env()
 connection = auth_manager.authenticate(credentials)
 
 compute = ComputeManager(connection)
+network = NetworkManager(connection)
+
+# Get the network ID by name instead of using the name directly
+student_id = os.environ.get('STUDENT_ID', 'default-student')
+network_name = student_id + "-app-network"
+network_obj = network.get_network_by_name(network_name)
+if not network_obj:
+    # Try to find any network that contains "app-network" to be more flexible
+    print(f"Network '{network_name}' not found. Looking for similar networks...")
+    all_networks = network.list_networks()
+    app_networks = [net for net in all_networks if "app-network" in net.name]
+    if app_networks:
+        network_obj = app_networks[0]  # Use the first one found
+        print(f"Using network: {network_obj.name}")
+    else:
+        raise Exception(f"Network '{network_name}' not found and no app-network found")
+
+# Check if SSH keypair exists, if not create it
+key_name = "opcp-openstack-automation-ssh-key"
+try:
+    # Try to get the keypair to see if it exists
+    keypair = connection.compute.get_keypair(key_name)
+    print(f"Keypair '{key_name}' already exists")
+except Exception:
+    # KeyPair doesn't exist, so create it
+    print(f"Creating keypair '{key_name}'...")
+    try:
+        # Read public key from file
+        pub_key_path = "./opcp-openstack-automation-ssh-key.pub"
+        if os.path.exists(pub_key_path):
+            with open(pub_key_path, 'r') as f:
+                public_key = f.read().strip()
+
+            # Create the keypair
+            keypair = connection.compute.create_keypair(
+                name=key_name,
+                public_key=public_key
+            )
+            print(f"Created keypair '{key_name}' successfully")
+        else:
+            print(f"Warning: Public key file '{pub_key_path}' not found. "
+                  f"Instance will be created without SSH keypair.")
+    except Exception as e:
+        print(f"Warning: Could not create keypair '{key_name}': {e}. "
+              f"Instance will be created without SSH keypair.")
 
 specs = [
     InstanceSpec(
-        name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server-1",
+        name=str(os.environ.get('STUDENT_ID', 'default-student'))+"-web-server-1",
         flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
         image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-        key_name="opcp-openstack-automation-ssh-key",
-        network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-app-network"],
-        security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server-sg"],
+        key_name=key_name,
+        network_ids=[network_obj.id],
+        security_groups=[student_id+"-web-server-sg"],
         metadata={"role": "web", "env": "production"},
     )
 ]
 
 instances = compute.create_compute_instances(specs)
 for inst in instances:
-    print(f"{inst.name}  ID={inst.id}  Statut={inst.status}")</code></pre>
+    print(f"{inst.name}  ID={inst.id}  Status={inst.status}")
+
+  </code></pre>
 
       <!-- Section 2 -->
       <h2>2. Validation des flavors et images</h2>
