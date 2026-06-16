@@ -59,17 +59,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.security_group_manager import SecurityGroupManager
 from config.models import SecurityGroupSpec, SecurityGroupRule, AuthCredentials
+from openstack_sdk.auth_manager import AuthenticationManager
 
-credentials = AuthCredentials(
-    auth_url="${OS_AUTH_URL}",
-    username="${OS_USERNAME}",
-    password="${OS_PASSWORD}",
-    tenant_name="${OS_TENANT_NAME}",
-    region="${OS_REGION_NAME}",
-)
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
 
-conn_manager = ConnectionManager(credentials)
-connection = conn_manager.connect()
+connection = auth_manager.authenticate(credentials)
 
 sg_manager = SecurityGroupManager(connection)
 
