@@ -61,9 +61,9 @@ security_groups:
 # Instance specifications
 instances:
   - name: "web-server-1"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids:
       - "private-network"
     security_groups:
@@ -73,9 +73,9 @@ instances:
       role: "web-server"
 
   - name: "web-server-2"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids:
       - "private-network"
     security_groups:
@@ -85,9 +85,9 @@ instances:
       role: "web-server"
 
   - name: "web-server-3"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids:
       - "private-network"
     security_groups:

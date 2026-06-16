@@ -49,7 +49,8 @@
         The <code>ComputeManager</code> validates flavors and images against the
         OVHcloud catalog, creates instances, and waits for them to reach
         <code>ACTIVE</code> status (default timeout: 300 s).
-        You can use environment variables to set INSTANCE_FLAVOR & INSTANCE_IMAGE
+        You can use environment variables to set INSTANCE_FLAVOR & INSTANCE_IMAGE.
+        You also have to create a ssh key named 'opcp-openstack-automation-ssh-key' (use "ssh-keygen -f opcp-openstack-automation-ssh-key")
       </p>
 
       <pre><code class="language-python">
@@ -76,9 +77,9 @@ specs = [
         name=str(os.environ.get('STUDENT_ID', 'default-student'))+"-web-server-1",
         flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
         image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-        key_name="my-ssh-key",
-        network_ids=[str(os.environ.get('STUDENT_ID', 'default-student'))+"-private-network"],
-        security_groups=[str(os.environ.get('STUDENT_ID', 'default-student'))+"-web-security-group"],
+        key_name="opcp-openstack-automation-ssh-key",
+        network_ids=[str(os.environ.get('STUDENT_ID', 'default-student'))+"-app-network"],
+        security_groups=[str(os.environ.get('STUDENT_ID', 'default-student'))+"-web-server-sg"],
         metadata={"role": "web", "env": "production"},
     )
 ]
@@ -142,7 +143,7 @@ spec = InstanceSpec(
     name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-nginx-host",
     flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
     image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-    key_name="my-ssh-key",
+    key_name="opcp-openstack-automation-ssh-key",
     network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-private-network"],
     security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-security-group"],
     user_data=user_data_script,
@@ -161,7 +162,7 @@ instances = compute.create_compute_instances([spec])</code></pre>
     name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-tagged-instance",
     flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
     image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-    key_name="my-ssh-key",
+    key_name="opcp-openstack-automation-ssh-key",
     network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-private-network"],
     metadata={
         "project": "web-app",

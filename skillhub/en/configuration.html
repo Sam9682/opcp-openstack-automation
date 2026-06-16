@@ -85,9 +85,9 @@ security_groups:
 
 instances:
   - name: "$STUDENT_ID-web-server-1"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "my-ssh-key"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids:
       - "$STUDENT_ID-private-network"
     security_groups:
@@ -126,9 +126,9 @@ volumes:
   "instances": [
     {
       "name": "$STUDENT_ID-web-server-1",
-      "flavor": "s1-4",
-      "image": "Ubuntu 22.04",
-      "key_name": "my-ssh-key",
+      "flavor": "scale-1",
+      "image": "Debian 12 LVM OPCP",
+      "key_name": "opcp-openstack-automation-ssh-key",
       "network_ids": ["$STUDENT_ID-private-network"]
     }
   ]

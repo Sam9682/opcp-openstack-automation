@@ -36,8 +36,8 @@ security_groups:
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids:
       - "opcp-simple-network-training-001"
     security_groups:

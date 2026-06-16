@@ -48,13 +48,13 @@ variable "instance_count" {
 }
 
 variable "instance_flavor" {
-  description = "The flavor/size for compute instances (e.g., s1-2, s1-4, s1-8)"
+  description = "The flavor/size for compute instances (e.g., s1-2, scale-1, s1-8)"
   type        = string
   default     = "s1-2"
 }
 
 variable "instance_image" {
-  description = "The image name or ID for compute instances (e.g., Ubuntu 22.04, Debian 11)"
+  description = "The image name or ID for compute instances (e.g., Debian 12 LVM OPCP, Debian 11)"
   type        = string
 }
 

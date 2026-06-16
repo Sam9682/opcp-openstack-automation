@@ -130,9 +130,9 @@ The Terraform configuration creates compute instances with the following feature
 ```hcl
 # Instance configuration
 instance_count    = 3                    # Number of instances to create
-instance_flavor   = "s1-4"               # Instance size (CPU/RAM)
-instance_image    = "Ubuntu 22.04"       # Operating system image
-key_name          = "my-ssh-key"         # SSH key for access
+instance_flavor   = "scale-1"               # Instance size (CPU/RAM)
+instance_image    = "Debian 12 LVM OPCP"       # Operating system image
+key_name          = "opcp-openstack-automation-ssh-key"         # SSH key for access
 
 # Optional: Instance metadata and user data
 instance_metadata = {

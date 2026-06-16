@@ -483,7 +483,7 @@ instance_specs = [
         name="web-server-1",
         flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
         image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-        key_name="opcp-automation-my-ssh-key-training-001",
+        key_name="opcp-openstack-automation-ssh-key1",
         network_ids=["network-id-123"],
         security_groups=["web-security-group"],
         user_data="""#!/bin/bash
@@ -501,7 +501,7 @@ systemctl start nginx
         name="web-server-2",
         flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
         image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-        key_name="opcp-automation-my-ssh-key-training-001",
+        key_name="opcp-openstack-automation-ssh-key",
         network_ids=["network-id-123"],
         security_groups=["web-security-group"],
         metadata={
@@ -524,9 +524,9 @@ for instance in instances:
 ```python
 instance_spec = InstanceSpec(
     name="multi-network-instance",
-    flavor="s1-4",
+    flavor="scale-1",
     image="Debian 11",
-    key_name="opcp-automation-my-ssh-key-training-001",
+    key_name="opcp-openstack-automation-ssh-key",
     network_ids=[
         "public-network-id",
         "private-network-id"
@@ -560,7 +560,7 @@ instance_spec = InstanceSpec(
     name="docker-host",
     flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
     image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
-    key_name="opcp-automation-my-ssh-key-training-001",
+    key_name="opcp-openstack-automation-ssh-key",
     network_ids=["network-id"],
     security_groups=["docker-sg"],
     user_data=user_data_script,
@@ -603,8 +603,8 @@ if success:
 minimal_spec = InstanceSpec(
     name="minimal-instance",
     flavor="s1-2",
-    image="Ubuntu 22.04",
-    key_name="opcp-automation-my-ssh-key-training-001",
+    image="Debian 12 LVM OPCP",
+    key_name="opcp-openstack-automation-ssh-key",
     network_ids=["network-id"]
 )
 
@@ -615,7 +615,7 @@ instances = compute_manager.create_compute_instances([minimal_spec])
 
 Common OVH instance flavors:
 - `s1-2`: 1 vCore, 2 GB RAM
-- `s1-4`: 1 vCore, 4 GB RAM
+- `scale-1`: 1 vCore, 4 GB RAM
 - `s1-8`: 2 vCores, 8 GB RAM
 - `b2-7`: 2 vCores, 7 GB RAM
 - `b2-15`: 4 vCores, 15 GB RAM
@@ -624,7 +624,7 @@ Common OVH instance flavors:
 ### Instance Images
 
 Common OVH images:
-- `Ubuntu 22.04`
+- `Debian 12 LVM OPCP`
 - `Ubuntu 20.04`
 - `Debian 11`
 - `Debian 10`
@@ -979,8 +979,8 @@ config = DeploymentConfig(
         InstanceSpec(
             name="web-server",
             flavor="s1-2",
-            image="Ubuntu 22.04",
-            key_name="my-ssh-key",
+            image="Debian 12 LVM OPCP",
+            key_name="opcp-openstack-automation-ssh-key",
             network_ids=[],  # Populated after network creation
             security_groups=["web-sg"],
             metadata={"role": "web"}

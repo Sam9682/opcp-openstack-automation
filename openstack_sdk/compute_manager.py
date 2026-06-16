@@ -211,7 +211,7 @@ class ComputeManager:
         Get flavor ID by name, with caching.
         
         Args:
-            flavor_name: Name of the flavor (e.g., "s1-2", "s1-4")
+            flavor_name: Name of the flavor (e.g., "s1-2", "scale-1")
             
         Returns:
             Flavor ID if found, None otherwise
@@ -240,7 +240,7 @@ class ComputeManager:
         Get image ID by name, with caching.
         
         Args:
-            image_name: Name of the image (e.g., "Ubuntu 22.04", "Debian 11")
+            image_name: Name of the image (e.g., "Debian 12 LVM OPCP", "Debian 11")
             
         Returns:
             Image ID if found, None otherwise

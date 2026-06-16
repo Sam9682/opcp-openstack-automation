@@ -185,9 +185,9 @@ def web_stack(name, instance_count=2, volume_size=100):
         "instances": [
             InstanceSpec(
                 name=f"{name}-web-{i+1}",
-                flavor="s1-4",
-                image="Ubuntu 22.04",
-                key_name="my-ssh-key",
+                flavor="scale-1",
+                image="Debian 12 LVM OPCP",
+                key_name="opcp-openstack-automation-ssh-key",
                 network_ids=[f"{name}-network"],
                 security_groups=[f"{name}-sg"],
             )

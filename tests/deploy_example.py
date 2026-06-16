@@ -101,8 +101,8 @@ def create_example_config(credentials) -> DeploymentConfig:
             InstanceSpec(
                 name="example-web-1",
                 flavor="s1-2",  # Adjust based on your OVH region
-                image="Ubuntu 22.04",  # Adjust based on available images
-                key_name="my-ssh-key",  # Replace with your SSH key name
+                image="Debian 12 LVM OPCP",  # Adjust based on available images
+                key_name="opcp-openstack-automation-ssh-key",  # Replace with your SSH key name
                 network_ids=[],  # Will be populated after network creation
                 security_groups=["example-web-sg"],
                 metadata={

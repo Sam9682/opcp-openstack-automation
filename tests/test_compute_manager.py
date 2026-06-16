@@ -33,9 +33,9 @@ def sample_instance_spec():
     """Create a sample instance specification."""
     return InstanceSpec(
         name="test-instance",
-        flavor="s1-4",
-        image="Ubuntu 22.04",
-        key_name="test-key",
+        flavor="scale-1",
+        image="Debian 12 LVM OPCP",
+        key_name="opcp-openstack-automation-ssh-key",
         network_ids=["net-123"],
         security_groups=["default"],
         user_data="#!/bin/bash\necho 'Hello World'",
@@ -88,7 +88,7 @@ class TestComputeManager:
         assert call_args['name'] == "test-instance"
         assert call_args['flavor_id'] == "flavor-123"
         assert call_args['image_id'] == "image-456"
-        assert call_args['key_name'] == "test-key"
+        assert call_args['key_name'] == "opcp-openstack-automation-ssh-key"
         assert call_args['networks'] == [{'uuid': 'net-123'}]
         assert call_args['security_groups'] == [{'name': 'default'}]
         assert call_args['user_data'] == "#!/bin/bash\necho 'Hello World'"
@@ -103,7 +103,7 @@ class TestComputeManager:
         with pytest.raises(ComputeError) as exc_info:
             compute_manager.create_instance(sample_instance_spec)
         
-        assert "Flavor 's1-4' not found" in str(exc_info.value)
+        assert "Flavor 'scale-1' not found" in str(exc_info.value)
     
     def test_create_instance_image_not_found(self, compute_manager, mock_connection, sample_instance_spec):
         """Test instance creation fails when image not found."""
@@ -119,16 +119,16 @@ class TestComputeManager:
         with pytest.raises(ComputeError) as exc_info:
             compute_manager.create_instance(sample_instance_spec)
         
-        assert "Image 'Ubuntu 22.04' not found" in str(exc_info.value)
+        assert "Image 'Debian 12 LVM OPCP' not found" in str(exc_info.value)
     
     def test_create_instance_no_networks(self, compute_manager, mock_connection):
         """Test instance creation fails when no networks specified."""
         # Create instance spec without networks
         instance_spec = InstanceSpec(
             name="test-instance",
-            flavor="s1-4",
-            image="Ubuntu 22.04",
-            key_name="test-key",
+            flavor="scale-1",
+            image="Debian 12 LVM OPCP",
+            key_name="opcp-openstack-automation-ssh-key",
             network_ids=[]
         )
         
@@ -197,16 +197,16 @@ class TestComputeManager:
         instance_specs = [
             InstanceSpec(
                 name="duplicate-name",
-                flavor="s1-4",
-                image="Ubuntu 22.04",
-                key_name="test-key",
+                flavor="scale-1",
+                image="Debian 12 LVM OPCP",
+                key_name="opcp-openstack-automation-ssh-key",
                 network_ids=["net-123"]
             ),
             InstanceSpec(
                 name="duplicate-name",
-                flavor="s1-4",
-                image="Ubuntu 22.04",
-                key_name="test-key",
+                flavor="scale-1",
+                image="Debian 12 LVM OPCP",
+                key_name="opcp-openstack-automation-ssh-key",
                 network_ids=["net-123"]
             )
         ]
@@ -310,15 +310,15 @@ class TestComputeManager:
         mock_connection.compute.find_flavor.return_value = mock_flavor
         
         # First lookup
-        flavor_id1 = compute_manager._get_flavor_id("s1-4")
+        flavor_id1 = compute_manager._get_flavor_id("scale-1")
         assert flavor_id1 == "flavor-123"
         
         # Second lookup should use cache
-        flavor_id2 = compute_manager._get_flavor_id("s1-4")
+        flavor_id2 = compute_manager._get_flavor_id("scale-1")
         assert flavor_id2 == "flavor-123"
         
         # Verify find_flavor was only called once
-        mock_connection.compute.find_flavor.assert_called_once_with("s1-4")
+        mock_connection.compute.find_flavor.assert_called_once_with("scale-1")
     
     def test_image_caching(self, compute_manager, mock_connection):
         """Test that image lookups are cached."""
@@ -328,15 +328,15 @@ class TestComputeManager:
         mock_connection.compute.find_image.return_value = mock_image
         
         # First lookup
-        image_id1 = compute_manager._get_image_id("Ubuntu 22.04")
+        image_id1 = compute_manager._get_image_id("Debian 12 LVM OPCP")
         assert image_id1 == "image-456"
         
         # Second lookup should use cache
-        image_id2 = compute_manager._get_image_id("Ubuntu 22.04")
+        image_id2 = compute_manager._get_image_id("Debian 12 LVM OPCP")
         assert image_id2 == "image-456"
         
         # Verify find_image was only called once
-        mock_connection.compute.find_image.assert_called_once_with("Ubuntu 22.04")
+        mock_connection.compute.find_image.assert_called_once_with("Debian 12 LVM OPCP")
     
     def test_create_instance_without_optional_fields(self, compute_manager, mock_connection):
         """Test instance creation without optional fields (user_data, metadata, security_groups)."""
@@ -345,7 +345,7 @@ class TestComputeManager:
             name="minimal-instance",
             flavor="s1-2",
             image="Debian 11",
-            key_name="test-key",
+            key_name="opcp-openstack-automation-ssh-key",
             network_ids=["net-123"]
         )
         

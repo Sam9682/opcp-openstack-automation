@@ -185,9 +185,9 @@ security_groups:
 # Instances
 instances:
   - name: "web-server-1"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["private-network"]
     security_groups: ["web-sg"]
 
@@ -230,9 +230,9 @@ security_groups:
 # Instances
 instances:
   - name: "web-server-1"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["private-network"]
     security_groups: ["web-sg"]
 
@@ -379,7 +379,7 @@ See `requirements.txt` and `requirements-dev.txt` for complete dependency lists.
 
 ### Common Instance Flavors
 - s1-2: 1 vCore, 2GB RAM
-- s1-4: 1 vCore, 4GB RAM
+- scale-1: 1 vCore, 4GB RAM
 - s1-8: 2 vCores, 8GB RAM
 - s1-16: 4 vCores, 16GB RAM
 

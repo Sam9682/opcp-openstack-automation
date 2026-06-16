@@ -176,14 +176,14 @@ conn.network.create_security_group_rule(
 
       <pre><code class="language-python"># Resolve flavor and image by name
 flavor = conn.compute.find_flavor("s1-2")
-image  = conn.compute.find_image("Ubuntu 22.04")
+image  = conn.compute.find_image("Debian 12 LVM OPCP")
 
 # Launch an instance
 server = conn.compute.create_server(
     name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-my-instance",
     flavor_id=flavor.id,
     image_id=image.id,
-    key_name="my-keypair",
+    key_name="opcp-openstack-automation-ssh-key",
     networks=[{"uuid": network.id}],
     security_groups=[{"name": str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg"}],
     metadata={"student_id": "slepetre"},

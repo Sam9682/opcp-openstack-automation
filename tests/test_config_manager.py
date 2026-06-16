@@ -28,8 +28,8 @@ project_name: "test-project"
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
     security_groups: ["test-sg"]
 
@@ -70,8 +70,8 @@ security_groups:
     {
       "name": "test-instance",
       "flavor": "s1-2",
-      "image": "Ubuntu 22.04",
-      "key_name": "test-key",
+      "image": "Debian 12 LVM OPCP",
+      "key_name": "opcp-openstack-automation-ssh-key",
       "network_ids": ["test-network"],
       "security_groups": ["test-sg"]
     }
@@ -123,9 +123,9 @@ project_name: "test-project"
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
-    network_ids: ["test-network"]
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
+    network_ids: ["opcp-openstack-automation-ssh-key"]
 
 networks:
   - name: "test-network"
@@ -159,8 +159,8 @@ project_name: "test-project"
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
     security_groups: ["test-sg"]
 
@@ -200,8 +200,8 @@ project_name: "test-project"
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
 
 networks:
@@ -235,13 +235,13 @@ project_name: "test-project"
 instances:
   - name: "duplicate-name"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
   - name: "duplicate-name"
-    flavor: "s1-4"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    flavor: "scale-1"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
 
 networks:
@@ -275,8 +275,8 @@ project_name: "test-project"
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
 
 networks:
@@ -310,8 +310,8 @@ project_name: "test-project"
 instances:
   - name: "test-instance"
     flavor: "s1-2"
-    image: "Ubuntu 22.04"
-    key_name: "test-key"
+    image: "Debian 12 LVM OPCP"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
     security_groups: ["test-sg"]
 

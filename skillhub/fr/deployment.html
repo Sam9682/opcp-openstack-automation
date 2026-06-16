@@ -110,8 +110,8 @@ config = DeploymentConfig(
         InstanceSpec(
             name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
             flavor="s1-2",
-            image="Ubuntu 22.04",
-            key_name="my-ssh-key",
+            image="Debian 12 LVM OPCP",
+            key_name="opcp-openstack-automation-ssh-key",
             network_ids=[],
             security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg"],
             metadata={"role": "web"},

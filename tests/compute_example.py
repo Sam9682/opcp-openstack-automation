@@ -104,8 +104,8 @@ def main():
             InstanceSpec(
                 name="opcp-automation-web-server-1",
                 flavor="scale-1",  # Small instance flavor
-                image="7e995f9c-c6fc-4d26-97ab-6c224d69280c",  # Ubuntu 22.04 image
-                key_name="lab-key",  # Replace with your SSH key name
+                image="7e995f9c-c6fc-4d26-97ab-6c224d69280c",  # Debian 12 LVM OPCP image
+                key_name="opcp-openstack-automation-ssh-key",  # Replace with your SSH key name
                 network_ids=["f96825f7-5c9f-4079-a393-b6f94628ee1e"],  # Replace with your network ID
                 security_groups=["opcp-automation-web-server-sg"],  # Replace with your security group
                 user_data="",
@@ -119,7 +119,7 @@ def main():
                 name="opcp-automation-web-server-2",
                 flavor="scale-1",
                 image="7e995f9c-c6fc-4d26-97ab-6c224d69280c",
-                key_name="lab-key",
+                key_name="opcp-openstack-automation-ssh-key",
                 network_ids=["f96825f7-5c9f-4079-a393-b6f94628ee1e"],
                 security_groups=["opcp-automation-web-server-sg"],
                 user_data="",

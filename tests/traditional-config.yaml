@@ -28,7 +28,7 @@ instances:
   - name: "opcp-automation-traditional-instance"
     flavor: "s1-2"
     image: "Ubuntu 24.04 GOR"
-    key_name: "opcp-automation-my-ssh-key-training-001"
+    key_name: "opcp-openstack-automation-ssh-key"
     network_ids:
       - "opcp_automation-traditional-network"
     security_groups:

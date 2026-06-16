@@ -162,7 +162,7 @@ variable "volume_size" {
 }
 
 variable "instance_flavor" {
-  description = "Flavor de l'instance (ex. s1-2, s1-4)"
+  description = "Flavor de l'instance (ex. s1-2, scale-1)"
   type        = string
   default     = "s1-2"
 }</code></pre>
@@ -218,7 +218,7 @@ application_credential_id     = "${OS_APPLICATION_CREDENTIAL_ID}"
 application_credential_secret = "${OS_APPLICATION_CREDENTIAL_SECRET}"
 tenant_name                   = "${OS_TENANT_NAME}"
 region                        = "${OS_REGION_NAME}"
-instance_image                = "Ubuntu 22.04"
+instance_image                = "Debian 12 LVM OPCP"
 key_name                      = "my-ssh-key"
 instance_count                = 2
 volume_count                  = 2</code></pre>
