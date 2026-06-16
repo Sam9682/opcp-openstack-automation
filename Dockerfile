@@ -30,6 +30,7 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV SECRET_KEY=change-this-in-production
+ENV PYTHONPATH=/app
 
 # Copy initialization script
 COPY ./scripts/init_website.sh /app/
