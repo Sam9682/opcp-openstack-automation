@@ -52,11 +52,10 @@
       </p>
 
       <pre><code class="language-python">
-import sys
+import sys                                                                                                                                                                                                        🛠️ function call (auto)
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.network_manager import NetworkManager
 from config.models import NetworkSpec, SubnetSpec, AuthCredentials
@@ -71,7 +70,7 @@ connection = auth_manager.authenticate(credentials)
 
 network_manager = NetworkManager(connection)
 
-# Définir un réseau avec un sous-réseau
+# Define network with a subnet
 network_spec = NetworkSpec(
     name=str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network",
     admin_state_up=True,
@@ -87,9 +86,8 @@ network_spec = NetworkSpec(
     ],
 )
 
-created = network_manager.create_networks([network_spec])
-for net in created:
-    print(f"Réseau : {net.name} (ID : {net.id})")</code></pre>
+created = network_manager.create_network(network_spec)
+print(f"Network: {created.name} (ID: {created.id})")</code></pre>
 
       <!-- Section 2 -->
       <h2>2. Gestion des sous-réseaux</h2>

@@ -481,8 +481,8 @@ compute_manager = ComputeManager(connection)
 instance_specs = [
     InstanceSpec(
         name="web-server-1",
-        flavor="s1-2",  # Small instance
-        image="Ubuntu 22.04",
+        flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+        image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
         key_name="opcp-automation-my-ssh-key-training-001",
         network_ids=["network-id-123"],
         security_groups=["web-security-group"],
@@ -499,8 +499,8 @@ systemctl start nginx
     ),
     InstanceSpec(
         name="web-server-2",
-        flavor="s1-2",
-        image="Ubuntu 22.04",
+        flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+        image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
         key_name="opcp-automation-my-ssh-key-training-001",
         network_ids=["network-id-123"],
         security_groups=["web-security-group"],
@@ -558,8 +558,8 @@ echo "*/5 * * * * /usr/local/bin/health-check.sh" | crontab -
 
 instance_spec = InstanceSpec(
     name="docker-host",
-    flavor="s1-8",
-    image="Ubuntu 22.04",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
     key_name="opcp-automation-my-ssh-key-training-001",
     network_ids=["network-id"],
     security_groups=["docker-sg"],

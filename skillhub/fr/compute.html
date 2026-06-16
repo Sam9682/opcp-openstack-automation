@@ -108,6 +108,7 @@ for inst in instances:
         Les scripts cloud-init passés via <code>user_data</code> s'exécutent au
         premier démarrage. Utilisez-les pour installer des paquets, démarrer des
         services ou configurer l'instance.
+        Vous pouvez définir les variables d'environment: INSTANCE_FLAVOR & INSTANCE_IMAGE
       </p>
 
       <pre><code class="language-python">user_data_script = """#!/bin/bash
@@ -119,8 +120,8 @@ systemctl start nginx
 
 spec = InstanceSpec(
     name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-nginx-host",
-    flavor="s1-4",
-    image="Ubuntu 22.04",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
     key_name="my-ssh-key",
     network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-private-network"],
     security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-security-group"],
@@ -138,8 +139,8 @@ instances = compute.create_compute_instances([spec])</code></pre>
 
       <pre><code class="language-python">spec = InstanceSpec(
     name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-tagged-instance",
-    flavor="s1-2",
-    image="Ubuntu 22.04",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
     key_name="my-ssh-key",
     network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-private-network"],
     metadata={
