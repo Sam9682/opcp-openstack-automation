@@ -144,16 +144,33 @@ for inst in instances:
       </p>
 
       <pre><code class="language-python"># Flavors OVHcloud courants
-# s1-2  — 1 vCore,  2 Go RAM
-# scale-1  — 1 vCore,  4 Go RAM
-# s1-8  — 2 vCores, 8 Go RAM
-# b2-7  — 2 vCores, 7 Go RAM
-# b2-15 — 4 vCores, 15 Go RAM
-
-# Images courantes
-# Debian 12 LVM OPCP, Ubuntu 20.04
-# Debian 11, Debian 10
-# Rocky Linux 8</code></pre>
+openstack flavor list
+	+--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+	| ID                                   | Name        |    RAM | Disk | Ephemeral | VCPUs | Is Public |
+	+--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+	| 0f6c5acb-f221-47fe-a848-012345678901 | scale-1     |    128 | 2000 |         0 |    24 | True      |
+	| 10b9c6fc-883f-462f-8375-012345678901 | gpu         |    400 |  900 |         0 |   128 | True      |
+	| 2c6cb207-ce88-4a02-9afb-012345678901 | scale-3     |    256 | 4000 |         0 |    48 | True      |
+	| 30b24852-d84d-4dad-808e-012345678901 | proxmox-lab | 131072 | 1024 |         0 |    64 | True      |
+	| aae00b73-85ff-4f7c-a51d-012345678901 | hsm         |    512 | 4000 |         0 |   128 | True      |
+	| c1cfc9f1-d0a0-444f-b3f6-012345678901 | scale-2     |    256 | 4000 |         0 |    32 | True      |
+	+--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+	
+	openstack image list
+	+--------------------------------------+------------------------+--------+
+	| ID                                   | Name                   | Status |
+	+--------------------------------------+------------------------+--------+
+	| c9d1b60e-42f5-490f-b6f6-012345678901 | CentOS 9 OPCP          | active |
+	| ae8e057f-ef2d-40fc-898c-012345678901 | Debian 12 LVM OPCP     | active |
+	| c2a00639-0cf0-4913-830e-012345678901 | Debian 13 Cloud VM     | active |
+	| ccd53d11-3652-4e84-b4db-012345678901 | harvester1.7.1         | active |
+	| 41fa9ca2-aead-4736-83c1-012345678901 | harvester1.8.0         | active |
+	| 61db2a19-71eb-4256-b6c1-012345678901 | ironic-agent.initramfs | active |
+	| 0b59e8c9-0a06-4b1c-acb6-012345678901 | ironic-agent.kernel    | active |
+	| c7770ed8-cb60-4974-9b07-012345678901 | proxmox-ve-9.2         | active |
+	+--------------------------------------+------------------------+--------+
+	</code></pre>
+</code></pre>
 
       <!-- Section 3 -->
       <h2>3. Injection de user-data</h2>
