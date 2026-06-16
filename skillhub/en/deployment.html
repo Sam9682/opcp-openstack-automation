@@ -77,10 +77,10 @@ config = DeploymentConfig(
     project_name="${OS_TENANT_NAME}",
     networks=[
         NetworkSpec(
-            name=f"$STUDENT_ID-app-network",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network",
             subnets=[
                 SubnetSpec(
-                    name=f"$STUDENT_ID-app-subnet",
+                    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-app-subnet",
                     cidr="192.168.1.0/24",
                     dns_nameservers=["8.8.8.8", "8.8.4.4"],
                 )
@@ -89,7 +89,7 @@ config = DeploymentConfig(
     ],
     security_groups=[
         SecurityGroupSpec(
-            name=f"$STUDENT_ID-web-sg",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg",
             description="Web traffic",
             rules=[
                 SecurityGroupRule(
@@ -105,21 +105,21 @@ config = DeploymentConfig(
     ],
     instances=[
         InstanceSpec(
-            name=f"$STUDENT_ID-web-server",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
             flavor="s1-2",
             image="Ubuntu 22.04",
             key_name="my-ssh-key",
             network_ids=[],
-            security_groups=[f"$STUDENT_ID-web-sg"],
+            security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg"],
             metadata={"role": "web"},
         )
     ],
     volumes=[
         VolumeSpec(
-            name=f"$STUDENT_ID-data-volume",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-data-volume",
             size=100,
             volume_type="classic",
-            attach_to=f"$STUDENT_ID-web-server",
+            attach_to=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
         )
     ],
 )

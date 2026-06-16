@@ -87,12 +87,12 @@ provider "openstack" {
 
 resource "openstack_networking_network_v2" "net_gra" {
   provider = openstack.gra7
-  name     = "$STUDENT_ID-app-network-gra"
+  name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-gra"
 }
 
 resource "openstack_networking_network_v2" "net_sbg" {
   provider = openstack.sbg5
-  name     = "$STUDENT_ID-app-network-sbg"
+  name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-sbg"
 }</code></pre>
 
       <!-- Section 2 -->

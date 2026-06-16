@@ -74,8 +74,8 @@ connection = conn_manager.connect()
 volume_manager = VolumeManager(connection)
 
 volume_specs = [
-    VolumeSpec(name=f"$STUDENT_ID-data-vol-1", size=100, volume_type="classic"),
-    VolumeSpec(name=f"$STUDENT_ID-fast-vol-1", size=50, volume_type="high-speed"),
+    VolumeSpec(name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-data-vol-1", size=100, volume_type="classic"),
+    VolumeSpec(name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-fast-vol-1", size=50, volume_type="high-speed"),
 ]
 
 volumes = volume_manager.create_and_attach_volumes(volume_specs, {})
@@ -97,10 +97,10 @@ instances_dict = {inst.name: inst for inst in instances}
 
 volume_specs = [
     VolumeSpec(
-        name=f"$STUDENT_ID-web-data",
+        name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-data",
         size=150,
         volume_type="classic",
-        attach_to=f"$STUDENT_ID-web-server-1",
+        attach_to=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server-1",
     ),
 ]
 
@@ -119,7 +119,7 @@ for vol in volumes:
       </p>
 
       <pre><code class="language-python">boot_vol = VolumeSpec(
-    name=f"$STUDENT_ID-boot-volume",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-boot-volume",
     size=50,
     volume_type="high-speed",
     bootable=True,

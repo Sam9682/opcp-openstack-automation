@@ -75,12 +75,12 @@ compute = ComputeManager(connection)
 
 specs = [
     InstanceSpec(
-        name=f"$STUDENT_ID-web-server-1",
+        name=str(os.environ.get('STUDENT_ID', 'default-student'))+"-web-server-1",
         flavor="s1-4",
         image="Ubuntu 22.04",
         key_name="my-ssh-key",
-        network_ids=[f"$STUDENT_ID-private-network"],
-        security_groups=[f"$STUDENT_ID-web-security-group"],
+        network_ids=[str(os.environ.get('STUDENT_ID', 'default-student'))+"-private-network"],
+        security_groups=[str(os.environ.get('STUDENT_ID', 'default-student'))+"-web-security-group"],
         metadata={"role": "web", "env": "production"},
     )
 ]
@@ -124,12 +124,12 @@ systemctl start nginx
 """
 
 spec = InstanceSpec(
-    name=f"$STUDENT_ID-nginx-host",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-nginx-host",
     flavor="s1-4",
     image="Ubuntu 22.04",
     key_name="my-ssh-key",
-    network_ids=[f"$STUDENT_ID-private-network"],
-    security_groups=[f"$STUDENT_ID-web-security-group"],
+    network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-private-network"],
+    security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-security-group"],
     user_data=user_data_script,
 )
 
@@ -143,11 +143,11 @@ instances = compute.create_compute_instances([spec])</code></pre>
       </p>
 
       <pre><code class="language-python">spec = InstanceSpec(
-    name=f"$STUDENT_ID-tagged-instance",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-tagged-instance",
     flavor="s1-2",
     image="Ubuntu 22.04",
     key_name="my-ssh-key",
-    network_ids=[f"$STUDENT_ID-private-network"],
+    network_ids=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-private-network"],
     metadata={
         "project": "web-app",
         "environment": "staging",
@@ -169,7 +169,7 @@ instance = compute.wait_for_instance_active("instance-id", timeout=300)
 print(f"Instance is now {instance.status}")
 
 # Query instances
-inst = compute.get_instance_by_name(f"$STUDENT_ID-web-server-1")
+inst = compute.get_instance_by_name(str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server-1")
 all_instances = compute.list_instances()
 
 # Delete when done

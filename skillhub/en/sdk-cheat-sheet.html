@@ -98,12 +98,12 @@ conn.close()</code></pre>
 
       <pre><code class="language-python"># Create a private network + subnet
 network = conn.network.create_network(
-    name=f"$STUDENT_ID-my-network",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-my-network",
     admin_state_up=True,
 )
 
 subnet = conn.network.create_subnet(
-    name=f"$STUDENT_ID-my-subnet",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-my-subnet",
     network_id=network.id,
     cidr="192.168.1.0/24",
     ip_version=4,
@@ -132,7 +132,7 @@ for net in conn.network.networks():
 
       <pre><code class="language-python"># Create a security group with SSH + HTTP rules
 sg = conn.network.create_security_group(
-    name=f"$STUDENT_ID-web-sg",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg",
     description="Allow SSH and HTTP",
 )
 
@@ -180,12 +180,12 @@ image  = conn.compute.find_image("Ubuntu 22.04")
 
 # Launch an instance
 server = conn.compute.create_server(
-    name=f"$STUDENT_ID-my-instance",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-my-instance",
     flavor_id=flavor.id,
     image_id=image.id,
     key_name="my-keypair",
     networks=[{"uuid": network.id}],
-    security_groups=[{"name": f"$STUDENT_ID-web-sg"}],
+    security_groups=[{"name": str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg"}],
     metadata={"student_id": "slepetre"},
     user_data="#!/bin/bash\napt update",
 )
@@ -216,7 +216,7 @@ while True:
 
       <pre><code class="language-python"># Create a 10 GB volume
 volume = conn.block_storage.create_volume(
-    name=f"$STUDENT_ID-data-vol",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-data-vol",
     size=10,
     volume_type="classic",
 )

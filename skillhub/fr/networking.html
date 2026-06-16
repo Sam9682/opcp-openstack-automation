@@ -76,12 +76,12 @@ network_manager = NetworkManager(connection)
 
 # Définir un réseau avec un sous-réseau
 network_spec = NetworkSpec(
-    name=f"$STUDENT_ID-app-network",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network",
     admin_state_up=True,
     external=False,
     subnets=[
         SubnetSpec(
-            name=f"$STUDENT_ID-app-subnet",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-app-subnet",
             cidr="192.168.1.0/24",
             ip_version=4,
             enable_dhcp=True,
@@ -104,17 +104,17 @@ for net in created:
 
       <pre><code class="language-python"># Plusieurs sous-réseaux dans un même réseau
 network_spec = NetworkSpec(
-    name=f"$STUDENT_ID-multi-subnet-network",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-multi-subnet-network",
     subnets=[
         SubnetSpec(
-            name=f"$STUDENT_ID-frontend-subnet",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-frontend-subnet",
             cidr="10.0.1.0/24",
             enable_dhcp=True,
             gateway_ip="10.0.1.1",
             dns_nameservers=["8.8.8.8"],
         ),
         SubnetSpec(
-            name=f"$STUDENT_ID-backend-subnet",
+            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-backend-subnet",
             cidr="10.0.2.0/24",
             enable_dhcp=True,
             gateway_ip="10.0.2.1",

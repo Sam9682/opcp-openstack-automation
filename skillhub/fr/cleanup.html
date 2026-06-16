@@ -104,41 +104,41 @@ auth_mgr = AuthenticationManager()
 credentials = auth_mgr.load_credentials_from_env()
 conn = ConnectionManager(credentials).connect()
 
-PREFIX = f"$STUDENT_ID-"
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) +"-"
 
 # ── Correspondance : nom original → nouveau nom ───────────────
 NETWORK_RENAMES = {
-    "app-network":          f"$STUDENT_ID-network",
-    "private-network":      f"$STUDENT_ID-network-private",
-    "multi-subnet-network": f"$STUDENT_ID-network-multi",
+    "app-network":          str(os.environ.get('STUDENT_ID', 'default-student')) +"-network",
+    "private-network":      str(os.environ.get('STUDENT_ID', 'default-student')) +"-network-private",
+    "multi-subnet-network": str(os.environ.get('STUDENT_ID', 'default-student')) +"-network-multi",
 }
 
 SUBNET_RENAMES = {
-    "app-subnet":      f"$STUDENT_ID-subnet",
-    "private-subnet":  f"$STUDENT_ID-subnet-private",
-    "frontend-subnet": f"$STUDENT_ID-subnet-frontend",
-    "backend-subnet":  f"$STUDENT_ID-subnet-backend",
+    "app-subnet":      str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet",
+    "private-subnet":  str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet-private",
+    "frontend-subnet": str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet-frontend",
+    "backend-subnet":  str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet-backend",
 }
 
 SG_RENAMES = {
-    "web-server-sg":       f"$STUDENT_ID-sg-web",
-    "web-security-group":  f"$STUDENT_ID-sg-web-group",
-    "web-sg":              f"$STUDENT_ID-sg-web-deploy",
+    "web-server-sg":       str(os.environ.get('STUDENT_ID', 'default-student')) +"-sg-web",
+    "web-security-group":  str(os.environ.get('STUDENT_ID', 'default-student')) +"-sg-web-group",
+    "web-sg":              str(os.environ.get('STUDENT_ID', 'default-student')) +"-sg-web-deploy",
 }
 
 INSTANCE_RENAMES = {
-    "web-server-1": f"$STUDENT_ID-instance-web-1",
-    "web-server-2": f"$STUDENT_ID-instance-web-2",
-    "web-server-3": f"$STUDENT_ID-instance-web-3",
+    "web-server-1": str(os.environ.get('STUDENT_ID', 'default-student')) +"-instance-web-1",
+    "web-server-2": str(os.environ.get('STUDENT_ID', 'default-student')) +"-instance-web-2",
+    "web-server-3": str(os.environ.get('STUDENT_ID', 'default-student')) +"-instance-web-3",
 }
 
 VOLUME_RENAMES = {
-    "data-vol-1":    f"$STUDENT_ID-volume-data-1",
-    "fast-vol-1":    f"$STUDENT_ID-volume-fast-1",
-    "web-data":      f"$STUDENT_ID-volume-web-data",
-    "data-volume-1": f"$STUDENT_ID-volume-data-v1",
-    "data-volume-2": f"$STUDENT_ID-volume-data-v2",
-    "data-volume-3": f"$STUDENT_ID-volume-data-v3",
+    "data-vol-1":    str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-1",
+    "fast-vol-1":    str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-fast-1",
+    "web-data":      str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-web-data",
+    "data-volume-1": str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-v1",
+    "data-volume-2": str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-v2",
+    "data-volume-3": str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-v3",
 }
 
 # ── Fonctions de renommage ─────────────────────────────────────
@@ -188,7 +188,7 @@ print("Terminé — toutes les ressources lab utilisent le préfixe $STUDENT_ID-
       </p>
 
       <pre><code class="language-python">"""cleanup_list.py — Lister chaque ressource dont le nom commence par $STUDENT_ID-."""
-PREFIX = f"$STUDENT_ID-"
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) +"-"
 
 print("=== Réseaux ===")
 for net in conn.network.networks():
@@ -227,7 +227,7 @@ for vol in conn.block_storage.volumes():
       <pre><code class="language-python">"""cleanup_delete.py — Supprimer toutes les ressources $STUDENT_ID-* dans l'ordre sûr."""
 import time
 
-PREFIX = f"$STUDENT_ID-"
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) +"-"
 
 # ── Étape 1 : Détacher et supprimer les volumes ───────────────
 print("Étape 1/5 — Suppression des volumes …")

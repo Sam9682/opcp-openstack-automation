@@ -74,7 +74,7 @@ connection = conn_manager.connect()
 sg_manager = SecurityGroupManager(connection)
 
 web_sg = SecurityGroupSpec(
-    name=f"$STUDENT_ID-web-server-sg",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server-sg",
     description="Allow HTTP, HTTPS, and SSH",
     rules=[
         SecurityGroupRule(
@@ -146,7 +146,7 @@ for err in result.errors:
       </p>
 
       <pre><code class="language-python">db_sg = SecurityGroupSpec(
-    name=f"$STUDENT_ID-database-sg",
+    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-database-sg",
     description="Database — private network only",
     rules=[
         SecurityGroupRule(
@@ -199,7 +199,7 @@ ipv6_rule = SecurityGroupRule(
       <h2>5. Querying and Deleting Groups</h2>
 
       <pre><code class="language-python"># Look up by name
-sg = sg_manager.get_security_group_by_name(f"$STUDENT_ID-web-server-sg")
+sg = sg_manager.get_security_group_by_name(str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server-sg")
 if sg:
     print(f"Found: {sg.name} (ID: {sg.id})")
 
