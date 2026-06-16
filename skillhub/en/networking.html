@@ -74,12 +74,12 @@ network_manager = NetworkManager(connection)
 
 # Define network with a subnet
 network_spec = NetworkSpec(
-    name="app-network",
+    name=f"$STUDENT_ID-app-network",
     admin_state_up=True,
     external=False,
     subnets=[
         SubnetSpec(
-            name="app-subnet",
+            name=f"$STUDENT_ID-app-subnet",
             cidr="192.168.1.0/24",
             ip_version=4,
             enable_dhcp=True,
@@ -101,17 +101,17 @@ for net in created:
 
       <pre><code class="language-python"># Multiple subnets in one network
 network_spec = NetworkSpec(
-    name="multi-subnet-network",
+    name=f"$STUDENT_ID-multi-subnet-network",
     subnets=[
         SubnetSpec(
-            name="frontend-subnet",
+            name=f"$STUDENT_ID-frontend-subnet",
             cidr="10.0.1.0/24",
             enable_dhcp=True,
             gateway_ip="10.0.1.1",
             dns_nameservers=["8.8.8.8"],
         ),
         SubnetSpec(
-            name="backend-subnet",
+            name=f"$STUDENT_ID-backend-subnet",
             cidr="10.0.2.0/24",
             enable_dhcp=True,
             gateway_ip="10.0.2.1",
@@ -153,9 +153,9 @@ if not result.is_valid:
 
       <pre><code class="language-yaml"># In your config.yaml
 networks:
-  - name: "private-network"
+  - name: "$STUDENT_ID-private-network"
     subnets:
-      - name: "private-subnet"
+      - name: "$STUDENT_ID-private-subnet"
         cidr: "192.168.1.0/24"
         dns_nameservers:
           - "8.8.8.8"
@@ -189,7 +189,7 @@ resource "openstack_networking_subnet_v2" "private_subnet" {
 variable "network_name" {
   description = "Name of the private network"
   type        = string
-  default     = "private-network"
+  default     = "$STUDENT_ID-private-network"
 }
 
 variable "subnet_cidr" {

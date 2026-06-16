@@ -47,7 +47,7 @@
       <!-- Section 1 -->
       <h2>1. The Naming Convention</h2>
       <p>
-        We use the prefix <code>lab-</code> to tag every resource created during the
+        We use the prefix <code>$STUDENT_ID-</code> to tag every resource created during the
         labs. This makes it trivial to list and delete them without touching
         production resources.
       </p>
@@ -64,27 +64,27 @@
           <tr>
             <td>Network</td>
             <td>app-network</td>
-            <td>lab-network</td>
+            <td>$STUDENT_ID-network</td>
           </tr>
           <tr>
             <td>Subnet</td>
             <td>app-subnet</td>
-            <td>lab-subnet</td>
+            <td>$STUDENT_ID-subnet</td>
           </tr>
           <tr>
             <td>Security group</td>
             <td>web-server-sg</td>
-            <td>lab-sg-web</td>
+            <td>$STUDENT_ID-sg-web</td>
           </tr>
           <tr>
             <td>Instance</td>
             <td>web-server-1</td>
-            <td>lab-instance-web-1</td>
+            <td>$STUDENT_ID-instance-web-1</td>
           </tr>
           <tr>
             <td>Volume</td>
             <td>data-vol-1</td>
-            <td>lab-volume-data-1</td>
+            <td>$STUDENT_ID-volume-data-1</td>
           </tr>
         </tbody>
       </table>
@@ -97,7 +97,7 @@
         matches a known lab name.
       </p>
 
-      <pre><code class="language-python">"""cleanup_rename.py — Rename all lab resources to the lab-* pattern."""
+      <pre><code class="language-python">"""cleanup_rename.py — Rename all lab resources to the $STUDENT_ID-* pattern."""
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
@@ -108,41 +108,41 @@ auth_mgr = AuthenticationManager()
 credentials = auth_mgr.load_credentials_from_env()
 conn = ConnectionManager(credentials).connect()
 
-PREFIX = "lab-"
+PREFIX = f"$STUDENT_ID-"
 
 # ── Mapping: original name → new name ──────────────────────────
 NETWORK_RENAMES = {
-    "app-network":          "lab-network",
-    "private-network":      "lab-network-private",
-    "multi-subnet-network": "lab-network-multi",
+    "app-network":          f"$STUDENT_ID-network",
+    "private-network":      f"$STUDENT_ID-network-private",
+    "multi-subnet-network": f"$STUDENT_ID-network-multi",
 }
 
 SUBNET_RENAMES = {
-    "app-subnet":      "lab-subnet",
-    "private-subnet":  "lab-subnet-private",
-    "frontend-subnet": "lab-subnet-frontend",
-    "backend-subnet":  "lab-subnet-backend",
+    "app-subnet":      f"$STUDENT_ID-subnet",
+    "private-subnet":  f"$STUDENT_ID-subnet-private",
+    "frontend-subnet": f"$STUDENT_ID-subnet-frontend",
+    "backend-subnet":  f"$STUDENT_ID-subnet-backend",
 }
 
 SG_RENAMES = {
-    "web-server-sg":       "lab-sg-web",
-    "web-security-group":  "lab-sg-web-group",
-    "web-sg":              "lab-sg-web-deploy",
+    "web-server-sg":       f"$STUDENT_ID-sg-web",
+    "web-security-group":  f"$STUDENT_ID-sg-web-group",
+    "web-sg":              f"$STUDENT_ID-sg-web-deploy",
 }
 
 INSTANCE_RENAMES = {
-    "web-server-1": "lab-instance-web-1",
-    "web-server-2": "lab-instance-web-2",
-    "web-server-3": "lab-instance-web-3",
+    "web-server-1": f"$STUDENT_ID-instance-web-1",
+    "web-server-2": f"$STUDENT_ID-instance-web-2",
+    "web-server-3": f"$STUDENT_ID-instance-web-3",
 }
 
 VOLUME_RENAMES = {
-    "data-vol-1":    "lab-volume-data-1",
-    "fast-vol-1":    "lab-volume-fast-1",
-    "web-data":      "lab-volume-web-data",
-    "data-volume-1": "lab-volume-data-v1",
-    "data-volume-2": "lab-volume-data-v2",
-    "data-volume-3": "lab-volume-data-v3",
+    "data-vol-1":    f"$STUDENT_ID-volume-data-1",
+    "fast-vol-1":    f"$STUDENT_ID-volume-fast-1",
+    "web-data":      f"$STUDENT_ID-volume-web-data",
+    "data-volume-1": f"$STUDENT_ID-volume-data-v1",
+    "data-volume-2": f"$STUDENT_ID-volume-data-v2",
+    "data-volume-3": f"$STUDENT_ID-volume-data-v3",
 }
 
 # ── Rename helpers ─────────────────────────────────────────────
@@ -182,7 +182,7 @@ rename_subnets(conn, SUBNET_RENAMES)
 rename_security_groups(conn, SG_RENAMES)
 rename_instances(conn, INSTANCE_RENAMES)
 rename_volumes(conn, VOLUME_RENAMES)
-print("Done — all lab resources now use the lab-* prefix.")</code></pre>
+print("Done — all lab resources now use the $STUDENT_ID-* prefix.")</code></pre>
 
       <!-- Section 3 -->
       <h2>3. List Resources by Prefix</h2>
@@ -190,8 +190,8 @@ print("Done — all lab resources now use the lab-* prefix.")</code></pre>
         Before deleting anything, verify that only lab resources are targeted.
       </p>
 
-      <pre><code class="language-python">"""cleanup_list.py — List every resource whose name starts with lab-."""
-PREFIX = "lab-"
+      <pre><code class="language-python">"""cleanup_list.py — List every resource whose name starts with $STUDENT_ID-."""
+PREFIX = f"$STUDENT_ID-"
 
 print("=== Networks ===")
 for net in conn.network.networks():
@@ -226,10 +226,10 @@ for vol in conn.block_storage.volumes():
         and finally networks. The script below handles this automatically.
       </p>
 
-      <pre><code class="language-python">"""cleanup_delete.py — Delete every lab-* resource in safe order."""
+      <pre><code class="language-python">"""cleanup_delete.py — Delete every $STUDENT_ID-* resource in safe order."""
 import time
 
-PREFIX = "lab-"
+PREFIX = f"$STUDENT_ID-"
 
 # ── Step 1: Detach and delete volumes ──────────────────────────
 print("Step 1/5 — Deleting volumes …")
@@ -278,7 +278,7 @@ for net in conn.network.networks():
         print(f"  Deleting network: {net.name}")
         conn.network.delete_network(net.id, ignore_missing=True)
 
-print("\nCleanup complete — all lab-* resources have been removed.")</code></pre>
+print("\nCleanup complete — all $STUDENT_ID-* resources have been removed.")</code></pre>
 
       <!-- Section 5 -->
       <h2>5. Using the DeploymentEngine Cleanup</h2>
@@ -336,7 +336,7 @@ terraform destroy -auto-approve</code></pre>
 
       <h2>Summary</h2>
       <ul>
-        <li>Rename resources to a <strong>lab-*</strong> prefix so they are easy to identify.</li>
+        <li>Rename resources to a <strong>$STUDENT_ID-*</strong> prefix so they are easy to identify.</li>
         <li>Always delete in <strong>reverse dependency order</strong>: volumes → instances → security groups → subnets → networks.</li>
         <li>Use <code>DeploymentEngine.cleanup_resources()</code> when you have resource IDs from a previous deployment.</li>
         <li>For Terraform resources, <code>terraform destroy</code> handles ordering for you.</li>

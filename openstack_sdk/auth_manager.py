@@ -173,6 +173,9 @@ class AuthenticationManager:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith('#'):
+                        # Handle export statements (like "export OS_AUTH_URL=...")
+                        if line.startswith('export '):
+                            line = line[7:]  # Remove 'export ' prefix
                         if '=' in line:
                             key, value = line.split('=', 1)
                             credentials_dict[key.strip()] = value.strip()

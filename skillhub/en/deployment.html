@@ -77,10 +77,10 @@ config = DeploymentConfig(
     project_name="${OS_TENANT_NAME}",
     networks=[
         NetworkSpec(
-            name="app-network",
+            name=f"$STUDENT_ID-app-network",
             subnets=[
                 SubnetSpec(
-                    name="app-subnet",
+                    name=f"$STUDENT_ID-app-subnet",
                     cidr="192.168.1.0/24",
                     dns_nameservers=["8.8.8.8", "8.8.4.4"],
                 )
@@ -89,7 +89,7 @@ config = DeploymentConfig(
     ],
     security_groups=[
         SecurityGroupSpec(
-            name="web-sg",
+            name=f"$STUDENT_ID-web-sg",
             description="Web traffic",
             rules=[
                 SecurityGroupRule(
@@ -105,21 +105,21 @@ config = DeploymentConfig(
     ],
     instances=[
         InstanceSpec(
-            name="web-server",
+            name=f"$STUDENT_ID-web-server",
             flavor="s1-2",
             image="Ubuntu 22.04",
             key_name="my-ssh-key",
             network_ids=[],
-            security_groups=["web-sg"],
+            security_groups=[f"$STUDENT_ID-web-sg"],
             metadata={"role": "web"},
         )
     ],
     volumes=[
         VolumeSpec(
-            name="data-volume",
+            name=f"$STUDENT_ID-data-volume",
             size=100,
             volume_type="classic",
-            attach_to="web-server",
+            attach_to=f"$STUDENT_ID-web-server",
         )
     ],
 )

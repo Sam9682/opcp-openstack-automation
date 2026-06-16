@@ -51,23 +51,26 @@
       </p>
 
       <pre><code class="language-bash"># 1. Authenticate and obtain a token
-TOKEN=$(curl -si -X POST "$OS_AUTH_URL/auth/tokens" \
+TOKEN=$(curl -si --cacert $OS_CACERT -X POST "$OS_AUTH_URL/auth/tokens" \
   -H "Content-Type: application/json" \
   -d '{
-    "auth": {
-      "identity": {
-        "methods": ["application_credential"],
-        "application_credential": {
-          "id": "'"$OS_APPLICATION_CREDENTIAL_ID"'",
-          "secret": "'"$OS_APPLICATION_CREDENTIAL_SECRET"'"
-        }
-      }
-    }
-  }' | grep -i "X-Subject-Token" | awk '{print $2}' | tr -d '\r')
+     "auth": {
+       "identity": {
+         "methods": ["application_credential"],
+         "application_credential": {
+           "id": "'"$OS_APPLICATION_CREDENTIAL_ID"'",
+           "secret": "'"$OS_APPLICATION_CREDENTIAL_SECRET"'"
+         }
+       }
+     }
+   }' 2>/dev/null | sed -n 's/^x-subject-token: *//p' | tr -d '\r')
+ echo "Token: $TOKEN
+
+ You can also use option -k without certificate.
 
 # 2. List servers using the Compute API
-curl -s -H "X-Auth-Token: $TOKEN" \
-  "$NOVA_ENDPOINT/servers" | python3 -m json.tool</code></pre>
+curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers" \
+  | python3 -m json.tool</code></pre>
 
       <p>
         To discover the available service endpoints (the base URLs used in your API
@@ -90,8 +93,7 @@ pip3 install python-openstackclient
 
 # Examples
 openstack server list
-openstack network create my-network
-openstack volume create --size 10 my-volume
+openstack network create $STUDENT_ID-my-network
 openstack endpoint list</code></pre>
 
       <!-- Option C -->
@@ -145,12 +147,12 @@ terraform {
 }
 
 resource "openstack_networking_network_v2" "my_network" {
-  name           = "my-network"
+  name           = "$STUDENT_ID-my-network"
   admin_state_up = true
 }
 
 resource "openstack_compute_instance_v2" "my_instance" {
-  name        = "my-instance"
+  name        = "$STUDENT_ID-my-instance"
   flavor_name = "scale-1"
   image_name  = "Ubuntu 24.04 BMPOD"
 
@@ -176,15 +178,15 @@ ansible-galaxy collection install openstack.cloud</code></pre>
   tasks:
     - name: Create a network
       openstack.cloud.network:
-        name: my-network
+        name: $STUDENT_ID-my-network
         state: present
 
     - name: Create an instance
       openstack.cloud.server:
-        name: my-instance
+        name: $STUDENT_ID-my-instance
         flavor: scale-1
         image: "Ubuntu 24.04 BMPOD"
-        network: my-network
+        network: $STUDENT_ID-my-network
         state: present
         wait: true</code></pre>
 

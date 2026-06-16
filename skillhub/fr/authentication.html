@@ -181,8 +181,13 @@ import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        
 from openstack_sdk.auth_manager import ConnectionManager
+from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Load from a secure file (should have 600 permissions)
+credentials = auth_manager.load_credentials_from_file("credentials.txt")
 
 conn_manager = ConnectionManager(credentials)
 
@@ -200,7 +205,7 @@ with conn_manager as connection:
       </p>
 
       <pre><code class="language-bash"># Create an application credential via the OpenStack CLI
-openstack application credential create my-automation \
+openstack application credential create $STUDENT_ID-my-automation \
   --description "CI/CD pipeline credential" \
   --unrestricted</code></pre>
 
@@ -237,6 +242,7 @@ auth_manager = AuthenticationManager()
 try:
     credentials = auth_manager.load_credentials_from_env()
     connection = auth_manager.authenticate(credentials)
+    print(f"Authentication succeeded: no exception !")
 except AuthenticationError as exc:
     print(f"Authentication failed: {exc}")
     # Handle gracefully — log, alert, or retry</code></pre>

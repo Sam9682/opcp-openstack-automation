@@ -60,11 +60,11 @@ application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
 application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
 
 networks:
-  - name: "private-network"
+  - name: "$STUDENT_ID-private-network"
     admin_state_up: true
     external: false
     subnets:
-      - name: "private-subnet"
+      - name: "$STUDENT_ID-private-subnet"
         cidr: "192.168.1.0/24"
         ip_version: 4
         enable_dhcp: true
@@ -73,7 +73,7 @@ networks:
           - "8.8.4.4"
 
 security_groups:
-  - name: "web-security-group"
+  - name: "$STUDENT_ID-web-security-group"
     description: "Security group for web servers"
     rules:
       - direction: "ingress"
@@ -84,20 +84,20 @@ security_groups:
         ethertype: "IPv4"
 
 instances:
-  - name: "web-server-1"
+  - name: "$STUDENT_ID-web-server-1"
     flavor: "s1-4"
     image: "Ubuntu 22.04"
     key_name: "my-ssh-key"
     network_ids:
-      - "private-network"
+      - "$STUDENT_ID-private-network"
     security_groups:
-      - "web-security-group"
+      - "$STUDENT_ID-web-security-group"
 
 volumes:
-  - name: "data-volume-1"
+  - name: "$STUDENT_ID-data-volume-1"
     size: 100
     volume_type: "classic"
-    attach_to: "web-server-1"</code></pre>
+    attach_to: "$STUDENT_ID-web-server-1"</code></pre>
 
       <!-- Section 2 -->
       <h2>2. Format de configuration JSON</h2>
@@ -114,10 +114,10 @@ volumes:
   "application_credential_secret": "${OS_APPLICATION_CREDENTIAL_SECRET}",
   "networks": [
     {
-      "name": "private-network",
+      "name": "$STUDENT_ID-private-network",
       "subnets": [
         {
-          "name": "private-subnet",
+          "name": "$STUDENT_ID-private-subnet",
           "cidr": "192.168.1.0/24"
         }
       ]
@@ -125,11 +125,11 @@ volumes:
   ],
   "instances": [
     {
-      "name": "web-server-1",
+      "name": "$STUDENT_ID-web-server-1",
       "flavor": "s1-4",
       "image": "Ubuntu 22.04",
       "key_name": "my-ssh-key",
-      "network_ids": ["private-network"]
+      "network_ids": ["$STUDENT_ID-private-network"]
     }
   ]
 }</code></pre>
@@ -170,6 +170,7 @@ export OS_TENANT_NAME="my-project"</code></pre>
       </p>
 
       <pre><code class="language-python">import sys
+import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -177,16 +178,27 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config("tests/config.yaml")
+config = manager.load_config("./config.yaml")
 
 validation = manager.validate_config(config)
 
 if validation.is_valid:
-    print("La configuration est valide !")
+    print("YAML configuration est valide !")
 else:
-    print("Erreurs de validation :")
+    print("YAML validation erreur:")
     for error in validation.errors:
-        print(f"  - {error}")</code></pre>
+        print(f"  - {erreur}")
+
+config = manager.load_config("./config.json")
+
+validation = manager.validate_config(config)
+
+if validation.is_valid:
+    print("JSON configuration est valide !")
+else:
+    print("JSON validation erreur:")
+    for error in validation.errors:
+        print(f"  - {erreurr}")</code></pre>
 
       <p>Les vérifications courantes incluent :</p>
       <ul>

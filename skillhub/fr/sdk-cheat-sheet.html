@@ -98,12 +98,12 @@ conn.close()</code></pre>
 
       <pre><code class="language-python"># Créer un réseau privé + sous-réseau
 network = conn.network.create_network(
-    name="my-network",
+    name=f"$STUDENT_ID-my-network",
     admin_state_up=True,
 )
 
 subnet = conn.network.create_subnet(
-    name="my-subnet",
+    name=f"$STUDENT_ID-my-subnet",
     network_id=network.id,
     cidr="192.168.1.0/24",
     ip_version=4,
@@ -132,7 +132,7 @@ for net in conn.network.networks():
 
       <pre><code class="language-python"># Créer un groupe de sécurité avec règles SSH + HTTP
 sg = conn.network.create_security_group(
-    name="web-sg",
+    name=f"$STUDENT_ID-web-sg",
     description="Autoriser SSH et HTTP",
 )
 
@@ -180,12 +180,12 @@ image  = conn.compute.find_image("Ubuntu 22.04")
 
 # Lancer une instance
 server = conn.compute.create_server(
-    name="my-instance",
+    name=f"$STUDENT_ID-my-instance",
     flavor_id=flavor.id,
     image_id=image.id,
     key_name="my-keypair",
     networks=[{"uuid": network.id}],
-    security_groups=[{"name": "web-sg"}],
+    security_groups=[{"name": f"$STUDENT_ID-web-sg"}],
     metadata={"student_id": "slepetre"},
     user_data="#!/bin/bash\napt update",
 )
@@ -216,7 +216,7 @@ while True:
 
       <pre><code class="language-python"># Créer un volume de 10 Go
 volume = conn.block_storage.create_volume(
-    name="data-vol",
+    name=f"$STUDENT_ID-data-vol",
     size=10,
     volume_type="classic",
 )

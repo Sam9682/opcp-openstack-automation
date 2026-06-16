@@ -87,12 +87,12 @@ provider "openstack" {
 
 resource "openstack_networking_network_v2" "net_gra" {
   provider = openstack.gra7
-  name     = "app-network-gra"
+  name     = "$STUDENT_ID-app-network-gra"
 }
 
 resource "openstack_networking_network_v2" "net_sbg" {
   provider = openstack.sbg5
-  name     = "app-network-sbg"
+  name     = "$STUDENT_ID-app-network-sbg"
 }</code></pre>
 
       <!-- Section 2 -->
