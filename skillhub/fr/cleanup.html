@@ -322,13 +322,16 @@ for resource, success in results.items():
       </p>
 
       <pre><code class="language-bash">cd terraform
-terraform destroy -auto-approve</code></pre>
+terraform destroy -auto-approve
+# Ou, avec OpenTofu :
+tofu destroy -auto-approve</code></pre>
 
       <p>
         Vérifiez que l'état est vide ensuite :
       </p>
 
       <pre><code class="language-bash">terraform state list
+# Ou : tofu state list
 # Ne devrait rien retourner</code></pre>
 
       <h2>Résumé</h2>
@@ -336,7 +339,7 @@ terraform destroy -auto-approve</code></pre>
         <li>Renommez les ressources avec un préfixe <strong>$STUDENT_ID-*</strong> pour les identifier facilement.</li>
         <li>Supprimez toujours dans l'<strong>ordre inverse des dépendances</strong> : volumes → instances → groupes de sécurité → sous-réseaux → réseaux.</li>
         <li>Utilisez <code>DeploymentEngine.cleanup_resources()</code> quand vous avez les IDs de ressources d'un déploiement précédent.</li>
-        <li>Pour les ressources Terraform, <code>terraform destroy</code> gère l'ordre pour vous.</li>
+        <li>Pour les ressources Terraform, <code>terraform destroy</code> (ou <code>tofu destroy</code>) gère l'ordre pour vous.</li>
       </ul>
 
       <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">

@@ -50,6 +50,8 @@
         A single <code>deploy_infrastructure()</code> call creates all resources in
         dependency order: networks first, then security groups, then instances, and
         finally volumes attached to those instances.
+        You can use environment variables to set INSTANCE_FLAVOR & INSTANCE_IMAGE.
+        You also have to create a ssh key named 'opcp-openstack-automation-ssh-key' (use "ssh-keygen -f opcp-openstack-automation-ssh-key")
       </p>
 
       <pre><code class="language-python">
@@ -59,28 +61,81 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.deployment_engine import DeploymentEngine
 from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.network_manager import NetworkManager
 from config.models import (
     DeploymentConfig, NetworkSpec, SubnetSpec,
     SecurityGroupSpec, SecurityGroupRule,
     InstanceSpec, VolumeSpec,
 )
 
-auth_mgr = AuthenticationManager()
-credentials = auth_mgr.load_credentials_from_env()
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
+
+connection = auth_manager.authenticate(credentials)
+
+network = NetworkManager(connection)
+
+# Get the network ID by name instead of using the name directly
+student_id = os.environ.get('STUDENT_ID', 'default-student')
+network_name = student_id + "-app-network"
+network_obj = network.get_network_by_name(network_name)
+if not network_obj:
+    # Try to find any network that contains "app-network" to be more flexible
+    print(f"Network '{network_name}' not found. Looking for similar networks...")
+    all_networks = network.list_networks()
+    app_networks = [net for net in all_networks if "app-network" in net.name]
+    if app_networks:
+        network_obj = app_networks[0]  # Use the first one found
+        print(f"Using network: {network_obj.name}")
+    else:
+        raise Exception(f"Network '{network_name}' not found and no app-network found")
+
+# Check if SSH keypair exists, if not create it
+key_name = "opcp-openstack-automation-ssh-key"
+try:
+    # Try to get the keypair to see if it exists
+    keypair = connection.compute.get_keypair(key_name)
+    print(f"Keypair '{key_name}' already exists")
+except Exception:
+    # KeyPair doesn't exist, so create it
+    print(f"Creating keypair '{key_name}'...")
+    try:
+        # Read public key from file
+        pub_key_path = "./opcp-openstack-automation-ssh-key.pub"
+        if os.path.exists(pub_key_path):
+            with open(pub_key_path, 'r') as f:
+                public_key = f.read().strip()
+
+            # Create the keypair
+            keypair = connection.compute.create_keypair(
+                name=key_name,
+                public_key=public_key
+            )
+            print(f"Created keypair '{key_name}' successfully")
+        else:
+            print(f"Warning: Public key file '{pub_key_path}' not found. "
+                  f"Instance will be created without SSH keypair.")
+    except Exception as e:
+        print(f"Warning: Could not create keypair '{key_name}': {e}. "
+              f"Instance will be created without SSH keypair.")
+
+# Cloud-init user data script for first boot
+user_data_script = """#!/bin/bash
+apt-get update
+apt-get install -y nginx
+systemctl enable nginx
+systemctl start nginx
+"""
 
 config = DeploymentConfig(
-    auth_url="${OS_AUTH_URL}",
-    username="${OS_USERNAME}",
-    password="${OS_PASSWORD}",
-    tenant_name="${OS_TENANT_NAME}",
-    region="${OS_REGION_NAME}",
-    project_name="${OS_TENANT_NAME}",
     networks=[
         NetworkSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network",
+            name=student_id + "-app-network",
             subnets=[
                 SubnetSpec(
-                    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-app-subnet",
+                    name=student_id + "-app-subnet",
                     cidr="192.168.1.0/24",
                     dns_nameservers=["8.8.8.8", "8.8.4.4"],
                 )
@@ -89,7 +144,7 @@ config = DeploymentConfig(
     ],
     security_groups=[
         SecurityGroupSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg",
+            name=student_id + "-web-sg",
             description="Web traffic",
             rules=[
                 SecurityGroupRule(
@@ -105,20 +160,22 @@ config = DeploymentConfig(
     ],
     instances=[
         InstanceSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
-            flavor="s1-2",
-            image="Debian 12 LVM OPCP",
-            key_name="opcp-openstack-automation-ssh-key
-            security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg"],
-            metadata={"role": "web"},
+            name=student_id + "-web-server",
+            flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+            image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
+            key_name=key_name,
+            network_ids=[network_obj.id],
+            security_groups=[student_id + "-web-sg"],
+            user_data=user_data_script,
+            metadata={"role": "web", "env": "production", "owner": "platform-team"},
         )
     ],
     volumes=[
         VolumeSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-data-volume",
+            name=student_id + "-data-volume",
             size=100,
             volume_type="classic",
-            attach_to=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
+            attach_to=student_id + "-web-server",
         )
     ],
 )
@@ -137,7 +194,120 @@ else:
         print(f"  {f.resource_type}: {f.error_message}")</code></pre>
 
       <!-- Section 2 -->
-      <h2>2. Deployment Tracking</h2>
+      <h2>2. Flavor and Image Validation</h2>
+      <p>
+        Before sending a create request the engine verifies that the requested
+        flavor and image exist in the OVHcloud catalog. Results are cached to reduce
+        API calls.
+      </p>
+
+      <pre><code class="language-python"># Common OVHcloud flavors
+openstack flavor list
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+| ID                                   | Name        |    RAM | Disk | Ephemeral | VCPUs | Is Public |
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+| 0f6c5acb-f221-47fe-a848-012345678901 | scale-1     |    128 | 2000 |         0 |    24 | True      |
+| 10b9c6fc-883f-462f-8375-012345678901 | gpu         |    400 |  900 |         0 |   128 | True      |
+| 2c6cb207-ce88-4a02-9afb-012345678901 | scale-3     |    256 | 4000 |         0 |    48 | True      |
+| 30b24852-d84d-4dad-808e-012345678901 | proxmox-lab | 131072 | 1024 |         0 |    64 | True      |
+| aae00b73-85ff-4f7c-a51d-012345678901 | hsm         |    512 | 4000 |         0 |   128 | True      |
+| c1cfc9f1-d0a0-444f-b3f6-012345678901 | scale-2     |    256 | 4000 |         0 |    32 | True      |
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+
+# Common images
+openstack image list
++--------------------------------------+------------------------+--------+
+| ID                                   | Name                   | Status |
++--------------------------------------+------------------------+--------+
+| c9d1b60e-42f5-490f-b6f6-012345678901 | CentOS 9 OPCP          | active |
+| ae8e057f-ef2d-40fc-898c-012345678901 | Debian 12 LVM OPCP     | active |
+| c2a00639-0cf0-4913-830e-012345678901 | Debian 13 Cloud VM     | active |
+| ccd53d11-3652-4e84-b4db-012345678901 | harvester1.7.1         | active |
+| 41fa9ca2-aead-4736-83c1-012345678901 | harvester1.8.0         | active |
+| 61db2a19-71eb-4256-b6c1-012345678901 | ironic-agent.initramfs | active |
+| 0b59e8c9-0a06-4b1c-acb6-012345678901 | ironic-agent.kernel    | active |
+| c7770ed8-cb60-4974-9b07-012345678901 | proxmox-ve-9.2         | active |
++--------------------------------------+------------------------+--------+
+</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Key Pair Creation</h2>
+      <p>
+        Before deploying instances, you need an SSH key pair registered in OpenStack.
+        The script checks if the keypair already exists and creates it from a local
+        public key file if needed. Generate a key with:
+        <code>ssh-keygen -f opcp-openstack-automation-ssh-key</code>
+      </p>
+
+      <pre><code class="language-python"># Check if SSH keypair exists, if not create it
+key_name = "opcp-openstack-automation-ssh-key"
+try:
+    keypair = connection.compute.get_keypair(key_name)
+    print(f"Keypair '{key_name}' already exists")
+except Exception:
+    print(f"Creating keypair '{key_name}'...")
+    pub_key_path = "./opcp-openstack-automation-ssh-key.pub"
+    if os.path.exists(pub_key_path):
+        with open(pub_key_path, 'r') as f:
+            public_key = f.read().strip()
+
+        keypair = connection.compute.create_keypair(
+            name=key_name,
+            public_key=public_key
+        )
+        print(f"Created keypair '{key_name}' successfully")
+    else:
+        print(f"Public key file '{pub_key_path}' not found.")
+        print("Generate one with: ssh-keygen -f opcp-openstack-automation-ssh-key")</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. User Data Injection</h2>
+      <p>
+        Cloud-init scripts passed via <code>user_data</code> run on first boot. Use
+        them to install packages, start services, or configure the instance.
+      </p>
+
+      <pre><code class="language-python">user_data_script = """#!/bin/bash
+apt-get update
+apt-get install -y nginx
+systemctl enable nginx
+systemctl start nginx
+"""
+
+# user_data is passed directly in the InstanceSpec
+spec = InstanceSpec(
+    name=student_id + "-nginx-host",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
+    key_name=key_name,
+    network_ids=[network_obj.id],
+    security_groups=[student_id + "-web-sg"],
+    user_data=user_data_script,
+    metadata={"role": "web"},
+)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Metadata</h2>
+      <p>
+        Attach arbitrary key-value metadata to instances for tagging, cost
+        allocation, or automation hooks.
+      </p>
+
+      <pre><code class="language-python">spec = InstanceSpec(
+    name=student_id + "-tagged-instance",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
+    key_name=key_name,
+    network_ids=[network_obj.id],
+    metadata={
+        "project": "web-app",
+        "environment": "staging",
+        "owner": "platform-team",
+    },
+)</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Deployment Tracking</h2>
       <p>
         Every deployment receives a unique <code>deployment_id</code>. The result
         object contains created resource IDs, failed resources, duration, and any
@@ -152,8 +322,8 @@ with open("deployment_id.txt", "w") as f:
 print(result.created_resources)
 # {'networks': ['net-abc'], 'instances': ['srv-123'], ...}</code></pre>
 
-      <!-- Section 3 -->
-      <h2>3. Automatic Rollback</h2>
+      <!-- Section 7 -->
+      <h2>7. Automatic Rollback</h2>
       <p>
         If any resource fails to create, the engine automatically rolls back all
         previously created resources in reverse dependency order. This prevents
@@ -172,8 +342,8 @@ try:
 except DeploymentError as exc:
     print(f"Deployment error: {exc}")</code></pre>
 
-      <!-- Section 4 -->
-      <h2>4. Manual Cleanup</h2>
+      <!-- Section 8 -->
+      <h2>8. Manual Cleanup</h2>
       <p>
         You can also clean up specific resources by type and ID.
       </p>
@@ -190,8 +360,8 @@ for key, success in results.items():
     status = "ok" if success else "FAILED"
     print(f"  {key}: {status}")</code></pre>
 
-      <!-- Section 5 -->
-      <h2>5. Rate Limiting</h2>
+      <!-- Section 9 -->
+      <h2>9. Rate Limiting</h2>
       <p>
         The engine uses exponential backoff when the OpenStack API returns rate-limit
         errors (HTTP 429). This ensures deployments complete even under heavy API
@@ -210,6 +380,11 @@ for key, success in results.items():
 
       <h2>Summary</h2>
       <ul>
+        <li>Authentication uses <strong>application credentials</strong> loaded from environment variables.</li>
+        <li>The engine validates <strong>flavors and images</strong> against the OVHcloud catalog before creation.</li>
+        <li><strong>SSH key pairs</strong> are checked and created automatically from a local public key file.</li>
+        <li>Inject <strong>cloud-init scripts</strong> via <code>user_data</code> for first-boot automation.</li>
+        <li>Attach <strong>metadata</strong> for tagging and cost tracking.</li>
         <li>The engine deploys resources in <strong>dependency order</strong>: networks → security groups → instances → volumes.</li>
         <li>Every deployment gets a unique <strong>deployment_id</strong> for tracking.</li>
         <li>On failure, <strong>automatic rollback</strong> removes previously created resources.</li>

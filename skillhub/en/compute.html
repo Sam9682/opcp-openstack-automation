@@ -265,7 +265,11 @@ compute.delete_instance("instance-id")</code></pre>
 cd terraform
 terraform init
 terraform plan -var="instance_count=2"
-terraform apply -auto-approve</code></pre>
+terraform apply -auto-approve
+# Or, with OpenTofu:
+tofu init
+tofu plan -var="instance_count=2"
+tofu apply -auto-approve</code></pre>
 
       <h2>Summary</h2>
       <ul>

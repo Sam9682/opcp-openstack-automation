@@ -121,13 +121,13 @@ validate:
 plan:
   script:
     - cd terraform
-    - terraform init
-    - terraform plan -out=tfplan
+    - terraform init    # Or: tofu init
+    - terraform plan -out=tfplan    # Or: tofu plan -out=tfplan
 
 deploy:
   script:
     - cd terraform
-    - terraform apply tfplan
+    - terraform apply tfplan    # Or: tofu apply tfplan
   when: manual</code></pre>
 
       <pre><code class="language-bash"># Environment variables for the pipeline
@@ -253,7 +253,7 @@ def web_stack(name, instance_count=2, volume_size=100):
           <tr>
             <td>Rollback</td>
             <td>Custom (DeploymentEngine)</td>
-            <td>terraform destroy</td>
+            <td>terraform destroy / tofu destroy</td>
             <td>Manual / playbook</td>
           </tr>
           <tr>
@@ -272,6 +272,8 @@ python tests/deploy_example.py
 
 # Terraform
 cd terraform &amp;&amp; terraform apply -auto-approve
+# Or, with OpenTofu:
+cd terraform &amp;&amp; tofu apply -auto-approve
 
 # Ansible (when playbooks are ready)
 ansible-playbook ansible/playbook.yml -e @vars.yml</code></pre>

@@ -325,13 +325,16 @@ for resource, success in results.items():
       </p>
 
       <pre><code class="language-bash">cd terraform
-terraform destroy -auto-approve</code></pre>
+terraform destroy -auto-approve
+# Or, with OpenTofu:
+tofu destroy -auto-approve</code></pre>
 
       <p>
         Verify the state is empty afterwards:
       </p>
 
       <pre><code class="language-bash">terraform state list
+# Or: tofu state list
 # Should return nothing</code></pre>
 
       <h2>Summary</h2>
@@ -339,7 +342,7 @@ terraform destroy -auto-approve</code></pre>
         <li>Rename resources to a <strong>{PREFIX}-*</strong> prefix so they are easy to identify.</li>
         <li>Always delete in <strong>reverse dependency order</strong>: volumes → instances → security groups → subnets → networks.</li>
         <li>Use <code>DeploymentEngine.cleanup_resources()</code> when you have resource IDs from a previous deployment.</li>
-        <li>For Terraform resources, <code>terraform destroy</code> handles ordering for you.</li>
+        <li>For Terraform resources, <code>terraform destroy</code> (or <code>tofu destroy</code>) handles ordering for you.</li>
       </ul>
 
       <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">

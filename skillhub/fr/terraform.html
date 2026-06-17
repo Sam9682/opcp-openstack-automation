@@ -61,7 +61,9 @@
 
       <pre><code class="language-bash"># Initialiser le fournisseur
 cd terraform
-terraform init</code></pre>
+terraform init
+# Ou, avec OpenTofu :
+tofu init</code></pre>
 
       <!-- Section 2 -->
       <h2>2. Ressources réseau</h2>
@@ -171,7 +173,7 @@ variable "instance_flavor" {
       <h2>6. Sorties (Outputs)</h2>
       <p>
         Les sorties exposent les attributs clés des ressources après
-        <code>terraform apply</code>.
+        <code>terraform apply</code> (ou <code>tofu apply</code>).
       </p>
 
       <pre><code class="language-hcl">output "network_id" {
@@ -202,15 +204,19 @@ output "deployment_summary" {
 
       <pre><code class="language-bash"># Plan — prévisualiser les changements sans les appliquer
 terraform plan -var-file="terraform.tfvars"
+# Ou : tofu plan -var-file="terraform.tfvars"
 
 # Apply — créer / mettre à jour les ressources
 terraform apply -auto-approve
+# Ou : tofu apply -auto-approve
 
 # Destroy — tout supprimer
 terraform destroy -auto-approve
+# Ou : tofu destroy -auto-approve
 
 # Afficher l'état actuel
-terraform show</code></pre>
+terraform show
+# Ou : tofu show</code></pre>
 
       <pre><code class="language-hcl"># terraform.tfvars — valeurs des variables
 auth_url                      = "${OS_AUTH_URL}"

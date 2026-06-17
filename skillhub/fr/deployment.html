@@ -52,6 +52,8 @@
         ressources dans l'ordre des dépendances : d'abord les réseaux, puis les
         groupes de sécurité, ensuite les instances, et enfin les volumes attachés
         à ces instances.
+        Vous pouvez définir les variables d'environnement INSTANCE_FLAVOR & INSTANCE_IMAGE.
+        Vous devez également générer une clé ssh appelée 'opcp-openstack-automation-ssh-key' (utilisez "ssh-keygen -f opcp-openstack-automation-ssh-key")
       </p>
 
       <pre><code class="language-python">
@@ -59,31 +61,83 @@ import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from openstack_sdk.deployment_engine import DeploymentEngine
 from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.network_manager import NetworkManager
 from config.models import (
     DeploymentConfig, NetworkSpec, SubnetSpec,
     SecurityGroupSpec, SecurityGroupRule,
     InstanceSpec, VolumeSpec,
 )
 
-auth_mgr = AuthenticationManager()
-credentials = auth_mgr.load_credentials_from_env()
+# Les variables d'environnement sont chargées automatiquement lorsque
+# OS_APPLICATION_CREDENTIAL_ID et OS_APPLICATION_CREDENTIAL_SECRET sont définies
+auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
+
+connection = auth_manager.authenticate(credentials)
+
+network = NetworkManager(connection)
+
+# Récupérer l'ID du réseau par nom au lieu d'utiliser le nom directement
+student_id = os.environ.get('STUDENT_ID', 'default-student')
+network_name = student_id + "-app-network"
+network_obj = network.get_network_by_name(network_name)
+if not network_obj:
+    # Essayer de trouver un réseau contenant "app-network" pour plus de flexibilité
+    print(f"Réseau '{network_name}' non trouvé. Recherche de réseaux similaires...")
+    all_networks = network.list_networks()
+    app_networks = [net for net in all_networks if "app-network" in net.name]
+    if app_networks:
+        network_obj = app_networks[0]  # Utiliser le premier trouvé
+        print(f"Utilisation du réseau : {network_obj.name}")
+    else:
+        raise Exception(f"Réseau '{network_name}' non trouvé et aucun app-network disponible")
+
+# Vérifier si la paire de clés SSH existe, sinon la créer
+key_name = "opcp-openstack-automation-ssh-key"
+try:
+    # Essayer de récupérer la paire de clés pour voir si elle existe
+    keypair = connection.compute.get_keypair(key_name)
+    print(f"La paire de clés '{key_name}' existe déjà")
+except Exception:
+    # La paire de clés n'existe pas, la créer
+    print(f"Création de la paire de clés '{key_name}'...")
+    try:
+        # Lire la clé publique depuis le fichier
+        pub_key_path = "./opcp-openstack-automation-ssh-key.pub"
+        if os.path.exists(pub_key_path):
+            with open(pub_key_path, 'r') as f:
+                public_key = f.read().strip()
+
+            # Créer la paire de clés
+            keypair = connection.compute.create_keypair(
+                name=key_name,
+                public_key=public_key
+            )
+            print(f"Paire de clés '{key_name}' créée avec succès")
+        else:
+            print(f"Attention : fichier de clé publique '{pub_key_path}' non trouvé. "
+                  f"L'instance sera créée sans paire de clés SSH.")
+    except Exception as e:
+        print(f"Attention : impossible de créer la paire de clés '{key_name}' : {e}. "
+              f"L'instance sera créée sans paire de clés SSH.")
+
+# Script cloud-init user data pour le premier démarrage
+user_data_script = """#!/bin/bash
+apt-get update
+apt-get install -y nginx
+systemctl enable nginx
+systemctl start nginx
+"""
 
 config = DeploymentConfig(
-    auth_url="${OS_AUTH_URL}",
-    username="${OS_USERNAME}",
-    password="${OS_PASSWORD}",
-    tenant_name="${OS_TENANT_NAME}",
-    region="${OS_REGION_NAME}",
-    project_name="${OS_TENANT_NAME}",
     networks=[
         NetworkSpec(
-            name= str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network",
+            name=student_id + "-app-network",
             subnets=[
                 SubnetSpec(
-                    name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-app-subnet",
+                    name=student_id + "-app-subnet",
                     cidr="192.168.1.0/24",
                     dns_nameservers=["8.8.8.8", "8.8.4.4"],
                 )
@@ -92,7 +146,7 @@ config = DeploymentConfig(
     ],
     security_groups=[
         SecurityGroupSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg",
+            name=student_id + "-web-sg",
             description="Trafic web",
             rules=[
                 SecurityGroupRule(
@@ -108,21 +162,22 @@ config = DeploymentConfig(
     ],
     instances=[
         InstanceSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
-            flavor="s1-2",
-            image="Debian 12 LVM OPCP",
-            key_name="opcp-openstack-automation-ssh-key",
-            network_ids=[],
-            security_groups=[str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-sg"],
-            metadata={"role": "web"},
+            name=student_id + "-web-server",
+            flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+            image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
+            key_name=key_name,
+            network_ids=[network_obj.id],
+            security_groups=[student_id + "-web-sg"],
+            user_data=user_data_script,
+            metadata={"role": "web", "env": "production", "owner": "platform-team"},
         )
     ],
     volumes=[
         VolumeSpec(
-            name=str(os.environ.get('STUDENT_ID', 'default-student')) +"-data-volume",
+            name=student_id + "-data-volume",
             size=100,
             volume_type="classic",
-            attach_to=str(os.environ.get('STUDENT_ID', 'default-student')) +"-web-server",
+            attach_to=student_id + "-web-server",
         )
     ],
 )
@@ -141,7 +196,121 @@ else:
         print(f"  {f.resource_type} : {f.error_message}")</code></pre>
 
       <!-- Section 2 -->
-      <h2>2. Suivi des déploiements</h2>
+      <h2>2. Validation des flavors et images</h2>
+      <p>
+        Avant d'envoyer une requête de création, le moteur vérifie que le flavor
+        et l'image demandés existent dans le catalogue OVHcloud. Les résultats sont
+        mis en cache pour réduire les appels API.
+      </p>
+
+      <pre><code class="language-python"># Flavors OVHcloud courants
+openstack flavor list
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+| ID                                   | Name        |    RAM | Disk | Ephemeral | VCPUs | Is Public |
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+| 0f6c5acb-f221-47fe-a848-012345678901 | scale-1     |    128 | 2000 |         0 |    24 | True      |
+| 10b9c6fc-883f-462f-8375-012345678901 | gpu         |    400 |  900 |         0 |   128 | True      |
+| 2c6cb207-ce88-4a02-9afb-012345678901 | scale-3     |    256 | 4000 |         0 |    48 | True      |
+| 30b24852-d84d-4dad-808e-012345678901 | proxmox-lab | 131072 | 1024 |         0 |    64 | True      |
+| aae00b73-85ff-4f7c-a51d-012345678901 | hsm         |    512 | 4000 |         0 |   128 | True      |
+| c1cfc9f1-d0a0-444f-b3f6-012345678901 | scale-2     |    256 | 4000 |         0 |    32 | True      |
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+
+# Images courantes
+openstack image list
++--------------------------------------+------------------------+--------+
+| ID                                   | Name                   | Status |
++--------------------------------------+------------------------+--------+
+| c9d1b60e-42f5-490f-b6f6-012345678901 | CentOS 9 OPCP          | active |
+| ae8e057f-ef2d-40fc-898c-012345678901 | Debian 12 LVM OPCP     | active |
+| c2a00639-0cf0-4913-830e-012345678901 | Debian 13 Cloud VM     | active |
+| ccd53d11-3652-4e84-b4db-012345678901 | harvester1.7.1         | active |
+| 41fa9ca2-aead-4736-83c1-012345678901 | harvester1.8.0         | active |
+| 61db2a19-71eb-4256-b6c1-012345678901 | ironic-agent.initramfs | active |
+| 0b59e8c9-0a06-4b1c-acb6-012345678901 | ironic-agent.kernel    | active |
+| c7770ed8-cb60-4974-9b07-012345678901 | proxmox-ve-9.2         | active |
++--------------------------------------+------------------------+--------+
+</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Création de paire de clés</h2>
+      <p>
+        Avant de déployer des instances, vous devez enregistrer une paire de clés SSH
+        dans OpenStack. Le script vérifie si la paire de clés existe déjà et la crée
+        à partir d'un fichier de clé publique local si nécessaire. Générez une clé avec :
+        <code>ssh-keygen -f opcp-openstack-automation-ssh-key</code>
+      </p>
+
+      <pre><code class="language-python"># Vérifier si la paire de clés SSH existe, sinon la créer
+key_name = "opcp-openstack-automation-ssh-key"
+try:
+    keypair = connection.compute.get_keypair(key_name)
+    print(f"La paire de clés '{key_name}' existe déjà")
+except Exception:
+    print(f"Création de la paire de clés '{key_name}'...")
+    pub_key_path = "./opcp-openstack-automation-ssh-key.pub"
+    if os.path.exists(pub_key_path):
+        with open(pub_key_path, 'r') as f:
+            public_key = f.read().strip()
+
+        keypair = connection.compute.create_keypair(
+            name=key_name,
+            public_key=public_key
+        )
+        print(f"Paire de clés '{key_name}' créée avec succès")
+    else:
+        print(f"Fichier de clé publique '{pub_key_path}' non trouvé.")
+        print("Générez-en une avec : ssh-keygen -f opcp-openstack-automation-ssh-key")</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Injection de user-data</h2>
+      <p>
+        Les scripts cloud-init passés via <code>user_data</code> s'exécutent au
+        premier démarrage. Utilisez-les pour installer des paquets, démarrer des
+        services ou configurer l'instance.
+      </p>
+
+      <pre><code class="language-python">user_data_script = """#!/bin/bash
+apt-get update
+apt-get install -y nginx
+systemctl enable nginx
+systemctl start nginx
+"""
+
+# user_data est passé directement dans l'InstanceSpec
+spec = InstanceSpec(
+    name=student_id + "-nginx-host",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
+    key_name=key_name,
+    network_ids=[network_obj.id],
+    security_groups=[student_id + "-web-sg"],
+    user_data=user_data_script,
+    metadata={"role": "web"},
+)</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Métadonnées</h2>
+      <p>
+        Attachez des métadonnées clé-valeur arbitraires aux instances pour le
+        marquage, l'allocation des coûts ou les hooks d'automatisation.
+      </p>
+
+      <pre><code class="language-python">spec = InstanceSpec(
+    name=student_id + "-tagged-instance",
+    flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
+    image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
+    key_name=key_name,
+    network_ids=[network_obj.id],
+    metadata={
+        "project": "web-app",
+        "environment": "staging",
+        "owner": "platform-team",
+    },
+)</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Suivi des déploiements</h2>
       <p>
         Chaque déploiement reçoit un <code>deployment_id</code> unique. L'objet
         résultat contient les IDs des ressources créées, les ressources en échec,
@@ -157,8 +326,8 @@ with open("deployment_id.txt", "w") as f:
 print(result.created_resources)
 # {'networks': ['net-abc'], 'instances': ['srv-123'], ...}</code></pre>
 
-      <!-- Section 3 -->
-      <h2>3. Rollback automatique</h2>
+      <!-- Section 7 -->
+      <h2>7. Rollback automatique</h2>
       <p>
         Si la création d'une ressource échoue, le moteur effectue automatiquement
         un rollback de toutes les ressources précédemment créées dans l'ordre
@@ -177,8 +346,8 @@ try:
 except DeploymentError as exc:
     print(f"Erreur de déploiement : {exc}")</code></pre>
 
-      <!-- Section 4 -->
-      <h2>4. Nettoyage manuel</h2>
+      <!-- Section 8 -->
+      <h2>8. Nettoyage manuel</h2>
       <p>
         Vous pouvez également nettoyer des ressources spécifiques par type et ID.
       </p>
@@ -195,8 +364,8 @@ for key, success in results.items():
     status = "ok" if success else "ÉCHOUÉ"
     print(f"  {key} : {status}")</code></pre>
 
-      <!-- Section 5 -->
-      <h2>5. Limitation de débit</h2>
+      <!-- Section 9 -->
+      <h2>9. Limitation de débit</h2>
       <p>
         Le moteur utilise un backoff exponentiel lorsque l'API OpenStack retourne
         des erreurs de limitation de débit (HTTP 429). Cela garantit que les
@@ -216,6 +385,11 @@ for key, success in results.items():
 
       <h2>Résumé</h2>
       <ul>
+        <li>L'authentification utilise des <strong>identifiants d'application</strong> chargés depuis les variables d'environnement.</li>
+        <li>Le moteur valide les <strong>flavors et images</strong> par rapport au catalogue OVHcloud avant la création.</li>
+        <li>Les <strong>paires de clés SSH</strong> sont vérifiées et créées automatiquement depuis un fichier de clé publique local.</li>
+        <li>Injectez des <strong>scripts cloud-init</strong> via <code>user_data</code> pour l'automatisation au premier démarrage.</li>
+        <li>Attachez des <strong>métadonnées</strong> pour le marquage et le suivi des coûts.</li>
         <li>Le moteur déploie les ressources dans l'<strong>ordre des dépendances</strong> : réseaux → groupes de sécurité → instances → volumes.</li>
         <li>Chaque déploiement reçoit un <strong>deployment_id</strong> unique pour le suivi.</li>
         <li>En cas d'échec, le <strong>rollback automatique</strong> supprime les ressources précédemment créées.</li>

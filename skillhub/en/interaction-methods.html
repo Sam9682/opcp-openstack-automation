@@ -133,7 +133,11 @@ for service in conn.identity.services():
       <pre><code class="language-bash"># Initialize and apply a Terraform configuration
 terraform init
 terraform plan
-terraform apply</code></pre>
+terraform apply
+# Or, with OpenTofu:
+tofu init
+tofu plan
+tofu apply</code></pre>
 
       <p>Example <code>main.tf</code>:</p>
 
