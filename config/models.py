@@ -58,7 +58,7 @@ class VolumeSpec:
 class InstanceSpec:
     """Instance specification."""
     name: str
-    flavor: str  # e.g., "s1-2", "scale-1", "s1-8"
+    flavor: str  # e.g., "scale-1", "scale-2"
     image: str  # e.g., "Debian 12 LVM OPCP", "Debian 11"
     key_name: str  # SSH key name
     network_ids: List[str] = field(default_factory=list)

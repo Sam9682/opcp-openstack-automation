@@ -343,8 +343,8 @@ class TestComputeManager:
         # Create instance spec without optional fields
         instance_spec = InstanceSpec(
             name="minimal-instance",
-            flavor="s1-2",
-            image="Debian 11",
+            flavor="scale-1",
+            image="Debian 12 LVM OPCP",
             key_name="opcp-openstack-automation-ssh-key",
             network_ids=["net-123"]
         )

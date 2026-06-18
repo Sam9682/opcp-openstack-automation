@@ -57,8 +57,10 @@
       </p>
 
       <pre><code class="language-python">
+
 import sys
 import os
+import base64
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.deployment_engine import DeploymentEngine
@@ -70,8 +72,8 @@ from config.models import (
     InstanceSpec, VolumeSpec,
 )
 
-# Les variables d'environnement sont chargées automatiquement lorsque
-# OS_APPLICATION_CREDENTIAL_ID et OS_APPLICATION_CREDENTIAL_SECRET sont définies
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
 auth_manager = AuthenticationManager()
 credentials = auth_manager.load_credentials_from_env()
 
@@ -79,51 +81,51 @@ connection = auth_manager.authenticate(credentials)
 
 network = NetworkManager(connection)
 
-# Récupérer l'ID du réseau par nom au lieu d'utiliser le nom directement
+# Get the network ID by name instead of using the name directly
 student_id = os.environ.get('STUDENT_ID', 'default-student')
 network_name = student_id + "-app-network"
 network_obj = network.get_network_by_name(network_name)
 if not network_obj:
-    # Essayer de trouver un réseau contenant "app-network" pour plus de flexibilité
-    print(f"Réseau '{network_name}' non trouvé. Recherche de réseaux similaires...")
+    # Try to find any network that contains "app-network" to be more flexible
+    print(f"Network '{network_name}' not found. Looking for similar networks...")
     all_networks = network.list_networks()
     app_networks = [net for net in all_networks if "app-network" in net.name]
     if app_networks:
-        network_obj = app_networks[0]  # Utiliser le premier trouvé
-        print(f"Utilisation du réseau : {network_obj.name}")
+        network_obj = app_networks[0]  # Use the first one found
+        print(f"Using network: {network_obj.name}")
     else:
-        raise Exception(f"Réseau '{network_name}' non trouvé et aucun app-network disponible")
+        raise Exception(f"Network '{network_name}' not found and no app-network found")
 
-# Vérifier si la paire de clés SSH existe, sinon la créer
+# Check if SSH keypair exists, if not create it
 key_name = "opcp-openstack-automation-ssh-key"
 try:
-    # Essayer de récupérer la paire de clés pour voir si elle existe
+    # Try to get the keypair to see if it exists
     keypair = connection.compute.get_keypair(key_name)
-    print(f"La paire de clés '{key_name}' existe déjà")
+    print(f"Keypair '{key_name}' already exists")
 except Exception:
-    # La paire de clés n'existe pas, la créer
-    print(f"Création de la paire de clés '{key_name}'...")
+    # KeyPair doesn't exist, so create it
+    print(f"Creating keypair '{key_name}'...")
     try:
-        # Lire la clé publique depuis le fichier
+        # Read public key from file
         pub_key_path = "./opcp-openstack-automation-ssh-key.pub"
         if os.path.exists(pub_key_path):
             with open(pub_key_path, 'r') as f:
                 public_key = f.read().strip()
 
-            # Créer la paire de clés
+            # Create the keypair
             keypair = connection.compute.create_keypair(
                 name=key_name,
                 public_key=public_key
             )
-            print(f"Paire de clés '{key_name}' créée avec succès")
+            print(f"Created keypair '{key_name}' successfully")
         else:
-            print(f"Attention : fichier de clé publique '{pub_key_path}' non trouvé. "
-                  f"L'instance sera créée sans paire de clés SSH.")
+            print(f"Warning: Public key file '{pub_key_path}' not found. "
+                  f"Instance will be created without SSH keypair.")
     except Exception as e:
-        print(f"Attention : impossible de créer la paire de clés '{key_name}' : {e}. "
-              f"L'instance sera créée sans paire de clés SSH.")
+        print(f"Warning: Could not create keypair '{key_name}': {e}. "
+              f"Instance will be created without SSH keypair.")
 
-# Script cloud-init user data pour le premier démarrage
+# Cloud-init user data script for first boot
 user_data_script = """#!/bin/bash
 apt-get update
 apt-get install -y nginx
@@ -131,7 +133,17 @@ systemctl enable nginx
 systemctl start nginx
 """
 
+# Base64 encode the user data script as required by OpenStack
+user_data_b64 = base64.b64encode(user_data_script.encode('utf-8')).decode('utf-8')
+
 config = DeploymentConfig(
+    auth_url=credentials.auth_url,
+    username=credentials.username,
+    password=credentials.password,
+    tenant_name=credentials.tenant_name,
+    region=credentials.region,
+    project_name=credentials.tenant_name,
+
     networks=[
         NetworkSpec(
             name=student_id + "-app-network",
@@ -147,7 +159,7 @@ config = DeploymentConfig(
     security_groups=[
         SecurityGroupSpec(
             name=student_id + "-web-sg",
-            description="Trafic web",
+            description="Web traffic",
             rules=[
                 SecurityGroupRule(
                     direction="ingress",
@@ -168,7 +180,7 @@ config = DeploymentConfig(
             key_name=key_name,
             network_ids=[network_obj.id],
             security_groups=[student_id + "-web-sg"],
-            user_data=user_data_script,
+            user_data=user_data_b64,
             metadata={"role": "web", "env": "production", "owner": "platform-team"},
         )
     ],
@@ -186,14 +198,15 @@ engine = DeploymentEngine(credentials)
 result = engine.deploy_infrastructure(config)
 
 if result.success:
-    print(f"Déploiement {result.deployment_id} réussi")
-    print(f"Durée : {result.duration_seconds:.1f}s")
+    print(f"Deployment {result.deployment_id} succeeded")
+    print(f"Duration: {result.duration_seconds:.1f}s")
     for rtype, ids in result.created_resources.items():
-        print(f"  {rtype} : {len(ids)} ressource(s)")
+        print(f"  {rtype}: {len(ids)} resource(s)")
 else:
-    print(f"Déploiement {result.deployment_id} échoué")
+    print(f"Deployment {result.deployment_id} failed")
     for f in result.failed_resources:
-        print(f"  {f.resource_type} : {f.error_message}")</code></pre>
+        print(f"  {f.resource_type}: {f.error_message}")
+      </code></pre>
 
       <!-- Section 2 -->
       <h2>2. Validation des flavors et images</h2>

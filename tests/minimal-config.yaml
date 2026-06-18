@@ -35,7 +35,7 @@ security_groups:
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids:

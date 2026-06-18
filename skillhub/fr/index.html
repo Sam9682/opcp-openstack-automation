@@ -47,16 +47,16 @@
       <p>À la fin de ce parcours de formation, vous maîtriserez trois approches de déploiement complémentaires :</p>
       <ul>
         <li><strong>OpenStack SDK (Python)</strong> — gestion programmatique des ressources avec les managers personnalisés du projet</li>
-        <li><strong>Terraform (HCL)</strong> — définitions d'infrastructure déclaratives avec le fournisseur OpenStack</li>
-        <li><strong>Ansible</strong> — gestion de configuration et playbooks d'orchestration</li>
+        <li><strong>Terraform (HCL) / OpenTofu</strong> — définitions d'infrastructure déclaratives avec le fournisseur OpenStack</li>
       </ul>
 
       <h2>Prérequis</h2>
       <ul>
         <li>Un projet OVHcloud Public Cloud avec accès API</li>
+        <li>Linux bash environnement (testé sur Ubuntu 24)</li>
         <li>Familiarité de base avec un terminal / ligne de commande</li>
         <li>Python 3.9+ installé (pour les leçons SDK)</li>
-        <li>Terraform 1.x installé (pour les leçons Terraform)</li>
+        <li>Terraform 1.x et/ou OpenTofu 1.x installé (pour les leçcons Terraform)</li>
       </ul>
 
       <h2>Identifiez vos ressources — <code>STUDENT_ID</code></h2>
@@ -119,30 +119,6 @@ cd opcp-openstack-automation</code></pre>
       <pre><code class="language-bash">python3 -m venv .venv
 source .venv/bin/activate
 pip install openstacksdk</code></pre>
-
-      <h2>Installer Terraform</h2>
-      <p>Sous Ubuntu, ajoutez le dépôt officiel HashiCorp à votre système :</p>
-
-      <pre><code class="language-bash">echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list</code></pre>
-
-      <p>Mettez à jour apt pour télécharger les informations du dépôt HashiCorp :</p>
-
-      <pre><code class="language-bash">sudo apt update</code></pre>
-
-      <p>Installez Terraform depuis le nouveau dépôt :</p>
-
-      <pre><code class="language-bash">sudo apt-get install terraform</code></pre>
-
-      <h2>Installer OpenTofu</h2>
-      <p>Sous Ubuntu, installez OpenTofu avec les commandes suivantes :</p>
-
-      <pre><code class="language-bash">sudo apt update
-sudo apt upgrade -y
-sudo apt install -y curl unzip gnupg
-curl -Lo opentofu.zip https://github.com/opentofu/opentofu/releases/download/v1.11.4/tofu_1.11.4_linux_amd64.zip
-unzip opentofu.zip
-chmod +x tofu
-sudo mv tofu /usr/local/bin/</code></pre>
 
       <h2>Exemple complet de variables d'environnement</h2>
       <p>Voici les variables d'environnement <strong>requises</strong> pour exécuter les scripts et les tests :</p>

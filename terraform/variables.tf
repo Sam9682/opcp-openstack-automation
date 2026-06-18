@@ -48,9 +48,9 @@ variable "instance_count" {
 }
 
 variable "instance_flavor" {
-  description = "The flavor/size for compute instances (e.g., s1-2, scale-1, s1-8)"
+  description = "The flavor/size for compute instances (e.g., scale-1, s1-8)"
   type        = string
-  default     = "s1-2"
+  default     = "scale-1"
 }
 
 variable "instance_image" {

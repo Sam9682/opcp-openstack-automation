@@ -211,7 +211,7 @@ class ComputeManager:
         Get flavor ID by name, with caching.
         
         Args:
-            flavor_name: Name of the flavor (e.g., "s1-2", "scale-1")
+            flavor_name: Name of the flavor (e.g., "scale-1")
             
         Returns:
             Flavor ID if found, None otherwise

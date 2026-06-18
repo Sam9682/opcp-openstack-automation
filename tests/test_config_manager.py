@@ -27,7 +27,7 @@ project_name: "test-project"
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
@@ -69,7 +69,7 @@ security_groups:
   "instances": [
     {
       "name": "test-instance",
-      "flavor": "s1-2",
+      "flavor": "scale-1",
       "image": "Debian 12 LVM OPCP",
       "key_name": "opcp-openstack-automation-ssh-key",
       "network_ids": ["test-network"],
@@ -122,7 +122,7 @@ project_name: "test-project"
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["opcp-openstack-automation-ssh-key"]
@@ -158,7 +158,7 @@ project_name: "test-project"
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
@@ -199,7 +199,7 @@ project_name: "test-project"
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
@@ -234,7 +234,7 @@ project_name: "test-project"
 
 instances:
   - name: "duplicate-name"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
@@ -274,7 +274,7 @@ project_name: "test-project"
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]
@@ -309,7 +309,7 @@ project_name: "test-project"
 
 instances:
   - name: "test-instance"
-    flavor: "s1-2"
+    flavor: "scale-1"
     image: "Debian 12 LVM OPCP"
     key_name: "opcp-openstack-automation-ssh-key"
     network_ids: ["test-network"]

@@ -57,6 +57,7 @@
       <pre><code class="language-python">
 import sys
 import os
+import base64
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.deployment_engine import DeploymentEngine
@@ -129,7 +130,17 @@ systemctl enable nginx
 systemctl start nginx
 """
 
+# Base64 encode the user data script as required by OpenStack
+user_data_b64 = base64.b64encode(user_data_script.encode('utf-8')).decode('utf-8')
+
 config = DeploymentConfig(
+    auth_url=credentials.auth_url,
+    username=credentials.username,
+    password=credentials.password,
+    tenant_name=credentials.tenant_name,
+    region=credentials.region,
+    project_name=credentials.tenant_name,
+
     networks=[
         NetworkSpec(
             name=student_id + "-app-network",
@@ -166,7 +177,7 @@ config = DeploymentConfig(
             key_name=key_name,
             network_ids=[network_obj.id],
             security_groups=[student_id + "-web-sg"],
-            user_data=user_data_script,
+            user_data=user_data_b64,
             metadata={"role": "web", "env": "production", "owner": "platform-team"},
         )
     ],
@@ -191,7 +202,8 @@ if result.success:
 else:
     print(f"Deployment {result.deployment_id} failed")
     for f in result.failed_resources:
-        print(f"  {f.resource_type}: {f.error_message}")</code></pre>
+        print(f"  {f.resource_type}: {f.error_message}")
+      </code></pre>
 
       <!-- Section 2 -->
       <h2>2. Flavor and Image Validation</h2>

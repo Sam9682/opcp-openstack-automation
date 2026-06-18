@@ -378,10 +378,9 @@ Voir `requirements.txt` et `requirements-dev.txt` pour les listes complètes des
 - SBG5 (Strasbourg, France)
 
 ### Goûts d'Instances Courants
-- s1-2: 1 vCore, 2GB RAM
-- scale-1: 1 vCore, 4GB RAM
-- s1-8: 2 vCores, 8GB RAM
-- s1-16: 4 vCores, 16GB RAM
+- scale-1: 24 vCore, 128MB RAM
+- scale-2: 32 vCore, 256MB RAM
+- scale-3: 48 vCore, 256MB RAM
 
 ### Types de Volumes
 - classic : Performance standard

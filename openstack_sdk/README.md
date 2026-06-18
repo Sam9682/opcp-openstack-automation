@@ -525,7 +525,7 @@ for instance in instances:
 instance_spec = InstanceSpec(
     name="multi-network-instance",
     flavor="scale-1",
-    image="Debian 11",
+    image="Debian 12 LVM OPCP",
     key_name="opcp-openstack-automation-ssh-key",
     network_ids=[
         "public-network-id",
@@ -602,7 +602,7 @@ if success:
 # Minimal instance without user_data, metadata, or security groups
 minimal_spec = InstanceSpec(
     name="minimal-instance",
-    flavor="s1-2",
+    flavor="scale-1",
     image="Debian 12 LVM OPCP",
     key_name="opcp-openstack-automation-ssh-key",
     network_ids=["network-id"]
@@ -614,12 +614,9 @@ instances = compute_manager.create_compute_instances([minimal_spec])
 ### Instance Flavors
 
 Common OVH instance flavors:
-- `s1-2`: 1 vCore, 2 GB RAM
-- `scale-1`: 1 vCore, 4 GB RAM
-- `s1-8`: 2 vCores, 8 GB RAM
-- `b2-7`: 2 vCores, 7 GB RAM
-- `b2-15`: 4 vCores, 15 GB RAM
-- `b2-30`: 8 vCores, 30 GB RAM
+- scale-1: 24 vCore, 128MB RAM
+- scale-2: 32 vCore, 256MB RAM
+- scale-3: 48 vCore, 256MB RAM
 
 ### Instance Images
 
@@ -978,7 +975,7 @@ config = DeploymentConfig(
     instances=[
         InstanceSpec(
             name="web-server",
-            flavor="s1-2",
+            flavor="scale-1",
             image="Debian 12 LVM OPCP",
             key_name="opcp-openstack-automation-ssh-key",
             network_ids=[],  # Populated after network creation
