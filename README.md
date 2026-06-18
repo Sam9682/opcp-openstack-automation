@@ -66,7 +66,6 @@ pip install -r requirements.txt
    export OS_USERNAME=your-username
    export OS_PASSWORD=your-password
    export OS_TENANT_NAME=your-project-name
-   export OS_REGION_NAME=GRA7
    ```
 
    **For Application Credentials:**
@@ -161,7 +160,6 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "${OS_USERNAME}"
 password: "${OS_PASSWORD}"
 tenant_name: "${OS_TENANT_NAME}"
-region: "GRA7"
 project_name: "my-project"
 
 # Networks
@@ -370,12 +368,7 @@ See `requirements.txt` and `requirements-dev.txt` for complete dependency lists.
 ## OVH OpenStack Information
 
 ### Available Regions
-- GRA7 (Gravelines, France)
-- BHS5 (Beauharnois, Canada)
-- DE1 (Frankfurt, Germany)
-- UK1 (London, UK)
-- WAW1 (Warsaw, Poland)
-- SBG5 (Strasbourg, France)
+default
 
 ### Common Instance Flavors
 - scale-1: 24 vCore, 128MB RAM

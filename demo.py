@@ -136,7 +136,6 @@ def demo_application_credentials():
     os.environ['OS_APPLICATION_CREDENTIAL_SECRET'] = 'app-cred-secret-67890'
     os.environ['OS_TENANT_NAME'] = 'demo-tenant'
     os.environ['OS_AUTH_URL'] = 'https://auth.cloud.ovh.net/v3'
-    os.environ['OS_REGION_NAME'] = 'GRA7'
     
     logger = setup_logging(log_level="INFO")
     logger.info("=" * 60)

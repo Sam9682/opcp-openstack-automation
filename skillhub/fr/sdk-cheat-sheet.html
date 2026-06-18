@@ -63,7 +63,7 @@ conn = openstack.connect(
     project_name="my-project",
     username="user",
     password="secret",
-    region_name="GRA7",
+    region_name="default",
     user_domain_name="Default",
     project_domain_name="Default",
 )
@@ -74,7 +74,7 @@ conn.close()</code></pre>
       <h3>Application Credentials</h3>
       <pre><code class="language-python">conn = openstack.connect(
     auth_url="https://auth.cloud.ovh.net/v3",
-    region_name="GRA7",
+    region_name="default",
     application_credential_id="APP_CRED_ID",
     application_credential_secret="APP_CRED_SECRET",
 )</code></pre>

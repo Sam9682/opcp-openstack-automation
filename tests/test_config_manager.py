@@ -22,7 +22,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "test-user"
 password: "test-pass"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:
@@ -64,7 +64,7 @@ security_groups:
   "username": "test-user",
   "password": "test-pass",
   "tenant_name": "test-tenant",
-  "region": "GRA7",
+  "region": "default",
   "project_name": "test-project",
   "instances": [
     {
@@ -117,7 +117,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "${TEST_USERNAME}"
 password: "${TEST_PASSWORD}"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:
@@ -153,7 +153,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "test-user"
 password: "test-pass"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:
@@ -194,7 +194,7 @@ auth_url: ""
 username: "test-user"
 password: "test-pass"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:
@@ -229,7 +229,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "test-user"
 password: "test-pass"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:
@@ -269,7 +269,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "test-user"
 password: "test-pass"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:
@@ -304,7 +304,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "test-user"
 password: "test-pass"
 tenant_name: "test-tenant"
-region: "GRA7"
+region: "default"
 project_name: "test-project"
 
 instances:

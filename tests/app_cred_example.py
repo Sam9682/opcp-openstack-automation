@@ -79,7 +79,7 @@ def example_app_cred_with_connection_manager():
         username='',  # Not used with application credentials
         password='',  # Not used with application credentials
         tenant_name=tenant_name,
-        region=os.environ.get('OS_REGION_NAME', 'GRA7'),
+        region=os.environ.get('OS_REGION_NAME', 'default'),
         #project_name=project_name,
         application_credential_id=os.environ.get('OS_APPLICATION_CREDENTIAL_ID'),
         application_credential_secret=os.environ.get('OS_APPLICATION_CREDENTIAL_SECRET'),

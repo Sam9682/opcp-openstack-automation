@@ -137,7 +137,6 @@ class AuthenticationManager:
             OS_USERNAME=your-username
             OS_PASSWORD=your-password
             OS_TENANT_NAME=your-tenant
-            OS_REGION_NAME=GRA7
         
         Args:
             file_path: Path to credentials file

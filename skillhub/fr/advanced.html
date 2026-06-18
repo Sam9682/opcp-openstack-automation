@@ -61,7 +61,7 @@ from openstack_sdk.auth_manager import AuthenticationManager
 
 auth_mgr = AuthenticationManager()
 
-regions = ["GRA7", "SBG5", "BHS5"]
+regions = ["default"]
 
 for region in regions:
     credentials = auth_mgr.load_credentials_from_env()
@@ -74,8 +74,8 @@ for region in regions:
 
       <pre><code class="language-hcl"># Terraform — multi-région avec alias de fournisseur
 provider "openstack" {
-  alias  = "gra7"
-  region = "GRA7"
+  alias  = "default"
+  region = "default"
   # ... champs d'authentification
 }
 
@@ -86,7 +86,7 @@ provider "openstack" {
 }
 
 resource "openstack_networking_network_v2" "net_gra" {
-  provider = openstack.gra7
+  provider = openstack.default
   name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-gra"
 }
 

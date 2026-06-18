@@ -53,12 +53,7 @@ tenant_name = "your-project-id-here"
 
 # The OVH OpenStack region where resources will be created
 # Available regions:
-#   - GRA7, GRA9, GRA11 (Gravelines, France)
-#   - SBG5, SBG7 (Strasbourg, France)
-#   - BHS5 (Beauharnois, Canada)
-#   - DE1 (Frankfurt, Germany)
-#   - UK1 (London, UK)
-#   - WAW1 (Warsaw, Poland)
+default
 region = "demo"
 
 # -----------------------------------------------------------------------------

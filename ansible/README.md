@@ -45,7 +45,6 @@ ansible-playbook ansible/playbook.yml \
   -e username="your-username" \
   -e password="your-password" \
   -e tenant_name="your-tenant" \
-  -e region="GRA7"
 ```
 
 ### Using Variables File
@@ -57,7 +56,6 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "your-username"
 password: "your-password"
 tenant_name: "your-tenant"
-region: "GRA7"
 ```
 
 Run with variables file:

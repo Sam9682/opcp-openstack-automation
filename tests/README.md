@@ -57,7 +57,7 @@ auth_url: "https://auth.cloud.ovh.net/v3"
 username: "${OS_USERNAME}"
 password: "${OS_PASSWORD}"
 tenant_name: "${OS_TENANT_NAME}"
-region: "GRA7"
+region: "default"
 project_name: "my-project"
 ```
 

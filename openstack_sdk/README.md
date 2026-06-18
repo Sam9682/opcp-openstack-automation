@@ -97,7 +97,6 @@ credentials = AuthCredentials(
     username='your-username',
     password='your-password',
     tenant_name='your-tenant',
-    region='GRA7',
     project_name='your-tenant'
 )
 
@@ -137,7 +136,6 @@ OS_AUTH_URL=https://auth.cloud.ovh.net/v3
 OS_USERNAME=your-username
 OS_PASSWORD=your-password
 OS_TENANT_NAME=your-tenant
-OS_REGION_NAME=GRA7
 ```
 
 **Security Note**: Set file permissions to 600:
@@ -154,7 +152,6 @@ export OS_AUTH_URL=https://auth.cloud.ovh.net/v3
 export OS_USERNAME=your-username
 export OS_PASSWORD=your-password
 export OS_TENANT_NAME=your-tenant
-export OS_REGION_NAME=GRA7
 ```
 
 ### Error Handling
@@ -288,7 +285,6 @@ auth_manager = AuthManager(
     username='your-username',
     password='your-password',
     tenant_name='your-tenant',
-    region='GRA7',
     project_name='your-project'
 )
 connection = auth_manager.get_connection()
@@ -467,7 +463,6 @@ credentials = AuthCredentials(
     username='your-username',
     password='your-password',
     tenant_name='your-tenant',
-    region='GRA7',
     project_name='your-tenant'
 )
 
@@ -707,7 +702,6 @@ credentials = AuthCredentials(
     username='your-username',
     password='your-password',
     tenant_name='your-tenant',
-    region='GRA7',
     project_name='your-tenant'
 )
 

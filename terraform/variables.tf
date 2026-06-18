@@ -35,7 +35,7 @@ variable "application_credential_secret" {
 }
 
 variable "region" {
-  description = "The OVH OpenStack region (e.g., GRA7, SBG5, BHS5)"
+  description = "The OVH OpenStack region (default)"
   type        = string
   sensitive   = false
 }
