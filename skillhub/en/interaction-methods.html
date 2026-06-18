@@ -42,12 +42,23 @@
         infrastructure-as-code — you can choose the approach that fits best.
       </p>
 
-      <!-- Option A -->
       <h2>Option A — REST API (cURL / HTTP)</h2>
       <p>
-        Every OpenStack service exposes a standard REST API. You can interact with it
+        Every OpenStack service exposes a standard REST API (HTTP URL). You can interact with it
         directly using <code>curl</code> or any HTTP client. This is the lowest-level
         approach and gives you full control over every request.
+      </p>
+
+      <p>
+        To access API you need first to discover the available service endpoints (the base URLs used in your API
+        calls), you can list them with the OpenStack CLI:
+      </p>
+
+      <pre><code class="language-bash"># List all service endpoints with their URLs
+openstack endpoint list -c URL -c 'Service Name'</code></pre>
+
+      <p>
+        Define the environment variable $NOVA_ENDPOINT with the corresponding value
       </p>
 
       <pre><code class="language-bash"># 1. Authenticate and obtain a token
@@ -72,15 +83,7 @@ TOKEN=$(curl -si --cacert $OS_CACERT -X POST "$OS_AUTH_URL/auth/tokens" \
 curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers" \
   | python3 -m json.tool</code></pre>
 
-      <p>
-        To discover the available service endpoints (the base URLs used in your API
-        calls), you can list them with the OpenStack CLI:
-      </p>
 
-      <pre><code class="language-bash"># List all service endpoints with their URLs
-openstack endpoint list -c URL -c 'Service Name'</code></pre>
-
-      <!-- Option B -->
       <h2>Option B — OpenStack CLI</h2>
       <p>
         The <code>openstack</code> command-line client wraps the REST APIs into
