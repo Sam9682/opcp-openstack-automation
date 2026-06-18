@@ -83,8 +83,7 @@ TOKEN=$(curl -si --cacert $OS_CACERT -X POST "$OS_AUTH_URL/auth/tokens" \
  Vous pouvez également utiliser l'option -k sans certificat.
 
 # 2. Lister les serveurs via l'API Compute
-curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers" \
-  | python3 -m json.tool</code></pre>
+curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers"</code></pre>
 
       <!-- Option B -->
       <h2>Option B — CLI OpenStack</h2>
