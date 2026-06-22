@@ -1,7 +1,8 @@
 variable "auth_url" {
-  description = "The authentication URL for OVH OpenStack API"
+  description = "The authentication URL for OVH OpenStack API (reads from TF_VAR_auth_url or set via env OS_AUTH_URL)"
   type        = string
   sensitive   = false
+  default     = null
 }
 
 # variable "username" {
@@ -17,27 +18,31 @@ variable "auth_url" {
 # }
 
 variable "tenant_name" {
-  description = "The tenant/project name for OVH OpenStack"
+  description = "The tenant/project name for OVH OpenStack (reads from TF_VAR_tenant_name or set via env OS_PROJECT_NAME)"
   type        = string
   sensitive   = false
+  default     = null
 }
 
 variable "application_credential_id" {
-  description = "The application credential ID for OVH OpenStack authentication"
+  description = "The application credential ID for OVH OpenStack authentication (reads from TF_VAR_application_credential_id or set via env OS_APPLICATION_CREDENTIAL_ID)"
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "application_credential_secret" {
-  description = "The application credential secret for OVH OpenStack authentication"
+  description = "The application credential secret for OVH OpenStack authentication (reads from TF_VAR_application_credential_secret or set via env OS_APPLICATION_CREDENTIAL_SECRET)"
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "region" {
-  description = "The OVH OpenStack region (default)"
+  description = "The OVH OpenStack region (reads from TF_VAR_region or set via env OS_REGION_NAME)"
   type        = string
   sensitive   = false
+  default     = null
 }
 
 # Instance Configuration Variables
@@ -56,11 +61,13 @@ variable "instance_flavor" {
 variable "instance_image" {
   description = "The image name or ID for compute instances (e.g., Debian 12 LVM OPCP, Debian 11)"
   type        = string
+  default     = "Debian 12 LVM OPCP"
 }
 
 variable "key_name" {
   description = "The SSH key name for instance access"
   type        = string
+  default     = "opcp-openstack-automation-ssh-key"
 }
 
 # Network Configuration Variables

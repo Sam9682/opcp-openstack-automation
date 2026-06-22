@@ -1,9 +1,11 @@
 provider "openstack" {
-  auth_url            = var.auth_url
-  application_credential_id     = var.application_credential_id
-  application_credential_secret = var.application_credential_secret
-  tenant_name         = var.tenant_name
-  region              = var.region
+  # Authentication is handled via standard OpenStack OS_* environment variables:
+  #   OS_AUTH_URL, OS_APPLICATION_CREDENTIAL_ID, OS_APPLICATION_CREDENTIAL_SECRET,
+  #   OS_PROJECT_NAME (or OS_TENANT_NAME), OS_REGION_NAME
+  #
+  # The OpenStack provider reads these automatically from the environment.
+  # Just source your credentials file before running terraform:
+  #   source set_app_cred_env.sh
 }
 
 # Build cloud-init user_data that always creates the student user
