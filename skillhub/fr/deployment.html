@@ -46,18 +46,75 @@
       </p>
 
       <!-- Section 1 -->
-      <h2>1. Orchestration complète</h2>
+      <h2>1. Sélection du flavor et de l'image</h2>
+      <p>
+        Avant de déployer une instance, vous devez choisir un <strong>flavor</strong>
+        (taille de la machine) et une <strong>image</strong> (système d'exploitation).
+        Le script suivant interroge le catalogue OpenStack, affiche les options
+        disponibles et vous demande de faire votre choix. Les variables d'environnement
+        <code>INSTANCE_FLAVOR</code> et <code>INSTANCE_IMAGE</code> sont ensuite
+        définies automatiquement pour le script de déploiement.
+      </p>
+
+      <pre><code class="language-python">import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
+
+# Authenticate
+auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
+connection = auth_manager.authenticate(credentials)
+
+# --- Flavor selection ---
+print("\n=== Available Flavors ===")
+flavors = list(connection.compute.flavors())
+for i, flavor in enumerate(flavors, 1):
+    print(f"  {i}. {flavor.name}  (RAM: {flavor.ram} MB, Disk: {flavor.disk} GB, VCPUs: {flavor.vcpus})")
+
+while True:
+    choice = input(f"\nSelect a flavor [1-{len(flavors)}]: ").strip()
+    if choice.isdigit() and 1 &lt;= int(choice) &lt;= len(flavors):
+        selected_flavor = flavors[int(choice) - 1].name
+        break
+    print("Invalid choice, please try again.")
+
+# --- Image selection ---
+print("\n=== Available Images ===")
+images = list(connection.image.images())
+for i, image in enumerate(images, 1):
+    print(f"  {i}. {image.name}  (Status: {image.status})")
+
+while True:
+    choice = input(f"\nSelect an image [1-{len(images)}]: ").strip()
+    if choice.isdigit() and 1 &lt;= int(choice) &lt;= len(images):
+        selected_image = images[int(choice) - 1].name
+        break
+    print("Invalid choice, please try again.")
+
+# --- Set environment variables for the deployment script ---
+os.environ['INSTANCE_FLAVOR'] = selected_flavor
+os.environ['INSTANCE_IMAGE'] = selected_image
+
+print(f"\n✓ INSTANCE_FLAVOR set to: {selected_flavor}")
+print(f"✓ INSTANCE_IMAGE set to: {selected_image}")
+print("\nYou can now run the full orchestration script (section 2).")
+      </code></pre>
+
+      <!-- Section 2 -->
+      <h2>2. Orchestration complète</h2>
       <p>
         Un seul appel à <code>deploy_infrastructure()</code> crée toutes les
         ressources dans l'ordre des dépendances : d'abord les réseaux, puis les
         groupes de sécurité, ensuite les instances, et enfin les volumes attachés
         à ces instances.
-        Vous pouvez définir les variables d'environnement INSTANCE_FLAVOR & INSTANCE_IMAGE.
+        Les variables d'environnement <code>INSTANCE_FLAVOR</code> et <code>INSTANCE_IMAGE</code>
+        doivent être définies au préalable (voir section 1).
         Vous devez également générer une clé ssh appelée 'opcp-openstack-automation-ssh-key' (utilisez "ssh-keygen -f opcp-openstack-automation-ssh-key")
       </p>
 
       <pre><code class="language-python">
-
 import sys
 import os
 import base64
@@ -125,8 +182,17 @@ except Exception:
         print(f"Warning: Could not create keypair '{key_name}': {e}. "
               f"Instance will be created without SSH keypair.")
 
+# Prompt the user for the instance password (entered via keyboard)
+import getpass
+instance_password = getpass.getpass(prompt=f"Enter password for user '{student_id}' on the instance: ")
+
 # Cloud-init user data script for first boot
-user_data_script = """#!/bin/bash
+user_data_script = f"""#!/bin/bash
+# Create user with the STUDENT_ID name and set password
+useradd -m -s /bin/bash {student_id}
+echo '{student_id}:{instance_password}' | chpasswd
+usermod -aG sudo {student_id}
+
 apt-get update
 apt-get install -y nginx
 systemctl enable nginx
@@ -208,43 +274,6 @@ else:
         print(f"  {f.resource_type}: {f.error_message}")
       </code></pre>
 
-      <!-- Section 2 -->
-      <h2>2. Validation des flavors et images</h2>
-      <p>
-        Avant d'envoyer une requête de création, le moteur vérifie que le flavor
-        et l'image demandés existent dans le catalogue OVHcloud. Les résultats sont
-        mis en cache pour réduire les appels API.
-      </p>
-
-      <pre><code class="language-python"># Flavors OVHcloud courants
-openstack flavor list
-+--------------------------------------+-------------+--------+------+-----------+-------+-----------+
-| ID                                   | Name        |    RAM | Disk | Ephemeral | VCPUs | Is Public |
-+--------------------------------------+-------------+--------+------+-----------+-------+-----------+
-| 0f6c5acb-f221-47fe-a848-012345678901 | scale-1     |    128 | 2000 |         0 |    24 | True      |
-| 10b9c6fc-883f-462f-8375-012345678901 | gpu         |    400 |  900 |         0 |   128 | True      |
-| 2c6cb207-ce88-4a02-9afb-012345678901 | scale-3     |    256 | 4000 |         0 |    48 | True      |
-| 30b24852-d84d-4dad-808e-012345678901 | proxmox-lab | 131072 | 1024 |         0 |    64 | True      |
-| aae00b73-85ff-4f7c-a51d-012345678901 | hsm         |    512 | 4000 |         0 |   128 | True      |
-| c1cfc9f1-d0a0-444f-b3f6-012345678901 | scale-2     |    256 | 4000 |         0 |    32 | True      |
-+--------------------------------------+-------------+--------+------+-----------+-------+-----------+
-
-# Images courantes
-openstack image list
-+--------------------------------------+------------------------+--------+
-| ID                                   | Name                   | Status |
-+--------------------------------------+------------------------+--------+
-| c9d1b60e-42f5-490f-b6f6-012345678901 | CentOS 9 OPCP          | active |
-| ae8e057f-ef2d-40fc-898c-012345678901 | Debian 12 LVM OPCP     | active |
-| c2a00639-0cf0-4913-830e-012345678901 | Debian 13 Cloud VM     | active |
-| ccd53d11-3652-4e84-b4db-012345678901 | harvester1.7.1         | active |
-| 41fa9ca2-aead-4736-83c1-012345678901 | harvester1.8.0         | active |
-| 61db2a19-71eb-4256-b6c1-012345678901 | ironic-agent.initramfs | active |
-| 0b59e8c9-0a06-4b1c-acb6-012345678901 | ironic-agent.kernel    | active |
-| c7770ed8-cb60-4974-9b07-012345678901 | proxmox-ve-9.2         | active |
-+--------------------------------------+------------------------+--------+
-</code></pre>
-
       <!-- Section 3 -->
       <h2>3. Création de paire de clés</h2>
       <p>
@@ -255,6 +284,20 @@ openstack image list
       </p>
 
       <pre><code class="language-python"># Vérifier si la paire de clés SSH existe, sinon la créer
+import sys
+import os
+import base64
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
+
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
+vi 
+connection = auth_manager.authenticate(credentials)
+
 key_name = "opcp-openstack-automation-ssh-key"
 try:
     keypair = connection.compute.get_keypair(key_name)
