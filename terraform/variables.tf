@@ -182,3 +182,15 @@ variable "instance_user_data" {
   type        = string
   default     = null
 }
+
+# Student Configuration Variables
+variable "student_id" {
+  description = "Student identifier — used as the Linux username created on instances via cloud-init"
+  type        = string
+}
+
+variable "student_password" {
+  description = "Password for the student user created on instances. MUST be set before running terraform apply (export TF_VAR_student_password)"
+  type        = string
+  sensitive   = true
+}

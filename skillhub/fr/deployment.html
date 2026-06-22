@@ -56,6 +56,42 @@
         définies automatiquement pour le script de déploiement.
       </p>
 
+            <pre><code class="language-python"># Flavors OVHcloud courants
+openstack flavor list
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+| ID                                   | Name        |    RAM | Disk | Ephemeral | VCPUs | Is Public |
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+| 0f6c5acb-f221-47fe-a848-012345678901 | scale-1     |    128 | 2000 |         0 |    24 | True      |
+| 10b9c6fc-883f-462f-8375-012345678901 | gpu         |    400 |  900 |         0 |   128 | True      |
+| 2c6cb207-ce88-4a02-9afb-012345678901 | scale-3     |    256 | 4000 |         0 |    48 | True      |
+| 30b24852-d84d-4dad-808e-012345678901 | proxmox-lab | 131072 | 1024 |         0 |    64 | True      |
+| aae00b73-85ff-4f7c-a51d-012345678901 | hsm         |    512 | 4000 |         0 |   128 | True      |
+| c1cfc9f1-d0a0-444f-b3f6-012345678901 | scale-2     |    256 | 4000 |         0 |    32 | True      |
++--------------------------------------+-------------+--------+------+-----------+-------+-----------+
+
+export INSTANCE_FLAVOR=scale-1
+
+# Images courantes
+openstack image list
++--------------------------------------+------------------------+--------+
+| ID                                   | Name                   | Status |
++--------------------------------------+------------------------+--------+
+| c9d1b60e-42f5-490f-b6f6-012345678901 | CentOS 9 OPCP          | active |
+| ae8e057f-ef2d-40fc-898c-012345678901 | Debian 12 LVM OPCP     | active |
+| c2a00639-0cf0-4913-830e-012345678901 | Debian 13 Cloud VM     | active |
+| ccd53d11-3652-4e84-b4db-012345678901 | harvester1.7.1         | active |
+| 41fa9ca2-aead-4736-83c1-012345678901 | harvester1.8.0         | active |
+| 61db2a19-71eb-4256-b6c1-012345678901 | ironic-agent.initramfs | active |
+| 0b59e8c9-0a06-4b1c-acb6-012345678901 | ironic-agent.kernel    | active |
+| c7770ed8-cb60-4974-9b07-012345678901 | proxmox-ve-9.2         | active |
++--------------------------------------+------------------------+--------+
+
+export INSTANCE_IMAGE='Debian 12 LVM OPCP'
+</code></pre>
+      <p>
+        Vous pouvez utiliser le script suivant pour définir les variables FLAVOR and IMAGE :
+      </p>
+
       <pre><code class="language-python">import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
@@ -274,16 +310,20 @@ else:
         print(f"  {f.resource_type}: {f.error_message}")
       </code></pre>
 
-      <!-- Section 3 -->
-      <h2>3. Création de paire de clés</h2>
-      <p>
-        Avant de déployer des instances, vous devez enregistrer une paire de clés SSH
-        dans OpenStack. Le script vérifie si la paire de clés existe déjà et la crée
-        à partir d'un fichier de clé publique local si nécessaire. Générez une clé avec :
-        <code>ssh-keygen -f opcp-openstack-automation-ssh-key</code>
-      </p>
+      <!-- Groupe d'explications : détails sur les composants du script d'orchestration ci-dessus -->
+      <div class="explanation-group">
+        <p><strong>Les sous-sections suivantes expliquent les composants clés utilisés dans le script d'orchestration ci-dessus.</strong></p>
 
-      <pre><code class="language-python"># Vérifier si la paire de clés SSH existe, sinon la créer
+        <!-- Sous-section 2.1 -->
+        <h3>2.1. Création de paire de clés</h3>
+        <p>
+          Avant de déployer des instances, vous devez enregistrer une paire de clés SSH
+          dans OpenStack. Le script vérifie si la paire de clés existe déjà et la crée
+          à partir d'un fichier de clé publique local si nécessaire. Générez une clé avec :
+          <code>ssh-keygen -f opcp-openstack-automation-ssh-key</code>
+        </p>
+
+        <pre><code class="language-python"># Vérifier si la paire de clés SSH existe, sinon la créer
 import sys
 import os
 import base64
@@ -318,15 +358,15 @@ except Exception:
         print(f"Fichier de clé publique '{pub_key_path}' non trouvé.")
         print("Générez-en une avec : ssh-keygen -f opcp-openstack-automation-ssh-key")</code></pre>
 
-      <!-- Section 4 -->
-      <h2>4. Injection de user-data</h2>
-      <p>
-        Les scripts cloud-init passés via <code>user_data</code> s'exécutent au
-        premier démarrage. Utilisez-les pour installer des paquets, démarrer des
-        services ou configurer l'instance.
-      </p>
+        <!-- Sous-section 2.2 -->
+        <h3>2.2. Injection de user-data</h3>
+        <p>
+          Les scripts cloud-init passés via <code>user_data</code> s'exécutent au
+          premier démarrage. Utilisez-les pour installer des paquets, démarrer des
+          services ou configurer l'instance.
+        </p>
 
-      <pre><code class="language-python">user_data_script = """#!/bin/bash
+        <pre><code class="language-python">user_data_script = """#!/bin/bash
 apt-get update
 apt-get install -y nginx
 systemctl enable nginx
@@ -345,14 +385,14 @@ spec = InstanceSpec(
     metadata={"role": "web"},
 )</code></pre>
 
-      <!-- Section 5 -->
-      <h2>5. Métadonnées</h2>
-      <p>
-        Attachez des métadonnées clé-valeur arbitraires aux instances pour le
-        marquage, l'allocation des coûts ou les hooks d'automatisation.
-      </p>
+        <!-- Sous-section 2.3 -->
+        <h3>2.3. Métadonnées</h3>
+        <p>
+          Attachez des métadonnées clé-valeur arbitraires aux instances pour le
+          marquage, l'allocation des coûts ou les hooks d'automatisation.
+        </p>
 
-      <pre><code class="language-python">spec = InstanceSpec(
+        <pre><code class="language-python">spec = InstanceSpec(
     name=student_id + "-tagged-instance",
     flavor=str(os.environ.get('INSTANCE_FLAVOR', 'scale-1')),
     image=str(os.environ.get('INSTANCE_IMAGE', 'Debian 12 LVM OPCP')),
@@ -365,16 +405,16 @@ spec = InstanceSpec(
     },
 )</code></pre>
 
-      <!-- Section 6 -->
-      <h2>6. Suivi des déploiements</h2>
-      <p>
-        Chaque déploiement reçoit un <code>deployment_id</code> unique. L'objet
-        résultat contient les IDs des ressources créées, les ressources en échec,
-        la durée et les éventuelles ressources orphelines qui n'ont pas pu être
-        nettoyées.
-      </p>
+        <!-- Sous-section 2.4 -->
+        <h3>2.4. Suivi des déploiements</h3>
+        <p>
+          Chaque déploiement reçoit un <code>deployment_id</code> unique. L'objet
+          résultat contient les IDs des ressources créées, les ressources en échec,
+          la durée et les éventuelles ressources orphelines qui n'ont pas pu être
+          nettoyées.
+        </p>
 
-      <pre><code class="language-python"># Sauvegarder l'ID de déploiement pour référence ultérieure
+        <pre><code class="language-python"># Sauvegarder l'ID de déploiement pour référence ultérieure
 with open("deployment_id.txt", "w") as f:
     f.write(result.deployment_id)
 
@@ -382,15 +422,15 @@ with open("deployment_id.txt", "w") as f:
 print(result.created_resources)
 # {'networks': ['net-abc'], 'instances': ['srv-123'], ...}</code></pre>
 
-      <!-- Section 7 -->
-      <h2>7. Rollback automatique</h2>
-      <p>
-        Si la création d'une ressource échoue, le moteur effectue automatiquement
-        un rollback de toutes les ressources précédemment créées dans l'ordre
-        inverse des dépendances. Cela évite l'infrastructure orpheline.
-      </p>
+        <!-- Sous-section 2.5 -->
+        <h3>2.5. Rollback automatique</h3>
+        <p>
+          Si la création d'une ressource échoue, le moteur effectue automatiquement
+          un rollback de toutes les ressources précédemment créées dans l'ordre
+          inverse des dépendances. Cela évite l'infrastructure orpheline.
+        </p>
 
-      <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentError
+        <pre><code class="language-python">from openstack_sdk.deployment_engine import DeploymentError
 
 try:
     result = engine.deploy_infrastructure(config)
@@ -401,17 +441,86 @@ try:
             print(f"  - {orphan}")
 except DeploymentError as exc:
     print(f"Erreur de déploiement : {exc}")</code></pre>
+      </div>
 
-      <!-- Section 8 -->
-      <h2>8. Nettoyage manuel</h2>
+      <!-- Section 3 -->
+      <h2>3. Nettoyage manuel</h2>
       <p>
-        Vous pouvez également nettoyer des ressources spécifiques par type et ID.
+        Avant de supprimer les ressources, le script liste toutes les ressources
+        dont le nom commence par la valeur de la variable d'environnement
+        <code>STUDENT_ID</code>. Il affiche également les volumes associés aux
+        instances, ainsi que les réseaux et sous-réseaux.
       </p>
 
-      <pre><code class="language-python">resource_ids = {
-    "instances": ["instance-id-1", "instance-id-2"],
-    "volumes": ["volume-id-1"],
-    "networks": ["network-id-1"],
+      <pre><code class="language-python">import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.deployment_engine import DeploymentEngine
+
+# Authentification
+auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
+connection = auth_manager.authenticate(credentials)
+
+student_id = os.environ.get('STUDENT_ID', 'default-student')
+print(f"\n=== Ressources correspondant à '{student_id}*' ===\n")
+
+# --- Lister les instances ---
+print("-- Instances --")
+instances = list(connection.compute.servers(details=True))
+student_instances = [s for s in instances if s.name.startswith(student_id)]
+for server in student_instances:
+    print(f"  • {server.name}  (ID: {server.id}, Status: {server.status})")
+
+    # Lister les volumes attachés à cette instance
+    volume_attachments = list(connection.compute.volume_attachments(server))
+    if volume_attachments:
+        for va in volume_attachments:
+            vol = connection.block_storage.get_volume(va.volume_id)
+            print(f"      ↳ Volume: {vol.name}  (ID: {vol.id}, Taille: {vol.size} Go)")
+
+    # Lister les réseaux connectés à cette instance
+    for net_name, addresses in (server.addresses or {}).items():
+        print(f"      ↳ Réseau: {net_name}")
+        for addr in addresses:
+            print(f"          IP: {addr['addr']} ({addr['OS-EXT-IPS:type']})")
+
+# --- Lister les volumes (autonomes, non attachés) ---
+print("\n-- Volumes --")
+volumes = list(connection.block_storage.volumes(details=True))
+student_volumes = [v for v in volumes if v.name and v.name.startswith(student_id)]
+for vol in student_volumes:
+    attached = "attaché" if vol.attachments else "détaché"
+    print(f"  • {vol.name}  (ID: {vol.id}, Taille: {vol.size} Go, État: {attached})")
+
+# --- Lister les réseaux et sous-réseaux ---
+print("\n-- Réseaux &amp; Sous-réseaux --")
+networks = list(connection.network.networks())
+student_networks = [n for n in networks if n.name and n.name.startswith(student_id)]
+for net in student_networks:
+    print(f"  • {net.name}  (ID: {net.id})")
+    for subnet_id in net.subnet_ids:
+        subnet = connection.network.get_subnet(subnet_id)
+        print(f"      ↳ Sous-réseau: {subnet.name}  (CIDR: {subnet.cidr})")
+
+# --- Lister les groupes de sécurité ---
+print("\n-- Groupes de sécurité --")
+security_groups = list(connection.network.security_groups())
+student_sgs = [sg for sg in security_groups if sg.name and sg.name.startswith(student_id)]
+for sg in student_sgs:
+    print(f"  • {sg.name}  (ID: {sg.id})")
+
+# --- Nettoyage ---
+print(f"\n=== Suppression des ressources correspondant à '{student_id}*' ===\n")
+
+engine = DeploymentEngine(credentials)
+
+resource_ids = {
+    "instances": [s.id for s in student_instances],
+    "volumes": [v.id for v in student_volumes],
+    "security_groups": [sg.id for sg in student_sgs],
+    "networks": [n.id for n in student_networks],
 }
 
 results = engine.cleanup_resources(resource_ids)
@@ -420,8 +529,8 @@ for key, success in results.items():
     status = "ok" if success else "ÉCHOUÉ"
     print(f"  {key} : {status}")</code></pre>
 
-      <!-- Section 9 -->
-      <h2>9. Limitation de débit</h2>
+      <!-- Section 4 -->
+      <h2>4. Limitation de débit</h2>
       <p>
         Le moteur utilise un backoff exponentiel lorsque l'API OpenStack retourne
         des erreurs de limitation de débit (HTTP 429). Cela garantit que les
