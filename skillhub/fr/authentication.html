@@ -146,16 +146,24 @@ print("Authenticated successfully!")</code></pre>
         rafraîchit automatiquement lorsqu'il reste moins de 5 minutes.
       </p>
 
-      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
 from config.models import AuthCredentials
-from openstack_sdk.auth_manager import AuthenticationManager
 
-# Environment variables are loaded automatically when
-# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
 auth_manager = AuthenticationManager()
-credentials = auth_manager.load_credentials_from_env()
 
-connection = auth_manager.authenticate(credentials)
+# Load from a secure file (should have 600 permissions)
+credentials = auth_manager.load_credentials_from_file("credentials.txt")
+
+conn_manager = ConnectionManager(credentials)
+
+# get_connection() refreshes the token transparently
+connection = conn_manager.get_connection()
+print(f"get_connection() refreshes the token transparently")
 
 # Use the connection for long-running operations …
 projects = list(connection.identity.projects())

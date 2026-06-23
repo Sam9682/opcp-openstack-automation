@@ -167,7 +167,8 @@ export OS_TENANT_NAME="my-project"</code></pre>
         resources.
       </p>
 
-      <pre><code class="language-python">import sys
+      <pre><code class="language-python">
+import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
@@ -175,7 +176,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '
 from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config("tests/config.yaml")
+config = manager.load_config("./config.yaml")
 
 validation = manager.validate_config(config)
 
@@ -186,7 +187,7 @@ else:
     for error in validation.errors:
         print(f"  - {error}")
 
-config = manager.load_config("tests/config.json")
+config = manager.load_config("./config.json")
 
 validation = manager.validate_config(config)
 

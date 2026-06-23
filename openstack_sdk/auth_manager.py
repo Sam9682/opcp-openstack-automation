@@ -87,8 +87,6 @@ class AuthenticationManager:
             missing_vars.append('OS_AUTH_TYPE')
         if not os.environ.get('OS_IDENTITY_API_VERSION'):
             missing_vars.append('OS_IDENTITY_API_VERSION')
-        if not region:
-            missing_vars.append('OS_REGION_NAME')
         if not os.environ.get('OS_INTERFACE'):
             missing_vars.append('OS_INTERFACE')
         if not app_credential_id:
