@@ -43,54 +43,7 @@
       </p>
 
       <!-- Option A -->
-<<<<<<< HEAD
       <h2>Option A — CLI OpenStack</h2>
-=======
-      <h2>Option A — API REST (cURL / HTTP)</h2>
-      <p>
-        Chaque service OpenStack expose une API REST standard. Vous pouvez interagir
-        directement avec elle en utilisant <code>curl</code> ou tout client HTTP.
-        C'est l'approche de plus bas niveau et elle vous donne un contrôle total sur
-        chaque requête.
-      </p>
-
-      <p>
-        Pour découvrir les endpoints de services disponibles (les URLs de base
-        utilisées dans vos appels API), vous pouvez les lister avec la CLI
-        OpenStack :
-      </p>
-
-      <p>
-        Définissez la variable d'environnement $NOVA_ENDPOINT avec la valeur correspondante
-      </p>
-
-      <pre><code class="language-bash"># Lister tous les endpoints de services avec leurs URLs
-openstack endpoint list -c URL -c 'Service Name'</code></pre>
-
-      <pre><code class="language-bash"># 1. S'authentifier et obtenir un token
-TOKEN=$(curl -si --cacert $OS_CACERT -X POST "$OS_AUTH_URL/auth/tokens" \
-  -H "Content-Type: application/json" \
-  -d '{
-     "auth": {
-       "identity": {
-         "methods": ["application_credential"],
-         "application_credential": {
-           "id": "'"$OS_APPLICATION_CREDENTIAL_ID"'",
-           "secret": "'"$OS_APPLICATION_CREDENTIAL_SECRET"'"
-         }
-       }
-     }
-   }' 2>/dev/null | sed -n 's/^x-subject-token: *//p' | tr -d '\r')
- echo "Token: $TOKEN
-
- Vous pouvez également utiliser l'option -k sans certificat.
-
-# 2. Lister les serveurs via l'API Compute
-curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers"</code></pre>
-
-      <!-- Option B -->
-      <h2>Option B — CLI OpenStack</h2>
->>>>>>> main
       <p>
         Le client en ligne de commande <code>openstack</code> encapsule les API REST
         dans des commandes simples et lisibles. C'est l'approche recommandée pour les
