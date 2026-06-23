@@ -53,11 +53,15 @@
         You also have to create a ssh key named 'opcp-openstack-automation-ssh-key' (use "ssh-keygen -f opcp-openstack-automation-ssh-key")
       </p>
 
+      <div role="alert" style="background:color-mix(in srgb,var(--color-warning) 15%,transparent);border-left:4px solid var(--color-warning);border-radius:4px;padding:0.75rem 1rem;margin-bottom:1.5rem;">
+        <strong>Warning:</strong> Security Groups are not yet available on OPCP. The <code>security_groups</code> parameter in the code below must be removed or adapted before running — the referenced group (<code>STUDENT_ID-web-server-sg</code>) will not exist on the platform.
+      </div>
+
       <pre><code class="language-python">
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.compute_manager import ComputeManager
 from openstack_sdk.network_manager import NetworkManager

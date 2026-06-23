@@ -1,25 +1,9 @@
 provider "openstack" {
-  # Authentication is handled via standard OpenStack OS_* environment variables:
-  #   OS_AUTH_URL, OS_APPLICATION_CREDENTIAL_ID, OS_APPLICATION_CREDENTIAL_SECRET,
-  #   OS_PROJECT_NAME (or OS_TENANT_NAME), OS_REGION_NAME
-  #
-  # The OpenStack provider reads these automatically from the environment.
-  # Just source your credentials file before running terraform:
-  #   source set_app_cred_env.sh
-}
-
-# Build cloud-init user_data that always creates the student user
-locals {
-  # Cloud-init script: create user + run custom user_data if provided
-  cloud_init_script = <<-CLOUDINIT
-#!/bin/bash
-# Create user with STUDENT_ID name and set password
-useradd -m -s /bin/bash ${var.student_id}
-echo '${var.student_id}:${var.student_password}' | chpasswd
-usermod -aG sudo ${var.student_id}
-
-${var.instance_user_data != null ? var.instance_user_data : "# No additional user_data script provided"}
-CLOUDINIT
+  auth_url            = var.auth_url
+  application_credential_id     = var.application_credential_id
+  application_credential_secret = var.application_credential_secret
+  tenant_name         = var.tenant_name
+  region              = var.region
 }
 
 # Network Infrastructure Resources
@@ -59,8 +43,8 @@ resource "openstack_compute_instance_v2" "instance" {
   # Apply metadata tags if provided
   metadata = var.instance_metadata
 
-  # Inject user_data script (includes student user creation + custom script)
-  user_data = local.cloud_init_script
+  # Inject user_data script if provided
+  user_data = var.instance_user_data
 
   # Explicit dependencies to ensure correct creation order
   depends_on = [

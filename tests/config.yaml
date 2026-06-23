@@ -26,7 +26,7 @@ networks:
     external: false
     subnets:
       - name: "private-subnet"
-        cidr: "345.168.1.0/24"
+        cidr: "192.168.1.0/24"
         ip_version: 4
         enable_dhcp: true
         gateway_ip: "192.168.1.1"

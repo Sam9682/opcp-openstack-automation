@@ -67,25 +67,6 @@ tofu init</code></pre>
 
       <!-- Section 2 -->
       <h2>2. Ressources réseau</h2>
-      <p>
-        <strong>📁 Fichier :</strong> <code>./terraform/main.tf</code> (définitions des ressources) ·
-        <code>./terraform/variables.tf</code> (déclarations des variables)
-      </p>
-      <p>
-        Les ressources réseau créent un réseau privé isolé et un sous-réseau pour
-        vos instances. Le sous-réseau inclut la configuration DHCP et DNS pour que
-        les instances puissent résoudre les noms d'hôtes immédiatement après le démarrage.
-      </p>
-      <p>
-        <strong>💡 Conseils :</strong>
-      </p>
-      <ul>
-        <li>La variable <code>network_name</code> sert de préfixe pour toutes les ressources (sous-réseau, instances, volumes). Choisissez un nom significatif comme votre identifiant étudiant.</li>
-        <li>Le CIDR par défaut <code>192.168.1.0/24</code> donne 254 IPs utilisables. Ajustez <code>subnet_cidr</code> dans <code>terraform.tfvars</code> si nécessaire.</li>
-        <li>Les serveurs DNS par défaut sont ceux de Google (8.8.8.8, 8.8.4.4). Pour la résolution interne, remplacez-les par les DNS de votre organisation.</li>
-        <li>Le DHCP est activé par défaut — les instances reçoivent leurs IPs automatiquement depuis le pool du sous-réseau.</li>
-        <li>Le <code>network_id</code> du sous-réseau référence le réseau via <code>openstack_networking_network_v2.private_network.id</code>, créant une dépendance implicite.</li>
-      </ul>
 
       <pre><code class="language-hcl"># Réseau privé
 resource "openstack_networking_network_v2" "private_network" {
@@ -106,26 +87,9 @@ resource "openstack_networking_subnet_v2" "private_subnet" {
       <!-- Section 3 -->
       <h2>3. Instances de Compute</h2>
       <p>
-        <strong>📁 Fichier :</strong> <code>./terraform/main.tf</code> (définitions des ressources) ·
-        <code>./terraform/variables.tf</code> (déclarations des variables)
-      </p>
-      <p>
         Utilisez <code>count</code> pour créer plusieurs instances identiques.
         Chaque instance dépend de la disponibilité du sous-réseau.
       </p>
-      <p>
-        <strong>💡 Conseils :</strong>
-      </p>
-      <ul>
-        <li>Définissez <code>instance_count</code> dans <code>terraform.tfvars</code> pour mettre à l'échelle horizontalement (par défaut : 1).</li>
-        <li>La variable <code>instance_flavor</code> correspond aux flavors OpenStack (ex. <code>scale-1</code>, <code>scale-2</code>). Listez les flavors disponibles avec <code>openstack flavor list</code>.</li>
-        <li>La variable <code>instance_image</code> accepte un nom d'image (ex. <code>Debian 12 LVM OPCP</code>). Listez les images disponibles avec <code>openstack image list</code>.</li>
-        <li><code>key_pair</code> référence une clé SSH déjà uploadée dans OpenStack. Assurez-vous que la clé existe avant d'exécuter <code>terraform apply</code>.</li>
-        <li>Le bloc <code>depends_on</code> garantit que Terraform crée le sous-réseau avant de lancer les instances — sans lui, l'instance pourrait échouer à obtenir une IP.</li>
-        <li><code>metadata</code> accepte une map clé-valeur pour le marquage (ex. <code>{"env": "production", "role": "web"}</code>).</li>
-        <li><code>user_data</code> injecte un script cloud-init exécuté au premier démarrage — utilisez-le pour installer des paquets ou configurer l'instance automatiquement.</li>
-        <li>Les noms d'instances sont générés automatiquement avec le pattern <code>{network_name}-instance-{index}</code>, ce qui les rend faciles à identifier.</li>
-      </ul>
 
       <pre><code class="language-hcl">resource "openstack_compute_instance_v2" "instance" {
   count       = var.instance_count
@@ -148,27 +112,6 @@ resource "openstack_networking_subnet_v2" "private_subnet" {
 
       <!-- Section 4 -->
       <h2>4. Volumes et attachements</h2>
-      <p>
-        <strong>📁 Fichier :</strong> <code>./terraform/main.tf</code> (définitions des ressources) ·
-        <code>./terraform/variables.tf</code> (déclarations des variables)
-      </p>
-      <p>
-        Les volumes de stockage bloc fournissent un espace disque persistant qui
-        survit aux redémarrages d'instances et peut être détaché/réattaché à
-        différentes instances.
-      </p>
-      <p>
-        <strong>💡 Conseils :</strong>
-      </p>
-      <ul>
-        <li>Définissez <code>volume_count</code> dans <code>terraform.tfvars</code> (par défaut : 0 — aucun volume n'est créé sauf demande explicite).</li>
-        <li>La variable <code>volume_size</code> définit la taille en Go. Le bloc de validation garantit qu'elle est toujours positive.</li>
-        <li><code>volume_type</code> contrôle le niveau de performance : <code>classic</code> pour des IOPS standards, <code>high-speed</code> pour du stockage SSD.</li>
-        <li>Définissez <code>volume_bootable = true</code> et fournissez un <code>volume_image_id</code> pour créer des volumes bootables (utile pour les charges de travail stateful).</li>
-        <li>L'attachement utilise <code>min(var.volume_count, var.instance_count)</code> pour mapper les volumes aux instances en 1:1. Si vous avez plus de volumes que d'instances, les volumes supplémentaires restent non attachés.</li>
-        <li>Les volumes sont créés en parallèle avec les instances mais attachés uniquement lorsque les deux sont prêts (imposé par <code>depends_on</code>).</li>
-        <li>Après <code>terraform apply</code>, le volume apparaît comme un périphérique bloc (ex. <code>/dev/vdb</code>) à l'intérieur de l'instance — vous devez encore le formater et le monter via cloud-init ou SSH.</li>
-      </ul>
 
       <pre><code class="language-hcl"># Volumes de stockage bloc
 resource "openstack_blockstorage_volume_v3" "volume" {
