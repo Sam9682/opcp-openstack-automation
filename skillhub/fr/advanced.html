@@ -39,18 +39,34 @@
 
       <p>
         Vous maîtrisez les briques individuelles. Cette leçon les rassemble avec
-        des patterns de production : déploiements multi-régions, intégration CI/CD,
-        modules personnalisés, bonnes pratiques et comparaison des trois approches
-        IaC.
+        des patterns de production : intégration CI/CD avec Gitea et OpenTofu,
+        bonnes pratiques et comparaison des trois approches IaC.
       </p>
 
       <!-- Section 1 -->
-      <h2>1. Déploiements multi-régions</h2>
+      <h2>1. Intégration CI/CD avec Gitea &amp; OpenTofu</h2>
       <p>
-        OVHcloud propose plusieurs régions. Déployez la même pile dans plusieurs
-        régions pour la redondance ou l'optimisation de la latence.
+        Dans cette section, vous allez mettre en place un pipeline CI/CD local complet
+        avec Gitea (une forge Git auto-hébergée) et OpenTofu. L'objectif : lorsque
+        vous modifiez un paramètre dans votre fichier source (ex. changer le flavor
+        ou l'image de l'instance), vous poussez le changement vers Gitea, et le
+        pipeline exécute automatiquement <code>tofu apply</code> pour créer ou
+        mettre à jour votre instance compute sur OpenStack.
       </p>
 
+<<<<<<< HEAD
+      <h3>1.1. Vue d'ensemble du scénario</h3>
+      <p>
+        Voici le workflow que nous allons construire :
+      </p>
+      <ol>
+        <li>Vous disposez d'un fichier OpenTofu (<code>main.tf</code>) qui définit une instance compute simple sur OpenStack.</li>
+        <li>Les paramètres de l'instance (flavor, image, nom) sont stockés dans un fichier séparé <code>terraform.tfvars</code>.</li>
+        <li>Vous poussez le tout vers un dépôt Gitea local.</li>
+        <li>Lorsque vous modifiez <code>terraform.tfvars</code> (ex. changez <code>instance_flavor</code> de <code>"scale-1"</code> à <code>"scale-2"</code>) et poussez, Gitea Actions déclenche automatiquement un pipeline qui exécute <code>tofu plan</code> puis <code>tofu apply</code>.</li>
+        <li>OpenStack provisionne ou met à jour l'instance compute selon le nouveau paramètre.</li>
+      </ol>
+=======
       <pre><code class="language-python">
 import sys
 import os
@@ -58,156 +74,250 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
 from openstack_sdk.deployment_engine import DeploymentEngine
 from openstack_sdk.auth_manager import AuthenticationManager
+>>>>>>> main
 
-auth_mgr = AuthenticationManager()
+      <h3>1.2. Installer Gitea localement</h3>
+      <p>
+        Gitea est un service Git léger et auto-hébergé avec CI/CD intégré (Gitea Actions).
+        Installez-le sur votre machine locale :
+      </p>
 
-regions = ["default"]
+      <pre><code class="language-bash"># Option 1 : Avec Docker (recommandé)
+docker run -d --name gitea \
+  -p 3000:3000 \
+  -p 2222:22 \
+  -v gitea-data:/data \
+  gitea/gitea:latest
 
-for region in regions:
-    credentials = auth_mgr.load_credentials_from_env()
-    # Remplacer la région à chaque itération
-    credentials.region = region
+# Option 2 : Avec le binaire (Linux/amd64)
+wget -O gitea https://dl.gitea.com/gitea/1.22/gitea-1.22-linux-amd64
+chmod +x gitea
+./gitea web
 
-    engine = DeploymentEngine(credentials)
-    result = engine.deploy_infrastructure(config)
-    print(f"Région {region} : {'OK' if result.success else 'ÉCHOUÉ'}")</code></pre>
+# Accédez à Gitea sur http://localhost:3000
+# Complétez l'assistant d'installation (SQLite suffit pour un usage local)</code></pre>
 
-      <pre><code class="language-hcl"># Terraform — multi-région avec alias de fournisseur
-provider "openstack" {
-  alias  = "default"
-  region = "default"
-  # ... champs d'authentification
+      <h3>1.3. Installer Gitea Act Runner (pour le CI/CD)</h3>
+      <p>
+        Gitea Actions nécessite un runner pour exécuter vos pipelines. Installez et enregistrez-en un :
+      </p>
+
+      <pre><code class="language-bash"># Télécharger le runner
+wget -O act_runner https://dl.gitea.com/act_runner/0.2/act_runner-0.2-linux-amd64
+chmod +x act_runner
+
+# Enregistrer le runner auprès de votre instance Gitea
+# Récupérez le token depuis : Administration du site > Runners > Créer un nouveau Runner
+./act_runner register --instance http://localhost:3000 --token VOTRE_TOKEN
+
+# Démarrer le runner (s'exécute au premier plan)
+./act_runner daemon</code></pre>
+
+      <h3>1.4. Écrire la configuration OpenTofu</h3>
+      <p>
+        Créez un projet OpenTofu minimal qui déploie une seule instance compute.
+        C'est l'infrastructure-as-code que le pipeline CI/CD va gérer.
+      </p>
+
+      <pre><code class="language-hcl"># versions.tf — Exigences du provider
+terraform {
+  required_version = ">= 1.6.0"
+  required_providers {
+    openstack = {
+      source  = "terraform-provider-openstack/openstack"
+      version = "~> 2.0"
+    }
+  }
 }
 
 provider "openstack" {
-  alias  = "sbg5"
-  region = "SBG5"
-  # ... champs d'authentification
-}
-
-resource "openstack_networking_network_v2" "net_gra" {
-  provider = openstack.default
-  name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-gra"
-}
-
-resource "openstack_networking_network_v2" "net_sbg" {
-  provider = openstack.sbg5
-  name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-sbg"
+  # Les identifiants proviennent des variables d'environnement définies par le pipeline CI :
+  # OS_AUTH_URL, OS_APPLICATION_CREDENTIAL_ID, OS_APPLICATION_CREDENTIAL_SECRET
 }</code></pre>
 
+      <pre><code class="language-hcl"># variables.tf — Paramètres d'entrée (valeurs fournies par terraform.tfvars)
+variable "instance_name" {
+  description = "Nom de l'instance compute"
+  type        = string
+}
+
+variable "instance_flavor" {
+  description = "Flavor (taille) de l'instance — ex. scale-1, scale-2"
+  type        = string
+}
+
+variable "instance_image" {
+  description = "Image de démarrage — ex. Debian 12 LVM OPCP"
+  type        = string
+}
+
+variable "network_name" {
+  description = "Nom du réseau privé à attacher"
+  type        = string
+}
+
+variable "key_name" {
+  description = "Nom de la paire de clés SSH"
+  type        = string
+}</code></pre>
+
+      <pre><code class="language-hcl"># main.tf — La ressource instance compute
+resource "openstack_compute_instance_v2" "app_server" {
+  name        = var.instance_name
+  flavor_name = var.instance_flavor
+  image_name  = var.instance_image
+  key_pair    = var.key_name
+
+  network {
+    name = var.network_name
+  }
+}
+
+output "instance_ip" {
+  description = "Adresse IP privée de l'instance"
+  value       = openstack_compute_instance_v2.app_server.access_ip_v4
+}</code></pre>
+
+      <pre><code class="language-hcl"># terraform.tfvars — Paramètres que vous modifiez pour déclencher des changements
+instance_name   = "my-app-server"
+instance_flavor = "scale-1"
+instance_image  = "Debian 12 LVM OPCP"
+network_name    = "student01-private-network"
+key_name        = "opcp-openstack-automation-ssh-key"</code></pre>
+
+      <h3>1.5. Créer le dépôt Gitea et pousser</h3>
+      <p>
+        Créez un nouveau dépôt dans Gitea et poussez le projet OpenTofu :
+      </p>
+
+      <pre><code class="language-bash"># Créez un nouveau dépôt dans l'interface Gitea : http://localhost:3000/repo/create
+# Nommez-le : openstack-infra
+
+# Initialisez votre projet local
+mkdir openstack-infra &amp;&amp; cd openstack-infra
+git init
+
+# Ajoutez les fichiers OpenTofu
+# (versions.tf, variables.tf, main.tf, terraform.tfvars créés ci-dessus)
+
+# Créez un .gitignore pour exclure les fichiers d'état
+cat &gt; .gitignore &lt;&lt;EOF
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+EOF
+
+# Créez le répertoire du workflow CI
+mkdir -p .gitea/workflows/
+
+# Connectez-vous à Gitea et poussez
+git remote add origin http://localhost:3000/votre-utilisateur/openstack-infra.git
+git add .
+git commit -m "Infrastructure OpenTofu initiale"
+git push -u origin main</code></pre>
+
+      <h3>1.6. Créer le pipeline CI/CD</h3>
+      <p>
+        Voici le fichier clé. Il indique à Gitea Actions d'exécuter <code>tofu plan</code>
+        et <code>tofu apply</code> à chaque fois qu'un fichier <code>.tf</code> ou
+        <code>.tfvars</code> est modifié sur la branche <code>main</code> :
+      </p>
+
+      <pre><code class="language-yaml"># .gitea/workflows/deploy.yaml
+name: OpenTofu Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.tf'
+      - '*.tfvars'
+
+env:
+  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
+  OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+  OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
+  OS_AUTH_TYPE: "v3applicationcredential"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@v1
+
+      - name: Initialize OpenTofu
+        run: tofu init
+
+      - name: Validate configuration
+        run: tofu validate
+
+      - name: Plan changes
+        run: tofu plan -out=tfplan
+
+      - name: Apply changes
+        run: tofu apply -auto-approve tfplan</code></pre>
+
+      <h3>1.7. Configurer les secrets dans Gitea</h3>
+      <p>
+        Stockez vos identifiants OpenStack comme secrets du dépôt pour que le pipeline
+        puisse s'authentifier sans exposer les identifiants dans le code :
+      </p>
+
+      <pre><code class="language-bash"># Dans l'interface Gitea : Dépôt > Paramètres > Actions > Secrets
+# Ajoutez les secrets suivants :
+#
+#   OS_AUTH_URL                       → votre URL d'authentification OpenStack
+#                                       (ex. https://auth.cloud.ovh.net/v3)
+#   OS_APPLICATION_CREDENTIAL_ID     → votre ID d'identifiant d'application
+#   OS_APPLICATION_CREDENTIAL_SECRET  → votre secret d'identifiant d'application</code></pre>
+
+      <h3>1.8. Déclencher l'automatisation — modifier un paramètre</h3>
+      <p>
+        La boucle complète est maintenant en place. Pour démontrer l'automatisation,
+        modifiez simplement un paramètre dans <code>terraform.tfvars</code> et poussez :
+      </p>
+
+      <pre><code class="language-bash"># Exemple : changer le flavor de l'instance de scale-1 à scale-2
+sed -i 's/instance_flavor = "scale-1"/instance_flavor = "scale-2"/' terraform.tfvars
+
+# Committer et pousser le changement
+git add terraform.tfvars
+git commit -m "Changement de flavor vers scale-2"
+git push
+
+# Gitea détecte le changement .tfvars et déclenche le pipeline :
+#   1. tofu init      — télécharge le provider OpenStack
+#   2. tofu validate  — vérifie la syntaxe
+#   3. tofu plan      — affiche : ~ openstack_compute_instance_v2.app_server (changement de flavor)
+#   4. tofu apply     — recrée l'instance avec le nouveau flavor
+#
+# Suivez l'exécution sur : http://localhost:3000/votre-utilisateur/openstack-infra/actions</code></pre>
+
+      <p>
+        Vous pouvez modifier n'importe quel paramètre dans <code>terraform.tfvars</code>
+        — nom de l'instance, image, réseau — et le pipeline réconciliera automatiquement
+        l'infrastructure. C'est la puissance de l'IaC déclaratif combiné au CI/CD :
+        votre dépôt Git devient la source unique de vérité pour votre infrastructure.
+      </p>
+
+      <p>
+        <strong>💡 Conseils :</strong>
+      </p>
+      <ul>
+        <li>Le filtre <code>paths</code> dans le workflow garantit que le pipeline ne s'exécute que lorsque des fichiers <code>*.tf</code> ou <code>*.tfvars</code> changent — modifier un README ne déclenchera pas de déploiement.</li>
+        <li>Ajoutez un bloc <code>environment: production</code> sur le job deploy pour exiger une approbation manuelle avant l'application.</li>
+        <li>Gardez <code>terraform.tfstate</code> dans <code>.gitignore</code> — pour un usage en équipe, configurez un backend distant (S3, Swift, etc.).</li>
+        <li>Le pipeline utilise <code>-auto-approve</code> car le plan a déjà été généré et sauvegardé comme artefact dans la même exécution.</li>
+        <li>Pour plus de sécurité, vous pouvez séparer en deux jobs : un pour <code>plan</code> (sur toute branche) et un pour <code>apply</code> (uniquement sur <code>main</code> après revue).</li>
+      </ul>
+
       <!-- Section 2 -->
-      <h2>2. Intégration CI/CD</h2>
-      <p>
-        Automatisez les déploiements avec un pipeline CI/CD. L'exemple ci-dessous
-        utilise une définition de pipeline générique — adaptez-la à GitHub Actions,
-        GitLab CI ou Jenkins.
-      </p>
-
-      <pre><code class="language-yaml"># .ci/deploy.yaml — pipeline générique
-stages:
-  - validate
-  - plan
-  - deploy
-
-validate:
-  script:
-    - python -c "
-        from config import ConfigurationManager;
-        m = ConfigurationManager();
-        c = m.load_config('config.yaml');
-        v = m.validate_config(c);
-        assert v.is_valid, v.errors
-      "
-
-plan:
-  script:
-    - cd terraform
-    - terraform init    # Ou : tofu init
-    - terraform plan -out=tfplan    # Ou : tofu plan -out=tfplan
-
-deploy:
-  script:
-    - cd terraform
-    - terraform apply tfplan    # Ou : tofu apply tfplan
-  when: manual</code></pre>
-
-      <pre><code class="language-bash"># Variables d'environnement pour le pipeline
-export OS_AUTH_URL="${OS_AUTH_URL}"
-export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
-export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"
-export OS_REGION_NAME="${OS_REGION_NAME}"
-export OS_TENANT_NAME="${OS_TENANT_NAME}"</code></pre>
-
-      <!-- Section 3 -->
-      <h2>3. Modules personnalisés</h2>
-      <p>
-        Encapsulez les patterns courants dans des fonctions Python réutilisables
-        ou des modules Terraform.
-      </p>
-
-      <pre><code class="language-python">"""custom_modules/web_stack.py — module de pile web réutilisable."""
-
-from config.models import (
-    NetworkSpec, SubnetSpec, SecurityGroupSpec,
-    SecurityGroupRule, InstanceSpec, VolumeSpec,
-)
-
-
-def web_stack(name, instance_count=2, volume_size=100):
-    """Retourne une configuration complète de pile web."""
-    return {
-        "networks": [
-            NetworkSpec(
-                name=f"{name}-network",
-                subnets=[
-                    SubnetSpec(
-                        name=f"{name}-subnet",
-                        cidr="192.168.1.0/24",
-                        dns_nameservers=["8.8.8.8"],
-                    )
-                ],
-            )
-        ],
-        "security_groups": [
-            SecurityGroupSpec(
-                name=f"{name}-sg",
-                description=f"GS pour {name}",
-                rules=[
-                    SecurityGroupRule(
-                        direction="ingress",
-                        protocol="tcp",
-                        port_range_min=80,
-                        port_range_max=80,
-                        remote_ip_prefix="0.0.0.0/0",
-                        ethertype="IPv4",
-                    ),
-                ],
-            )
-        ],
-        "instances": [
-            InstanceSpec(
-                name=f"{name}-web-{i+1}",
-                flavor="scale-1",
-                image="Debian 12 LVM OPCP",
-                key_name="opcp-openstack-automation-ssh-key",
-                network_ids=[f"{name}-network"],
-                security_groups=[f"{name}-sg"],
-            )
-            for i in range(instance_count)
-        ],
-        "volumes": [
-            VolumeSpec(
-                name=f"{name}-vol-{i+1}",
-                size=volume_size,
-                volume_type="classic",
-                attach_to=f"{name}-web-{i+1}",
-            )
-            for i in range(instance_count)
-        ],
-    }</code></pre>
-
-      <!-- Section 4 -->
-      <h2>4. Bonnes pratiques</h2>
+      <h2>2. Bonnes pratiques</h2>
       <ul>
         <li><strong>Ne jamais coder les identifiants en dur</strong> — utilisez des variables d'environnement ou des identifiants d'application.</li>
         <li><strong>Valider avant de déployer</strong> — détectez les erreurs de CIDR, ports et références tôt.</li>
@@ -218,8 +328,8 @@ def web_stack(name, instance_count=2, volume_size=100):
         <li><strong>Rotation des identifiants</strong> — utilisez des identifiants d'application à durée limitée et effectuez une rotation régulière.</li>
       </ul>
 
-      <!-- Section 5 -->
-      <h2>5. SDK vs Terraform vs Ansible</h2>
+      <!-- Section 3 -->
+      <h2>3. SDK vs Terraform vs Ansible</h2>
       <p>
         Chaque approche a ses forces. Choisissez en fonction du workflow de votre
         équipe.
@@ -273,9 +383,7 @@ def web_stack(name, instance_count=2, volume_size=100):
 # SDK
 python tests/deploy_example.py
 
-# Terraform
-cd terraform &amp;&amp; terraform apply -auto-approve
-# Ou, avec OpenTofu :
+# Terraform / OpenTofu
 cd terraform &amp;&amp; tofu apply -auto-approve
 
 # Ansible (quand les playbooks sont prêts)
@@ -283,10 +391,9 @@ ansible-playbook ansible/playbook.yml -e @vars.yml</code></pre>
 
       <h2>Résumé</h2>
       <ul>
-        <li>Déployez dans <strong>plusieurs régions</strong> pour la redondance avec une simple boucle ou des alias de fournisseur.</li>
-        <li>Intégrez avec le <strong>CI/CD</strong> — validez, planifiez, puis appliquez avec approbation manuelle.</li>
-        <li>Construisez des <strong>modules réutilisables</strong> pour standardiser les patterns courants.</li>
-        <li>Choisissez le bon outil : <strong>SDK</strong> pour la flexibilité, <strong>Terraform</strong> pour la gestion d'état, <strong>Ansible</strong> pour la configuration.</li>
+        <li>Intégrez avec le <strong>CI/CD via Gitea &amp; OpenTofu</strong> — installez une forge Git locale, poussez vos fichiers .tf, et toute modification de paramètre dans <code>terraform.tfvars</code> déclenche automatiquement le déploiement de l'infrastructure.</li>
+        <li>Suivez les <strong>bonnes pratiques</strong> — ne jamais coder les identifiants en dur, valider tôt, taguer les ressources, et automatiser le nettoyage.</li>
+        <li>Choisissez le bon outil : <strong>SDK</strong> pour la flexibilité, <strong>Terraform/OpenTofu</strong> pour la gestion d'état, <strong>Ansible</strong> pour la configuration.</li>
       </ul>
 
       <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
