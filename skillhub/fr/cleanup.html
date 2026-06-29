@@ -40,157 +40,74 @@
       <p>
         Tout au long de cette formation, vous avez créé des réseaux, des groupes de
         sécurité, des instances et des volumes. Cette dernière leçon vous guide pour
-        renommer chaque ressource avec un préfixe cohérent, puis les supprimer
-        afin de laisser votre projet OVHcloud propre.
+        lister chaque ressource correspondant à votre préfixe
+        <code>$STUDENT_ID-</code> puis les supprimer afin de laisser votre projet
+        OVHcloud propre.
       </p>
 
       <!-- Section 1 -->
       <h2>1. La convention de nommage</h2>
       <p>
-        Nous utilisons le préfixe <code>$STUDENT_ID-</code> pour identifier chaque ressource
-        créée pendant les labs. Cela permet de les lister et de les supprimer
-        facilement sans toucher aux ressources de production.
+        Chaque ressource créée pendant les labs utilise le préfixe
+        <code>$STUDENT_ID-</code> (votre identifiant étudiant). Cela permet de les
+        lister et de les supprimer facilement sans toucher aux ressources de
+        production.
       </p>
 
       <table>
         <thead>
           <tr>
             <th>Type de ressource</th>
-            <th>Nom original (exemple)</th>
-            <th>Renommé en</th>
+            <th>Exemples de noms créés dans les labs</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Réseau</td>
-            <td>app-network</td>
-            <td>$STUDENT_ID-network</td>
+            <td>$STUDENT_ID-app-network, $STUDENT_ID-multi-subnet-network, $STUDENT_ID-private-network</td>
           </tr>
           <tr>
             <td>Sous-réseau</td>
-            <td>app-subnet</td>
-            <td>$STUDENT_ID-subnet</td>
+            <td>$STUDENT_ID-app-subnet, $STUDENT_ID-frontend-subnet, $STUDENT_ID-backend-subnet, $STUDENT_ID-private-subnet</td>
           </tr>
           <tr>
             <td>Groupe de sécurité</td>
-            <td>web-server-sg</td>
-            <td>$STUDENT_ID-sg-web</td>
+            <td>$STUDENT_ID-web-server-sg, $STUDENT_ID-database-sg, $STUDENT_ID-mixed-sg, $STUDENT_ID-web-sg</td>
           </tr>
           <tr>
             <td>Instance</td>
-            <td>web-server-1</td>
-            <td>$STUDENT_ID-instance-web-1</td>
+            <td>$STUDENT_ID-web-server-1, $STUDENT_ID-nginx-host, $STUDENT_ID-tagged-instance</td>
           </tr>
           <tr>
             <td>Volume</td>
-            <td>data-vol-1</td>
-            <td>$STUDENT_ID-volume-data-1</td>
+            <td>$STUDENT_ID-data-vol-1, $STUDENT_ID-fast-vol-1, $STUDENT_ID-web-data, $STUDENT_ID-boot-volume</td>
           </tr>
         </tbody>
       </table>
 
       <!-- Section 2 -->
-      <h2>2. Renommer les ressources avec le SDK</h2>
+      <h2>2. Lister les ressources par préfixe</h2>
       <p>
-        Le SDK OpenStack permet de modifier l'attribut <code>name</code> de la
-        plupart des types de ressources. Le script ci-dessous renomme chaque
-        ressource dont le nom correspond à un nom de lab connu.
+        Avant de supprimer quoi que ce soit, vérifiez que seules les ressources lab
+        sont ciblées. Le script ci-dessous liste chaque ressource dont le nom
+        commence par votre préfixe <code>$STUDENT_ID-</code>.
       </p>
 
-      <pre><code class="language-python">"""cleanup_rename.py — Renommer toutes les ressources lab avec le préfixe $STUDENT_ID-*."""
+      <pre><code class="language-python">"""cleanup_list.py — Lister chaque ressource dont le nom commence par $STUDENT_ID-."""
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
 
 auth_mgr = AuthenticationManager()
 credentials = auth_mgr.load_credentials_from_env()
 conn = ConnectionManager(credentials).connect()
 
-PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) +"-"
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) + "-"
 
-# ── Correspondance : nom original → nouveau nom ───────────────
-NETWORK_RENAMES = {
-    "app-network":          str(os.environ.get('STUDENT_ID', 'default-student')) +"-network",
-    "private-network":      str(os.environ.get('STUDENT_ID', 'default-student')) +"-network-private",
-    "multi-subnet-network": str(os.environ.get('STUDENT_ID', 'default-student')) +"-network-multi",
-}
+print(f"Liste des ressources avec le préfixe : {PREFIX}")
 
-SUBNET_RENAMES = {
-    "app-subnet":      str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet",
-    "private-subnet":  str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet-private",
-    "frontend-subnet": str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet-frontend",
-    "backend-subnet":  str(os.environ.get('STUDENT_ID', 'default-student')) +"-subnet-backend",
-}
-
-SG_RENAMES = {
-    "web-server-sg":       str(os.environ.get('STUDENT_ID', 'default-student')) +"-sg-web",
-    "web-security-group":  str(os.environ.get('STUDENT_ID', 'default-student')) +"-sg-web-group",
-    "web-sg":              str(os.environ.get('STUDENT_ID', 'default-student')) +"-sg-web-deploy",
-}
-
-INSTANCE_RENAMES = {
-    "web-server-1": str(os.environ.get('STUDENT_ID', 'default-student')) +"-instance-web-1",
-    "web-server-2": str(os.environ.get('STUDENT_ID', 'default-student')) +"-instance-web-2",
-    "web-server-3": str(os.environ.get('STUDENT_ID', 'default-student')) +"-instance-web-3",
-}
-
-VOLUME_RENAMES = {
-    "data-vol-1":    str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-1",
-    "fast-vol-1":    str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-fast-1",
-    "web-data":      str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-web-data",
-    "data-volume-1": str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-v1",
-    "data-volume-2": str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-v2",
-    "data-volume-3": str(os.environ.get('STUDENT_ID', 'default-student')) +"-volume-data-v3",
-}
-
-# ── Fonctions de renommage ─────────────────────────────────────
-def rename_networks(conn, renames):
-    for net in conn.network.networks():
-        if net.name in renames:
-            print(f"  Réseau : {net.name} → {renames[net.name]}")
-            conn.network.update_network(net.id, name=renames[net.name])
-
-def rename_subnets(conn, renames):
-    for sub in conn.network.subnets():
-        if sub.name in renames:
-            print(f"  Sous-réseau : {sub.name} → {renames[sub.name]}")
-            conn.network.update_subnet(sub.id, name=renames[sub.name])
-
-def rename_security_groups(conn, renames):
-    for sg in conn.network.security_groups():
-        if sg.name in renames:
-            print(f"  Groupe de sécurité : {sg.name} → {renames[sg.name]}")
-            conn.network.update_security_group(sg.id, name=renames[sg.name])
-
-def rename_instances(conn, renames):
-    for srv in conn.compute.servers():
-        if srv.name in renames:
-            print(f"  Instance : {srv.name} → {renames[srv.name]}")
-            conn.compute.update_server(srv.id, name=renames[srv.name])
-
-def rename_volumes(conn, renames):
-    for vol in conn.block_storage.volumes():
-        if vol.name in renames:
-            print(f"  Volume : {vol.name} → {renames[vol.name]}")
-            conn.block_storage.update_volume(vol.id, name=renames[vol.name])
-
-print("Renommage des ressources lab …")
-rename_networks(conn, NETWORK_RENAMES)
-rename_subnets(conn, SUBNET_RENAMES)
-rename_security_groups(conn, SG_RENAMES)
-rename_instances(conn, INSTANCE_RENAMES)
-rename_volumes(conn, VOLUME_RENAMES)
-print("Terminé — toutes les ressources lab utilisent le préfixe $STUDENT_ID-*.")</code></pre>
-
-      <!-- Section 3 -->
-      <h2>3. Lister les ressources par préfixe</h2>
-      <p>
-        Avant de supprimer quoi que ce soit, vérifiez que seules les ressources lab
-        sont ciblées.
-      </p>
-
-      <pre><code class="language-python">"""cleanup_list.py — Lister chaque ressource dont le nom commence par $STUDENT_ID-."""
-PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) +"-"
-
-print("=== Réseaux ===")
+print("\n=== Réseaux ===")
 for net in conn.network.networks():
     if net.name and net.name.startswith(PREFIX):
         print(f"  {net.name}  (ID : {net.id})")
@@ -215,8 +132,8 @@ for vol in conn.block_storage.volumes():
     if vol.name and vol.name.startswith(PREFIX):
         print(f"  {vol.name}  (ID : {vol.id})  Statut : {vol.status}")</code></pre>
 
-      <!-- Section 4 -->
-      <h2>4. Supprimer toutes les ressources lab (SDK)</h2>
+      <!-- Section 3 -->
+      <h2>3. Supprimer toutes les ressources lab (SDK)</h2>
       <p>
         Les ressources doivent être supprimées dans l'<strong>ordre inverse des
         dépendances</strong> : d'abord les volumes (détacher puis supprimer), puis
@@ -225,9 +142,17 @@ for vol in conn.block_storage.volumes():
       </p>
 
       <pre><code class="language-python">"""cleanup_delete.py — Supprimer toutes les ressources $STUDENT_ID-* dans l'ordre sûr."""
+import sys
+import os
 import time
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
 
-PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) +"-"
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+conn = ConnectionManager(credentials).connect()
+
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) + "-"
 
 # ── Étape 1 : Détacher et supprimer les volumes ───────────────
 print("Étape 1/5 — Suppression des volumes …")
@@ -276,23 +201,22 @@ for net in conn.network.networks():
         print(f"  Suppression du réseau : {net.name}")
         conn.network.delete_network(net.id, ignore_missing=True)
 
-print("\nNettoyage terminé — toutes les ressources $STUDENT_ID-* ont été supprimées.")</code></pre>
+print(f"\nNettoyage terminé — toutes les ressources {PREFIX}* ont été supprimées.")</code></pre>
 
-      <!-- Section 5 -->
-      <h2>5. Utiliser le nettoyage du DeploymentEngine</h2>
+      <!-- Section 4 -->
+      <h2>4. Utiliser le nettoyage du DeploymentEngine</h2>
       <p>
         Si vous avez utilisé le <code>DeploymentEngine</code> pendant la leçon
         Déploiement, vous pouvez passer les IDs de ressources retournés directement
         à <code>cleanup_resources()</code>.
       </p>
 
-      <pre><code class="language-python">
+      <pre><code class="language-python">"""cleanup_engine.py — Nettoyage avec DeploymentEngine."""
 import sys
 import os
-# Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
-from openstack_sdk.deployment_engine import DeploymentEngine
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.deployment_engine import DeploymentEngine
 
 auth_mgr = AuthenticationManager()
 credentials = auth_mgr.load_credentials_from_env()
@@ -313,16 +237,18 @@ for resource, success in results.items():
     status = "supprimé" if success else "ÉCHOUÉ"
     print(f"  {resource} : {status}")</code></pre>
 
-      <!-- Section 6 -->
-      <h2>6. Nettoyage Terraform</h2>
+      <!-- Section 5 -->
+      <h2>5. Nettoyage Terraform / OpenTofu</h2>
       <p>
-        Si vous avez créé des ressources avec Terraform, une seule commande supprime
-        tout. Terraform lit son fichier d'état et supprime les ressources dans le bon
-        ordre automatiquement.
+        Si vous avez créé des ressources avec Terraform ou OpenTofu, une seule
+        commande supprime tout. Il lit le fichier d'état et supprime les ressources
+        dans le bon ordre automatiquement.
       </p>
 
       <pre><code class="language-bash">cd terraform
+# Avec Terraform :
 terraform destroy -auto-approve
+
 # Ou, avec OpenTofu :
 tofu destroy -auto-approve</code></pre>
 
@@ -336,10 +262,10 @@ tofu destroy -auto-approve</code></pre>
 
       <h2>Résumé</h2>
       <ul>
-        <li>Renommez les ressources avec un préfixe <strong>$STUDENT_ID-*</strong> pour les identifier facilement.</li>
+        <li>Toutes les ressources lab utilisent le préfixe <strong>$STUDENT_ID-</strong> — filtrez dessus pour les identifier en toute sécurité.</li>
         <li>Supprimez toujours dans l'<strong>ordre inverse des dépendances</strong> : volumes → instances → groupes de sécurité → sous-réseaux → réseaux.</li>
         <li>Utilisez <code>DeploymentEngine.cleanup_resources()</code> quand vous avez les IDs de ressources d'un déploiement précédent.</li>
-        <li>Pour les ressources Terraform, <code>terraform destroy</code> (ou <code>tofu destroy</code>) gère l'ordre pour vous.</li>
+        <li>Pour les ressources Terraform/OpenTofu, <code>terraform destroy</code> (ou <code>tofu destroy</code>) gère l'ordre pour vous.</li>
       </ul>
 
       <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
