@@ -44,6 +44,15 @@
         and handles API rate limits with exponential backoff.
       </p>
 
+      <div role="alert" style="background:color-mix(in srgb,var(--color-warning) 15%,transparent);border-left:4px solid var(--color-warning);border-radius:4px;padding:0.75rem 1rem;margin-bottom:1.5rem;">
+        <strong>Warning:</strong> Two of the four resource types orchestrated by the <code>DeploymentEngine</code> are not yet available on OPCP:
+        <ul style="margin:0.5rem 0 0 1.25rem;">
+          <li><strong>Security Groups</strong> — not supported on OPCP; remove or comment out any <code>SecurityGroupSpec</code> entries from your config.</li>
+          <li><strong>Volumes</strong> — block storage is not supported on OPCP; remove or comment out any <code>VolumeSpec</code> entries from your config.</li>
+        </ul>
+        Networks and compute instances are fully supported. The code examples in this lesson are provided for reference only and must be adapted before running against the platform.
+      </div>
+
       <!-- Section 1 -->
       <h2>1. Flavor and Image Selection</h2>
       <p>
@@ -152,7 +161,7 @@ import sys
 import os
 import base64
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
 from openstack_sdk.deployment_engine import DeploymentEngine
 from openstack_sdk.auth_manager import AuthenticationManager
 from openstack_sdk.network_manager import NetworkManager

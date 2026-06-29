@@ -54,6 +54,7 @@
         mettre à jour votre instance compute sur OpenStack.
       </p>
 
+<<<<<<< HEAD
       <h3>1.1. Vue d'ensemble du scénario</h3>
       <p>
         Voici le workflow que nous allons construire :
@@ -65,6 +66,15 @@
         <li>Lorsque vous modifiez <code>terraform.tfvars</code> (ex. changez <code>instance_flavor</code> de <code>"scale-1"</code> à <code>"scale-2"</code>) et poussez, Gitea Actions déclenche automatiquement un pipeline qui exécute <code>tofu plan</code> puis <code>tofu apply</code>.</li>
         <li>OpenStack provisionne ou met à jour l'instance compute selon le nouveau paramètre.</li>
       </ol>
+=======
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+from openstack_sdk.deployment_engine import DeploymentEngine
+from openstack_sdk.auth_manager import AuthenticationManager
+>>>>>>> main
 
       <h3>1.2. Installer Gitea localement</h3>
       <p>

@@ -55,7 +55,7 @@
 import sys                                                                                                                                                                                                        🛠️ function call (auto)
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.network_manager import NetworkManager
 from config.models import NetworkSpec, SubnetSpec, AuthCredentials
@@ -129,7 +129,7 @@ network_spec = NetworkSpec(
       <pre><code class="language-python">import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
 
 from config.config_manager import ConfigurationManager
 
