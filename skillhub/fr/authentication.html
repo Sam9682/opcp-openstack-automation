@@ -125,7 +125,7 @@ chmod 600 credentials.txt</code></pre>
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import AuthenticationManager
 
 auth_manager = AuthenticationManager()
@@ -146,24 +146,16 @@ print("Authenticated successfully!")</code></pre>
         rafraîchit automatiquement lorsqu'il reste moins de 5 minutes.
       </p>
 
-      <pre><code class="language-python">
-import sys
-import os
-# Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
-from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
+      <pre><code class="language-python">from openstack_sdk.auth_manager import ConnectionManager
 from config.models import AuthCredentials
+from openstack_sdk.auth_manager import AuthenticationManager
 
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
 auth_manager = AuthenticationManager()
+credentials = auth_manager.load_credentials_from_env()
 
-# Load from a secure file (should have 600 permissions)
-credentials = auth_manager.load_credentials_from_file("credentials.txt")
-
-conn_manager = ConnectionManager(credentials)
-
-# get_connection() refreshes the token transparently
-connection = conn_manager.get_connection()
-print(f"get_connection() refreshes the token transparently")
+connection = auth_manager.authenticate(credentials)
 
 # Use the connection for long-running operations …
 projects = list(connection.identity.projects())
@@ -183,7 +175,7 @@ conn_manager.close()</code></pre>
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.auth_manager import AuthenticationManager
 
@@ -198,6 +190,57 @@ with conn_manager as connection:
     servers = list(connection.compute.servers())
     print(f"Running instances: {len(servers)}")
 # Connection is automatically closed here</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Identifiants d'application</h2>
+      <p>
+        Les identifiants d'application vous permettent de vous authentifier sans
+        exposer votre mot de passe principal. Vous les créez dans le tableau de
+        bord Horizon ou via la CLI.
+      </p>
+
+      <pre><code class="language-bash"># Create an application credential via the OpenStack CLI
+openstack application credential create $STUDENT_ID-my-automation \
+  --description "CI/CD pipeline credential" \
+  --unrestricted</code></pre>
+
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+credentials = auth_manager.load_credentials_from_env()
+
+connection = auth_manager.authenticate(credentials)
+print("Authenticated with application credentials!")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Gestion des erreurs</h2>
+      <p>
+        Le module lève une <code>AuthenticationError</code> en cas d'échec —
+        variables manquantes, identifiants invalides ou problèmes réseau.
+      </p>
+
+      <pre><code class="language-python">from openstack_sdk.auth_manager import (
+    AuthenticationManager,
+    AuthenticationError,
+)
+
+auth_manager = AuthenticationManager()
+
+try:
+    credentials = auth_manager.load_credentials_from_env()
+    connection = auth_manager.authenticate(credentials)
+    print(f"Authentication succeeded: no exception !")
+except AuthenticationError as exc:
+    print(f"Authentication failed: {exc}")
+    # Handle gracefully — log, alert, or retry</code></pre>
 
       <h2>Résumé</h2>
       <ul>

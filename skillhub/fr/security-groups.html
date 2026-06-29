@@ -44,10 +44,6 @@
         créerez des groupes, validerez des règles et gérerez IPv4 et IPv6.
       </p>
 
-      <div role="alert" style="background:color-mix(in srgb,var(--color-warning) 15%,transparent);border-left:4px solid var(--color-warning);border-radius:4px;padding:0.75rem 1rem;margin-bottom:1.5rem;">
-        <strong>Avertissement :</strong> Les groupes de sécurité ne sont pas encore disponibles sur OPCP. Les exemples de code de cette leçon sont fournis à titre de référence uniquement et ne peuvent pas être exécutés sur la plateforme pour le moment.
-      </div>
-
       <!-- Section 1 -->
       <h2>1. Création d'un groupe de sécurité</h2>
       <p>
@@ -59,7 +55,7 @@
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.security_group_manager import SecurityGroupManager
@@ -126,7 +122,7 @@ print(f"Créé : {created[0].name} (ID : {created[0].id})")</code></pre>
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_manager import ConfigurationManager
 
@@ -195,16 +191,7 @@ ipv6_rule = SecurityGroupRule(
     port_range_max=443,
     remote_ip_prefix="::/0",
     ethertype="IPv6",
-)
-
-mixed_sg = SecurityGroupSpec(
-    name=str(os.environ.get('STUDENT_ID', 'default-student')) + "-mixed-sg",
-    description="ICMP et HTTPS IPv6",
-    rules=[icmp_rule, ipv6_rule],
-)
-
-created = sg_manager.create_security_groups([mixed_sg])
-print(f"Créé : {created[0].name} (ID : {created[0].id})")</code></pre>
+)</code></pre>
 
       <!-- Section 5 -->
       <h2>5. Recherche et suppression de groupes</h2>

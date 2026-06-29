@@ -42,24 +42,7 @@
         infrastructure-as-code — you can choose the approach that fits best.
       </p>
 
-      <!-- Option A -->
-      <h2>Option A — OpenStack CLI</h2>
-      <p>
-        The <code>openstack</code> command-line client wraps the REST APIs into
-        simple, human-friendly commands. It is the recommended approach for
-        day-to-day operations and is used throughout this training.
-      </p>
-
-      <pre><code class="language-bash"># Install the CLI
-pip3 install python-openstackclient
-
-# Examples
-openstack server list
-openstack network create $STUDENT_ID-my-network
-openstack endpoint list</code></pre>
-
-      <!-- Option B -->
-      <h2>Option B — REST API (cURL / HTTP)</h2>
+      <h2>Option A — REST API (cURL / HTTP)</h2>
       <p>
         Every OpenStack service exposes a standard REST API (HTTP URL). You can interact with it
         directly using <code>curl</code> or any HTTP client. This is the lowest-level
@@ -78,12 +61,7 @@ openstack endpoint list -c URL -c 'Service Name'</code></pre>
         Define the environment variable $NOVA_ENDPOINT with the corresponding value
       </p>
 
-      <pre><code class="language-bash"># 1. Retrieve the Nova (Compute) endpoint URL
-#    The public URL for the "nova" service becomes your NOVA_ENDPOINT.
-NOVA_ENDPOINT=$(openstack endpoint list --service nova --interface public -c URL -f value)
-echo "Nova endpoint: $NOVA_ENDPOINT"
-
-# 2. Authenticate and obtain a token
+      <pre><code class="language-bash"># 1. Authenticate and obtain a token
 TOKEN=$(curl -si --cacert $OS_CACERT -X POST "$OS_AUTH_URL/auth/tokens" \
   -H "Content-Type: application/json" \
   -d '{
@@ -97,19 +75,28 @@ TOKEN=$(curl -si --cacert $OS_CACERT -X POST "$OS_AUTH_URL/auth/tokens" \
        }
      }
    }' 2>/dev/null | sed -n 's/^x-subject-token: *//p' | tr -d '\r')
-echo "Token: $TOKEN"
+ echo "Token: $TOKEN
 
-# You can also use option -k to skip certificate verification instead of --cacert.
+ You can also use option -k without certificate.
 
 # 2. List servers using the Compute API
 curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers"</code></pre>
 
+
+      <h2>Option B — OpenStack CLI</h2>
       <p>
-        To list all available service endpoints and their URLs, use:
+        The <code>openstack</code> command-line client wraps the REST APIs into
+        simple, human-friendly commands. It is the recommended approach for
+        day-to-day operations and is used throughout this training.
       </p>
 
-      <pre><code class="language-bash"># List all service endpoints with their URLs
-openstack endpoint list -c URL -c 'Service Name'</code></pre>
+      <pre><code class="language-bash"># Install the CLI
+pip3 install python-openstackclient
+
+# Examples
+openstack server list
+openstack network create $STUDENT_ID-my-network
+openstack endpoint list</code></pre>
 
       <!-- Option C -->
       <h2>Option C — OpenStack SDK (Python)</h2>
@@ -170,13 +157,6 @@ resource "openstack_networking_network_v2" "my_network" {
   admin_state_up = true
 }
 
-resource "openstack_networking_subnet_v2" "my_subnet" {
-  name       = "$STUDENT_ID-my-subnet"
-  network_id = openstack_networking_network_v2.my_network.id
-  cidr       = "192.168.0.0/24"
-  ip_version = 4
-}
-
 resource "openstack_compute_instance_v2" "my_instance" {
   name        = "$STUDENT_ID-my-instance"
   flavor_name = "scale-1"
@@ -197,7 +177,7 @@ resource "openstack_compute_instance_v2" "my_instance" {
       <pre><code class="language-bash"># Install the Ansible OpenStack collection
 ansible-galaxy collection install openstack.cloud</code></pre>
 
-      <p>Example playbook (you can run it with <code>ansible-playbook</code>):</p>
+      <p>Example playbook:</p>
 
       <pre><code class="language-yaml">- name: Provision OpenStack resources
   hosts: localhost
@@ -207,22 +187,14 @@ ansible-galaxy collection install openstack.cloud</code></pre>
         name: $STUDENT_ID-my-network
         state: present
 
-    - name: Create a subnet
-      openstack.cloud.subnet:
-        name: $STUDENT_ID-my-subnet
-        network_name: $STUDENT_ID-my-network
-        cidr: 192.168.100.0/24
-        state: present
-
     - name: Create an instance
       openstack.cloud.server:
         name: $STUDENT_ID-my-instance
         flavor: scale-1
-        image: image_uuid
+        image: "Ubuntu 24.04 BMPOD"
         network: $STUDENT_ID-my-network
         state: present
-        wait: true
-        timeout: 1800</code></pre>
+        wait: true</code></pre>
 
       <!-- Comparison table -->
       <h2>Which Approach to Choose?</h2>
@@ -237,14 +209,14 @@ ansible-galaxy collection install openstack.cloud</code></pre>
         </thead>
         <tbody>
           <tr>
-            <td>OpenStack CLI</td>
-            <td>Day-to-day operations, quick tasks</td>
-            <td>Low</td>
-          </tr>
-          <tr>
             <td>REST API (cURL)</td>
             <td>Debugging, understanding the protocol</td>
             <td>High</td>
+          </tr>
+          <tr>
+            <td>OpenStack CLI</td>
+            <td>Day-to-day operations, quick tasks</td>
+            <td>Low</td>
           </tr>
           <tr>
             <td>OpenStack SDK</td>

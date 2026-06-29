@@ -144,7 +144,7 @@ volumes:
       <pre><code class="language-python">import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_manager import ConfigurationManager
 
@@ -167,11 +167,11 @@ export OS_TENANT_NAME="my-project"</code></pre>
         resources.
       </p>
 
-      <pre><code class="language-python">
+      <pre><code class="language-python">import sys
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_manager import ConfigurationManager
 

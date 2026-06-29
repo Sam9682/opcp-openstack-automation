@@ -119,44 +119,21 @@ export OS_AUTH_TYPE=v3applicationcredential</code></pre>
       <pre><code class="language-bash"># credentials.txt — keep permissions tight
 chmod 600 credentials.txt</code></pre>
 
-      <p>The file uses a simple <code>KEY=VALUE</code> format, one entry per line:</p>
-
-      <pre><code class="language-bash"># credentials.txt
-OS_AUTH_TYPE=v3applicationcredential
-OS_AUTH_URL=https://keystone.demo.com/v3
-OS_IDENTITY_API_VERSION=3
-OS_REGION_NAME=crx
-OS_INTERFACE=public
-OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
-OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
-
-      <p>
-        Application credentials can be generated with openstack
-      </p>
-
-      <pre><code class="language-bash"># Create an application credential via the OpenStack CLI
-openstack application credential create $STUDENT_ID-my-automation \
-  --description "CI/CD pipeline credential" \
-  --unrestricted</code></pre>
-
       <pre><code class="language-python">
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
-from openstack_sdk.auth_manager import AuthenticationManager, AuthenticationError
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
 
 auth_manager = AuthenticationManager()
 
 # Load from a secure file (should have 600 permissions)
 credentials = auth_manager.load_credentials_from_file("credentials.txt")
 
-try:
-    # Authenticate and obtain a connection
-    connection = auth_manager.authenticate(credentials)
-    print("Authenticated successfully!")
-except AuthenticationError as exc:
-    print(f"Authentication failed: {exc}")</code></pre>
+# Authenticate and obtain a connection
+connection = auth_manager.authenticate(credentials)
+print("Authenticated successfully!")</code></pre>
 
       <!-- Section 3 -->
       <h2>3. ConnectionManager with Token Refresh</h2>
@@ -170,7 +147,7 @@ except AuthenticationError as exc:
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
 from config.models import AuthCredentials
 
@@ -203,7 +180,7 @@ conn_manager.close()</code></pre>
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.auth_manager import AuthenticationManager
 
@@ -218,6 +195,62 @@ with conn_manager as connection:
     servers = list(connection.compute.servers())
     print(f"Running instances: {len(servers)}")
 # Connection is automatically closed here</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Application Credentials</h2>
+      <p>
+        Application credentials let you authenticate without exposing your main
+        password. You create them in the Horizon dashboard or via the CLI.
+      </p>
+
+      <pre><code class="language-bash"># Create an application credential via the OpenStack CLI
+openstack application credential create $STUDENT_ID-my-automation \
+  --description "CI/CD pipeline credential" \
+  --unrestricted</code></pre>
+
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
+
+auth_manager = AuthenticationManager()
+
+# Environment variables are loaded automatically when
+# OS_APPLICATION_CREDENTIAL_ID and OS_APPLICATION_CREDENTIAL_SECRET are set
+credentials = auth_manager.load_credentials_from_env()
+
+connection = auth_manager.authenticate(credentials)
+print("Authenticated with application credentials!")</code></pre>
+
+      <!-- Section 6 -->
+      <h2>6. Error Handling</h2>
+      <p>
+        The module raises <code>AuthenticationError</code> for any failure — missing
+        variables, invalid credentials, or network issues.
+      </p>
+
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from openstack_sdk.auth_manager import (
+    AuthenticationManager,
+    AuthenticationError,
+)
+
+auth_manager = AuthenticationManager()
+
+try:
+    credentials = auth_manager.load_credentials_from_env()
+    connection = auth_manager.authenticate(credentials)
+    print(f"Authentication succeeded: no exception !")
+except AuthenticationError as exc:
+    print(f"Authentication failed: {exc}")
+    # Handle gracefully — log, alert, or retry</code></pre>
 
       <h2>Summary</h2>
       <ul>

@@ -54,7 +54,7 @@
 import sys                                                                                                                                                                                                        🛠️ function call (auto)
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openstack_sdk.auth_manager import ConnectionManager
 from openstack_sdk.network_manager import NetworkManager
 from config.models import NetworkSpec, SubnetSpec, AuthCredentials
@@ -86,11 +86,7 @@ network_spec = NetworkSpec(
 )
 
 created = network_manager.create_network_infrastructure([network_spec])
-<<<<<<< HEAD
-print(f"Network: {created[0].name} (ID: {created[0].id})")</code></pre>
-=======
 print(f"Network: {created}")</code></pre>
->>>>>>> main
 
       <!-- Section 2 -->
       <h2>2. Subnet Management</h2>
@@ -118,10 +114,7 @@ network_spec = NetworkSpec(
             dns_nameservers=["8.8.8.8"],
         ),
     ],
-)
-
-created = network_manager.create_network_infrastructure([network_spec])
-print(f"Network: {created[0].name} (ID: {created[0].id})")</code></pre>
+)</code></pre>
 
       <!-- Section 3 -->
       <h2>3. CIDR Validation</h2>
@@ -133,7 +126,7 @@ print(f"Network: {created[0].name} (ID: {created[0].id})")</code></pre>
       <pre><code class="language-python">import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_manager import ConfigurationManager
 

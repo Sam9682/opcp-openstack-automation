@@ -145,7 +145,7 @@ volumes:
       <pre><code class="language-python">import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_manager import ConfigurationManager
 
@@ -168,11 +168,11 @@ export OS_TENANT_NAME="my-project"</code></pre>
         et les références croisées entre les ressources.
       </p>
 
-      <pre><code class="language-python">
+      <pre><code class="language-python">import sys
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_manager import ConfigurationManager
 
@@ -182,22 +182,22 @@ config = manager.load_config("./config.yaml")
 validation = manager.validate_config(config)
 
 if validation.is_valid:
-    print("YAML configuration is valid!")
+    print("YAML configuration est valide !")
 else:
-    print("YAML validation errors:")
+    print("YAML validation erreur:")
     for error in validation.errors:
-        print(f"  - {error}")
+        print(f"  - {erreur}")
 
 config = manager.load_config("./config.json")
 
 validation = manager.validate_config(config)
 
 if validation.is_valid:
-    print("JSON configuration is valid!")
+    print("JSON configuration est valide !")
 else:
-    print("JSON validation errors:")
+    print("JSON validation erreur:")
     for error in validation.errors:
-        print(f"  - {error}")</code></pre>
+        print(f"  - {erreurr}")</code></pre>
 
       <p>Les vérifications courantes incluent :</p>
       <ul>
