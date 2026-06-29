@@ -39,275 +39,173 @@
 
       <p>
         You have mastered the individual building blocks. This lesson brings them
-        together with production patterns: CI/CD integration with Gitea and OpenTofu,
-        best practices, and a comparison of the three IaC approaches.
+        together with production patterns: multi-region deployments, CI/CD
+        integration, custom modules, best practices, and a comparison of the three
+        IaC approaches.
       </p>
 
       <!-- Section 1 -->
-      <h2>1. CI/CD Integration with Gitea &amp; OpenTofu</h2>
+      <h2>1. Multi-Region Deployments</h2>
       <p>
-        In this section, you will set up a complete local CI/CD pipeline using Gitea
-        (a self-hosted Git forge) and OpenTofu. The goal: when you modify a parameter
-        in your source file (e.g. change the instance flavor or image), push the
-        change to Gitea, and the pipeline automatically runs <code>tofu apply</code>
-        to create or update your compute instance on OpenStack.
+        OVHcloud offers multiple regions. Deploy the same stack to several regions
+        for redundancy or latency optimization.
       </p>
 
-      <h3>1.1. Scenario overview</h3>
-      <p>
-        Here is the workflow we will build:
-      </p>
-      <ol>
-        <li>You have an OpenTofu file (<code>main.tf</code>) that defines a simple compute instance on OpenStack.</li>
-        <li>Instance parameters (flavor, image, name) are stored in a separate <code>terraform.tfvars</code> file.</li>
-        <li>You push everything to a local Gitea repository.</li>
-        <li>When you modify <code>terraform.tfvars</code> (e.g. change <code>instance_flavor</code> from <code>"scale-1"</code> to <code>"scale-2"</code>) and push, Gitea Actions automatically triggers a pipeline that runs <code>tofu plan</code> then <code>tofu apply</code>.</li>
-        <li>OpenStack provisions or updates the compute instance according to the new parameter.</li>
-      </ol>
+      <pre><code class="language-python">
+import sys
+import os
+# Add the parent directory to Python path to import openstack_sdk
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
+from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.deployment_engine import DeploymentEngine
 
-      <h3>1.2. Install Gitea locally</h3>
-      <p>
-        Gitea is a lightweight, self-hosted Git service with built-in CI/CD (Gitea Actions).
-        Install it on your local machine:
-      </p>
+auth_mgr = AuthenticationManager()
 
-      <pre><code class="language-bash"># Option 1: Using Docker (recommended)
-docker run -d --name gitea \
-  -p 3000:3000 \
-  -p 2222:22 \
-  -v gitea-data:/data \
-  gitea/gitea:latest
+regions = ["default"]
 
-# Option 2: Using binary (Linux/amd64)
-wget -O gitea https://dl.gitea.com/gitea/1.22/gitea-1.22-linux-amd64
-chmod +x gitea
-./gitea web
+for region in regions:
+    credentials = auth_mgr.load_credentials_from_env()
+    # Override region per iteration
+    credentials.region = region
 
-# Access Gitea at http://localhost:3000
-# Complete the initial setup wizard (SQLite is fine for local use)</code></pre>
+    engine = DeploymentEngine(credentials)
+    result = engine.deploy_infrastructure(config)
+    print(f"Region {region}: {'OK' if result.success else 'FAILED'}")</code></pre>
 
-      <h3>1.3. Install Gitea Act Runner (for CI/CD)</h3>
-      <p>
-        Gitea Actions requires a runner to execute your pipelines. Install and register one:
-      </p>
-
-      <pre><code class="language-bash"># Download the act runner
-wget -O act_runner https://dl.gitea.com/act_runner/0.2/act_runner-0.2-linux-amd64
-chmod +x act_runner
-
-# Register the runner with your Gitea instance
-# Get the registration token from: Site Administration > Runners > Create new Runner
-./act_runner register --instance http://localhost:3000 --token YOUR_REGISTRATION_TOKEN
-
-# Start the runner (runs in foreground)
-./act_runner daemon</code></pre>
-
-      <h3>1.4. Write the OpenTofu configuration</h3>
-      <p>
-        Create a minimal OpenTofu project that deploys a single compute instance.
-        This is the infrastructure-as-code that the CI/CD pipeline will manage.
-      </p>
-
-      <pre><code class="language-hcl"># versions.tf — Provider requirements
-terraform {
-  required_version = ">= 1.6.0"
-  required_providers {
-    openstack = {
-      source  = "terraform-provider-openstack/openstack"
-      version = "~> 2.0"
-    }
-  }
+      <pre><code class="language-hcl"># Terraform — multi-region with provider aliases
+provider "openstack" {
+  alias  = "default"
+  region = "default"
+  # ... auth fields
 }
 
 provider "openstack" {
-  # Credentials come from environment variables set by the CI pipeline:
-  # OS_AUTH_URL, OS_APPLICATION_CREDENTIAL_ID, OS_APPLICATION_CREDENTIAL_SECRET
+  alias  = "sbg5"
+  region = "default"
+  # ... auth fields
+}
+
+resource "openstack_networking_network_v2" "net_gra" {
+  provider = openstack.default
+  name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-gra"
+}
+
+resource "openstack_networking_network_v2" "net_sbg" {
+  provider = openstack.sbg5
+  name     = str(os.environ.get('STUDENT_ID', 'default-student')) + "-app-network-sbg"
 }</code></pre>
-
-      <pre><code class="language-hcl"># variables.tf — Input parameters (values provided by terraform.tfvars)
-variable "instance_name" {
-  description = "Name of the compute instance"
-  type        = string
-}
-
-variable "instance_flavor" {
-  description = "Flavor (size) of the instance — e.g. scale-1, scale-2"
-  type        = string
-}
-
-variable "instance_image" {
-  description = "Image to boot from — e.g. Debian 12 LVM OPCP"
-  type        = string
-}
-
-variable "network_name" {
-  description = "Name of the private network to attach"
-  type        = string
-}
-
-variable "key_name" {
-  description = "SSH key pair name"
-  type        = string
-}</code></pre>
-
-      <pre><code class="language-hcl"># main.tf — The compute instance resource
-resource "openstack_compute_instance_v2" "app_server" {
-  name        = var.instance_name
-  flavor_name = var.instance_flavor
-  image_name  = var.instance_image
-  key_pair    = var.key_name
-
-  network {
-    name = var.network_name
-  }
-}
-
-output "instance_ip" {
-  description = "Private IP address of the instance"
-  value       = openstack_compute_instance_v2.app_server.access_ip_v4
-}</code></pre>
-
-      <pre><code class="language-hcl"># terraform.tfvars — Parameters you modify to trigger changes
-instance_name   = "my-app-server"
-instance_flavor = "scale-1"
-instance_image  = "Debian 12 LVM OPCP"
-network_name    = "student01-private-network"
-key_name        = "opcp-openstack-automation-ssh-key"</code></pre>
-
-      <h3>1.5. Create the Gitea repository and push</h3>
-      <p>
-        Create a new repository in Gitea and push the OpenTofu project:
-      </p>
-
-      <pre><code class="language-bash"># Create a new repo in Gitea UI: http://localhost:3000/repo/create
-# Name it: openstack-infra
-
-# Initialize your local project
-mkdir openstack-infra &amp;&amp; cd openstack-infra
-git init
-
-# Add the OpenTofu files
-# (versions.tf, variables.tf, main.tf, terraform.tfvars created above)
-
-# Create a .gitignore to exclude state files
-cat &gt; .gitignore &lt;&lt;EOF
-.terraform/
-*.tfstate
-*.tfstate.backup
-.terraform.lock.hcl
-EOF
-
-# Create the CI workflow directory
-mkdir -p .gitea/workflows/
-
-# Connect to Gitea and push
-git remote add origin http://localhost:3000/your-user/openstack-infra.git
-git add .
-git commit -m "Initial OpenTofu infrastructure"
-git push -u origin main</code></pre>
-
-      <h3>1.6. Create the CI/CD pipeline</h3>
-      <p>
-        This is the key file. It tells Gitea Actions to run <code>tofu plan</code>
-        and <code>tofu apply</code> whenever a <code>.tf</code> or <code>.tfvars</code>
-        file is modified on the <code>main</code> branch:
-      </p>
-
-      <pre><code class="language-yaml"># .gitea/workflows/deploy.yaml
-name: OpenTofu Deploy
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - '*.tf'
-      - '*.tfvars'
-
-env:
-  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
-  OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-  OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-  OS_AUTH_TYPE: "v3applicationcredential"
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install OpenTofu
-        uses: opentofu/setup-opentofu@v1
-
-      - name: Initialize OpenTofu
-        run: tofu init
-
-      - name: Validate configuration
-        run: tofu validate
-
-      - name: Plan changes
-        run: tofu plan -out=tfplan
-
-      - name: Apply changes
-        run: tofu apply -auto-approve tfplan</code></pre>
-
-      <h3>1.7. Configure secrets in Gitea</h3>
-      <p>
-        Store your OpenStack credentials as repository secrets so the pipeline can
-        authenticate without exposing credentials in code:
-      </p>
-
-      <pre><code class="language-bash"># In Gitea UI: Repository > Settings > Actions > Secrets
-# Add the following secrets:
-#
-#   OS_AUTH_URL                       → your OpenStack auth URL
-#                                       (e.g. https://auth.cloud.ovh.net/v3)
-#   OS_APPLICATION_CREDENTIAL_ID     → your application credential ID
-#   OS_APPLICATION_CREDENTIAL_SECRET  → your application credential secret</code></pre>
-
-      <h3>1.8. Trigger the automation — modify a parameter</h3>
-      <p>
-        Now the full loop is in place. To demonstrate the automation, simply change
-        a parameter in <code>terraform.tfvars</code> and push:
-      </p>
-
-      <pre><code class="language-bash"># Example: change the instance flavor from scale-1 to scale-2
-sed -i 's/instance_flavor = "scale-1"/instance_flavor = "scale-2"/' terraform.tfvars
-
-# Commit and push the change
-git add terraform.tfvars
-git commit -m "Change flavor to scale-2"
-git push
-
-# Gitea detects the .tfvars change and triggers the pipeline:
-#   1. tofu init      — downloads the OpenStack provider
-#   2. tofu validate  — checks syntax
-#   3. tofu plan      — shows: ~ openstack_compute_instance_v2.app_server (flavor change)
-#   4. tofu apply     — recreates the instance with the new flavor
-#
-# Monitor the run at: http://localhost:3000/your-user/openstack-infra/actions</code></pre>
-
-      <p>
-        You can modify any parameter in <code>terraform.tfvars</code> — instance name,
-        image, network — and the pipeline will automatically reconcile the
-        infrastructure to match. This is the power of declarative IaC combined with
-        CI/CD: your Git repository becomes the single source of truth for your
-        infrastructure.
-      </p>
-
-      <p>
-        <strong>💡 Tips:</strong>
-      </p>
-      <ul>
-        <li>The <code>paths</code> filter in the workflow ensures the pipeline only runs when <code>*.tf</code> or <code>*.tfvars</code> files change — editing a README won't trigger a deploy.</li>
-        <li>Add an <code>environment: production</code> block on the deploy job to require manual approval before applying.</li>
-        <li>Keep <code>terraform.tfstate</code> in <code>.gitignore</code> — for team use, configure a remote backend (S3, Swift, etc.).</li>
-        <li>The pipeline uses <code>-auto-approve</code> because the plan was already generated and saved as an artifact in the same run.</li>
-        <li>For safety, you can split into two jobs: one for <code>plan</code> (on any branch) and one for <code>apply</code> (only on <code>main</code> after review).</li>
-      </ul>
 
       <!-- Section 2 -->
-      <h2>2. Best Practices</h2>
+      <h2>2. CI/CD Integration</h2>
+      <p>
+        Automate deployments with a CI/CD pipeline. The example below uses a generic
+        pipeline definition — adapt it to GitHub Actions, GitLab CI, or Jenkins.
+      </p>
+
+      <pre><code class="language-yaml"># .ci/deploy.yaml — generic pipeline
+stages:
+  - validate
+  - plan
+  - deploy
+
+validate:
+  script:
+    - python -c "
+        from config import ConfigurationManager;
+        m = ConfigurationManager();
+        c = m.load_config('config.yaml');
+        v = m.validate_config(c);
+        assert v.is_valid, v.errors
+      "
+
+plan:
+  script:
+    - cd terraform
+    - terraform init    # Or: tofu init
+    - terraform plan -out=tfplan    # Or: tofu plan -out=tfplan
+
+deploy:
+  script:
+    - cd terraform
+    - terraform apply tfplan    # Or: tofu apply tfplan
+  when: manual</code></pre>
+
+      <pre><code class="language-bash"># Environment variables for the pipeline
+export OS_AUTH_URL="${OS_AUTH_URL}"
+export OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID}"
+export OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET}"
+export OS_REGION_NAME="${OS_REGION_NAME}"
+export OS_TENANT_NAME="${OS_TENANT_NAME}"</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Custom Modules</h2>
+      <p>
+        Wrap common patterns into reusable Python functions or Terraform modules.
+      </p>
+
+      <pre><code class="language-python">"""custom_modules/web_stack.py — reusable web stack module."""
+
+from config.models import (
+    NetworkSpec, SubnetSpec, SecurityGroupSpec,
+    SecurityGroupRule, InstanceSpec, VolumeSpec,
+)
+
+
+def web_stack(name, instance_count=2, volume_size=100):
+    """Return a complete web-stack configuration."""
+    return {
+        "networks": [
+            NetworkSpec(
+                name=f"{name}-network",
+                subnets=[
+                    SubnetSpec(
+                        name=f"{name}-subnet",
+                        cidr="192.168.1.0/24",
+                        dns_nameservers=["8.8.8.8"],
+                    )
+                ],
+            )
+        ],
+        "security_groups": [
+            SecurityGroupSpec(
+                name=f"{name}-sg",
+                description=f"SG for {name}",
+                rules=[
+                    SecurityGroupRule(
+                        direction="ingress",
+                        protocol="tcp",
+                        port_range_min=80,
+                        port_range_max=80,
+                        remote_ip_prefix="0.0.0.0/0",
+                        ethertype="IPv4",
+                    ),
+                ],
+            )
+        ],
+        "instances": [
+            InstanceSpec(
+                name=f"{name}-web-{i+1}",
+                flavor="scale-1",
+                image="Debian 12 LVM OPCP",
+                key_name="opcp-openstack-automation-ssh-key",
+                network_ids=[f"{name}-network"],
+                security_groups=[f"{name}-sg"],
+            )
+            for i in range(instance_count)
+        ],
+        "volumes": [
+            VolumeSpec(
+                name=f"{name}-vol-{i+1}",
+                size=volume_size,
+                volume_type="classic",
+                attach_to=f"{name}-web-{i+1}",
+            )
+            for i in range(instance_count)
+        ],
+    }</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Best Practices</h2>
       <ul>
         <li><strong>Never hard-code credentials</strong> — use environment variables or application credentials.</li>
         <li><strong>Validate before deploying</strong> — catch CIDR, port, and reference errors early.</li>
@@ -318,8 +216,8 @@ git push
         <li><strong>Rotate credentials</strong> — use short-lived application credentials and rotate regularly.</li>
       </ul>
 
-      <!-- Section 3 -->
-      <h2>3. SDK vs Terraform vs Ansible</h2>
+      <!-- Section 5 -->
+      <h2>5. SDK vs Terraform vs Ansible</h2>
       <p>
         Each approach has strengths. Choose based on your team's workflow.
       </p>
@@ -372,7 +270,9 @@ git push
 # SDK
 python tests/deploy_example.py
 
-# Terraform / OpenTofu
+# Terraform
+cd terraform &amp;&amp; terraform apply -auto-approve
+# Or, with OpenTofu:
 cd terraform &amp;&amp; tofu apply -auto-approve
 
 # Ansible (when playbooks are ready)
@@ -380,9 +280,10 @@ ansible-playbook ansible/playbook.yml -e @vars.yml</code></pre>
 
       <h2>Summary</h2>
       <ul>
-        <li>Integrate with <strong>CI/CD using Gitea &amp; OpenTofu</strong> — set up a local Git forge, push your .tf files, and any parameter change in <code>terraform.tfvars</code> triggers automatic infrastructure deployment.</li>
-        <li>Follow <strong>best practices</strong> — never hard-code credentials, validate early, tag resources, and automate cleanup.</li>
-        <li>Choose the right tool: <strong>SDK</strong> for flexibility, <strong>Terraform/OpenTofu</strong> for state management, <strong>Ansible</strong> for configuration.</li>
+        <li>Deploy to <strong>multiple regions</strong> for redundancy with a simple loop or provider aliases.</li>
+        <li>Integrate with <strong>CI/CD</strong> — validate, plan, then apply with manual approval.</li>
+        <li>Build <strong>reusable modules</strong> to standardize common patterns.</li>
+        <li>Choose the right tool: <strong>SDK</strong> for flexibility, <strong>Terraform</strong> for state management, <strong>Ansible</strong> for configuration.</li>
       </ul>
 
       <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
