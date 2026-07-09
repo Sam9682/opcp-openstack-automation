@@ -23,7 +23,7 @@ Cette formation vous permet de :
 - Niveau technique intermédiaire
 - Connaissance de base des concepts de cloud computing
 - Capacité à utiliser un terminal/command line
-- Familiarité avec les outils de développement de base
+- Connaissances de base des outils de développement
 - Notions de Python et de scripting
 
 ## Durée Estimée

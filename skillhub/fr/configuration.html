@@ -51,6 +51,12 @@
         charge les commentaires. Voici un exemple complet :
       </p>
 
+      <p>
+        Avant d'exécuter les commandes suivantes, placez-vous dans le répertoire
+        <code>opcp-openstack-automation/tests</code> :
+      </p>
+      <pre><code class="language-bash">cd opcp-openstack-automation/tests</code></pre>
+
       <pre><code class="language-yaml"># config.yaml — Configuration complète de déploiement
 auth_url: "${OS_AUTH_URL}"
 auth_type: "${OS_AUTH_TYPE}"
@@ -152,7 +158,7 @@ from config.config_manager import ConfigurationManager
 manager = ConfigurationManager()
 
 # Les ${OS_AUTH_URL} etc. sont remplacées par les valeurs réelles
-config = manager.load_config("tests/config.yaml")
+config = manager.load_config("./config.yaml")
 print(f"Auth URL: {config.auth_url}")
 print(f"Region:   {config.region}")</code></pre>
 

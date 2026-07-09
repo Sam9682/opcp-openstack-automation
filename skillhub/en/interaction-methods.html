@@ -136,6 +136,7 @@ for service in conn.identity.services():
         Terraform/OpenTofu lets you describe your entire infrastructure as code in declarative
         <code>.tf</code> files. It handles dependency ordering, state tracking, and
         plan/apply workflows.
+        Hereafter examples not to be executed (just for your information)
       </p>
 
       <pre><code class="language-bash"># Initialize and apply a Terraform configuration
@@ -220,45 +221,45 @@ ansible-galaxy collection install openstack.cloud</code></pre>
       <!-- Comparison table -->
       <h2>Which Approach to Choose?</h2>
 
-      <table style="border-collapse: collapse; width: 100%;">
+      <table style="border-collapse: collapse; width: 100%; border: 2px solid #333;">
         <thead>
           <tr>
-            <th style="border: 1px solid #ccc; padding: 8px 12px;">Approach</th>
-            <th style="border: 1px solid #ccc; padding: 8px 12px;">Best for</th>
-            <th style="border: 1px solid #ccc; padding: 8px 12px;">Learning curve</th>
-            <th style="border: 1px solid #ccc; padding: 8px 12px;">Automation-friendly</th>
+            <th style="border: 1px solid #555; padding: 8px 12px; background-color: #f0f0f0;">Approach</th>
+            <th style="border: 1px solid #555; padding: 8px 12px; background-color: #f0f0f0;">Best for</th>
+            <th style="border: 1px solid #555; padding: 8px 12px; background-color: #f0f0f0;">Learning curve</th>
+            <th style="border: 1px solid #555; padding: 8px 12px; background-color: #f0f0f0;">Automation-friendly</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>OpenStack CLI</strong></td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Day-to-day operations, quick tasks</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Low</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Partial (shell scripts)</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;"><strong>OpenStack CLI</strong></td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Day-to-day operations, quick tasks</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Low</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Partial (shell scripts)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>REST API (cURL)</strong></td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Debugging, understanding the protocol</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">High</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Partial (verbose)</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;"><strong>REST API (cURL)</strong></td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Debugging, understanding the protocol</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">High</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Partial (verbose)</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>OpenStack SDK</strong></td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Custom Python scripts, automation</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Medium</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Yes</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;"><strong>OpenStack SDK</strong></td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Custom Python scripts, automation</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Medium</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Yes</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>Terraform</strong></td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Infrastructure as Code, reproducible environments</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Medium</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Yes</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;"><strong>Terraform</strong></td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Infrastructure as Code, reproducible environments</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Medium</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Yes</td>
           </tr>
           <tr>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>Ansible</strong></td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Configuration management, orchestration</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Medium</td>
-            <td style="border: 1px solid #ccc; padding: 8px 12px;">Yes</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;"><strong>Ansible</strong></td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Configuration management, orchestration</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Medium</td>
+            <td style="border: 1px solid #555; padding: 8px 12px;">Yes</td>
           </tr>
         </tbody>
       </table>
