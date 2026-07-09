@@ -1,0 +1,11 @@
+🚀 Nouveau ! Découvrez notre SkillHub Labs dédié à l'Automatisation OPCP OpenStack.
+
+L'équipe PSMC Professional Services d'OVHcloud lance un parcours interactif pour maîtriser l'automatisation d'OpenStack avec les outils modernes comme Python SDK, Terraform et Ansible, dans un environnement sécurisé et pratique.
+
+En une journée, passez de la théorie à la pratique : scripts, IaC, orchestration — dans un environnement réel et accompagné.
+
+🎯 1 journée | 4 modules | Environnement réel
+
+Python SDK, Terraform, Ansible...
+
+Testez par vous-même 👍Le prochain Labs ? Infrastructure as Code sur OPCP...

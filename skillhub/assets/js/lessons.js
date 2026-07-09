@@ -65,7 +65,7 @@
       slug: 'security-groups',
       titleEN: 'Security Groups',
       titleFR: 'Groupes de sécurité',
-      difficulty: 'intermediate',
+      difficulty: 'soon to come',
       estimatedMinutes: 20,
       prerequisites: ['config']
     },
@@ -83,7 +83,7 @@
       slug: 'volumes',
       titleEN: 'Volumes',
       titleFR: 'Volumes',
-      difficulty: 'intermediate',
+      difficulty: 'soon to come',
       estimatedMinutes: 20,
       prerequisites: ['compute']
     },

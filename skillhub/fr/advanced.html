@@ -65,13 +65,14 @@
         <li>Lorsque vous modifiez <code>terraform.tfvars</code> (ex. changez <code>instance_flavor</code> de <code>"scale-1"</code> à <code>"scale-2"</code>) et poussez, Gitea Actions déclenche automatiquement un pipeline qui exécute <code>tofu plan</code> puis <code>tofu apply</code>.</li>
         <li>OpenStack provisionne ou met à jour l'instance compute selon le nouveau paramètre.</li>
       </ol>
+
       <pre><code class="language-python">
 import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
 from openstack_sdk.deployment_engine import DeploymentEngine
-from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.auth_manager import AuthenticationManager</code></pre>
 
       <h3>1.2. Installer Gitea localement</h3>
       <p>
@@ -89,10 +90,12 @@ docker run -d --name gitea \
 # Option 2 : Avec le binaire (Linux/amd64)
 wget -O gitea https://dl.gitea.com/gitea/1.22/gitea-1.22-linux-amd64
 chmod +x gitea
-./gitea web
+./gitea web</code></pre>
 
-# Accédez à Gitea sur http://localhost:3000
-# Complétez l'assistant d'installation (SQLite suffit pour un usage local)</code></pre>
+<ul>
+  <li>Accédez à Gitea sur <a href="http://localhost:3000">http://localhost:3000</a></li>
+  <li>Complétez l'assistant d'installation (SQLite suffit pour un usage local)</li>
+</ul>
 
       <h3>1.3. Installer Gitea Act Runner (pour le CI/CD)</h3>
       <p>
@@ -100,12 +103,12 @@ chmod +x gitea
       </p>
 
       <pre><code class="language-bash"># Télécharger le runner
-wget -O act_runner https://dl.gitea.com/act_runner/0.2/act_runner-0.2-linux-amd64
-chmod +x act_runner
+wget -O act_runner https://dl.gitea.com/act_runner/0.2.0/act_runner-0.2.0-linux-amd64
+chmod +x act_runner</code></pre>
 
-# Enregistrer le runner auprès de votre instance Gitea
-# Récupérez le token depuis : Administration du site > Runners > Créer un nouveau Runner
-./act_runner register --instance http://localhost:3000 --token VOTRE_TOKEN
+<p>Enregistrez le runner auprès de votre instance Gitea.
+Récupérez le token depuis : Administration du site > Runners > Créer un nouveau Runner</p>
+<pre><code class="language-bash">./act_runner register --instance http://localhost:3000 --token VOTRE_TOKEN
 
 # Démarrer le runner (s'exécute au premier plan)
 ./act_runner daemon</code></pre>
@@ -184,20 +187,19 @@ key_name        = "opcp-openstack-automation-ssh-key"</code></pre>
 
       <h3>1.5. Créer le dépôt Gitea et pousser</h3>
       <p>
-        Créez un nouveau dépôt dans Gitea et poussez le projet OpenTofu :
+        Créez un nouveau dépôt dans l'interface Gitea : <a href="http://localhost:3000">http://localhost:3000</a> (nommez-le "openstack-infra") et poussez le projet OpenTofu :
       </p>
 
-      <pre><code class="language-bash"># Créez un nouveau dépôt dans l'interface Gitea : http://localhost:3000/repo/create
-# Nommez-le : openstack-infra
-
-# Initialisez votre projet local
+      <pre><code class="language-bash"># Initialisez votre projet local
 mkdir openstack-infra &amp;&amp; cd openstack-infra
 git init
+git checkout -b main</code></pre>
 
-# Ajoutez les fichiers OpenTofu
-# (versions.tf, variables.tf, main.tf, terraform.tfvars créés ci-dessus)
+<p>
+Ajoutez les fichiers OpenTofu (versions.tf, variables.tf, main.tf, terraform.tfvars créés ci-dessus)
+</p>
 
-# Créez un .gitignore pour exclure les fichiers d'état
+<pre><code class="language-bash"># Créez un .gitignore pour exclure les fichiers d'état
 cat &gt; .gitignore &lt;&lt;EOF
 .terraform/
 *.tfstate

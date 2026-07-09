@@ -94,13 +94,6 @@ echo "Token: $TOKEN"
 curl -s --cacert $OS_CACERT -H "X-Auth-Token: $TOKEN" "$NOVA_ENDPOINT/servers" \
   | python3 -m json.tool</code></pre>
 
-      <p>
-        Pour lister tous les endpoints de services disponibles et leurs URLs :
-      </p>
-
-      <pre><code class="language-bash"># Lister tous les endpoints de services avec leurs URLs
-openstack endpoint list -c URL -c 'Service Name'</code></pre>
-
       <!-- Option C -->
       <h2>Option C — SDK OpenStack (Python)</h2>
       <p>
@@ -211,39 +204,45 @@ ansible-galaxy collection install openstack.cloud</code></pre>
       <!-- Tableau comparatif -->
       <h2>Quelle approche choisir ?</h2>
 
-      <table>
+      <table style="border-collapse: collapse; width: 100%;">
         <thead>
           <tr>
-            <th>Approche</th>
-            <th>Idéale pour</th>
-            <th>Courbe d'apprentissage</th>
+            <th style="border: 1px solid #ccc; padding: 8px 12px;">Approche</th>
+            <th style="border: 1px solid #ccc; padding: 8px 12px;">Idéale pour</th>
+            <th style="border: 1px solid #ccc; padding: 8px 12px;">Courbe d'apprentissage</th>
+            <th style="border: 1px solid #ccc; padding: 8px 12px;">Automatisable</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>CLI OpenStack</td>
-            <td>Opérations quotidiennes, tâches rapides</td>
-            <td>Faible</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>CLI OpenStack</strong></td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Opérations quotidiennes, tâches rapides</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Faible</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Partiel (scripts shell)</td>
           </tr>
           <tr>
-            <td>API REST (cURL)</td>
-            <td>Débogage, compréhension du protocole</td>
-            <td>Élevée</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>API REST (cURL)</strong></td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Débogage, compréhension du protocole</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Élevée</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Partiel (verbeux)</td>
           </tr>
           <tr>
-            <td>SDK OpenStack</td>
-            <td>Scripts Python personnalisés, automatisation</td>
-            <td>Moyenne</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>SDK OpenStack</strong></td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Scripts Python personnalisés, automatisation</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Moyenne</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Oui</td>
           </tr>
           <tr>
-            <td>Terraform</td>
-            <td>Infrastructure as Code, environnements reproductibles</td>
-            <td>Moyenne</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>Terraform</strong></td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Infrastructure as Code, environnements reproductibles</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Moyenne</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Oui</td>
           </tr>
           <tr>
-            <td>Ansible</td>
-            <td>Gestion de configuration, orchestration</td>
-            <td>Moyenne</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;"><strong>Ansible</strong></td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Gestion de configuration, orchestration</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Moyenne</td>
+            <td style="border: 1px solid #ccc; padding: 8px 12px;">Oui</td>
           </tr>
         </tbody>
       </table>

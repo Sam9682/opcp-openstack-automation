@@ -81,10 +81,12 @@ docker run -d --name gitea \
 # Option 2: Using binary (Linux/amd64)
 wget -O gitea https://dl.gitea.com/gitea/1.22/gitea-1.22-linux-amd64
 chmod +x gitea
-./gitea web
+./gitea web</code></pre>
 
-# Access Gitea at http://localhost:3000
-# Complete the initial setup wizard (SQLite is fine for local use)</code></pre>
+<ul>
+  <li>Access Gitea at <a href="http://localhost:3000">http://localhost:3000</a></li>
+  <li>Complete the initial setup wizard (SQLite is fine for local use)</li>
+</ul>
 
       <h3>1.3. Install Gitea Act Runner (for CI/CD)</h3>
       <p>
@@ -92,12 +94,12 @@ chmod +x gitea
       </p>
 
       <pre><code class="language-bash"># Download the act runner
-wget -O act_runner https://dl.gitea.com/act_runner/0.2/act_runner-0.2-linux-amd64
-chmod +x act_runner
+wget -O act_runner https://dl.gitea.com/act_runner/0.2.0/act_runner-0.2.0-linux-amd64
+chmod +x act_runner</code></pre>
 
-# Register the runner with your Gitea instance
-# Get the registration token from: Site Administration > Runners > Create new Runner
-./act_runner register --instance http://localhost:3000 --token YOUR_REGISTRATION_TOKEN
+<p>Register the runner with your Gitea instance
+Get the registration token from: Site Administration > Runners > Create new Runner</p>
+<pre><code class="language-bash">./act_runner register --instance http://localhost:3000 --token YOUR_REGISTRATION_TOKEN
 
 # Start the runner (runs in foreground)
 ./act_runner daemon</code></pre>
@@ -176,20 +178,19 @@ key_name        = "opcp-openstack-automation-ssh-key"</code></pre>
 
       <h3>1.5. Create the Gitea repository and push</h3>
       <p>
-        Create a new repository in Gitea and push the OpenTofu project:
+        Create a new repo in Gitea UI: <a href="http://localhost:3000">http://localhost:3000</a> (name it "openstack-infra") and push the OpenTofu project:
       </p>
 
-      <pre><code class="language-bash"># Create a new repo in Gitea UI: http://localhost:3000/repo/create
-# Name it: openstack-infra
-
-# Initialize your local project
+      <pre><code class="language-bash"># Initialize your local project
 mkdir openstack-infra &amp;&amp; cd openstack-infra
 git init
+git checkout -b main</code></pre>
 
-# Add the OpenTofu files
-# (versions.tf, variables.tf, main.tf, terraform.tfvars created above)
+<p>
+Add the OpenTofu files (versions.tf, variables.tf, main.tf, terraform.tfvars created above)
+</p>
 
-# Create a .gitignore to exclude state files
+<pre><code class="language-bash"># Create a .gitignore to exclude state files
 cat &gt; .gitignore &lt;&lt;EOF
 .terraform/
 *.tfstate

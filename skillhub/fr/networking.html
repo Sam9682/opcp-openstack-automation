@@ -52,7 +52,7 @@
       </p>
 
       <pre><code class="language-python">
-import sys                                                                                                                                                                                                        🛠️ function call (auto)
+import sys
 import os
 # Add the parent directory to Python path to import openstack_sdk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '__file__' in globals() else os.getcwd()))))
@@ -87,7 +87,7 @@ network_spec = NetworkSpec(
 )
 
 created = network_manager.create_network_infrastructure([network_spec])
-print(f"Network: {created}")</code></pre>
+print(f"Network: {created[0].name} (ID: {created[0].id})")</code></pre>
 
       <!-- Section 2 -->
       <h2>2. Gestion des sous-réseaux</h2>
@@ -205,6 +205,11 @@ variable "subnet_cidr" {
 variable "dns_nameservers" {
   type    = list(string)
   default = ["8.8.8.8", "8.8.4.4"]
+}
+
+variable "enable_dhcp" {
+  type        = bool
+  default     = true
 }</code></pre>
 
       <h2>Résumé</h2>
