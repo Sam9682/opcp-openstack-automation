@@ -157,7 +157,7 @@ from config.config_manager import ConfigurationManager
 manager = ConfigurationManager()
 
 # ${OS_AUTH_URL} etc. are replaced with actual env var values
-config = manager.load_config("tests/config.yaml")
+config = manager.load_config("./config.yaml")
 print(f"Auth URL: {config.auth_url}")
 print(f"Region:   {config.region}")</code></pre>
 

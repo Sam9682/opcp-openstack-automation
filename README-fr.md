@@ -1,6 +1,6 @@
 # Automatisation du Déploiement d'Infrastructure OPCP OpenStack OVH
 
-Système d'automatisation pour le déploiement et la gestion d'infrastructure cloud privé OVH OpenStack avec trois approches de déploiement distinctes : Terraform, OpenStack SDK et Ansible.
+Système d'automatisation pour le déploiement et la gestion d'infrastructure cloud privé OVH OpenStack avec plusieurs approches de déploiement distinctes : Terraform, OpenStack SDK et Ansible.
 
 ## Aperçu
 

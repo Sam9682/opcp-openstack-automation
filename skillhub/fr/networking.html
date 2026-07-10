@@ -134,7 +134,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__ if '
 from config.config_manager import ConfigurationManager
 
 manager = ConfigurationManager()
-config = manager.load_config("tests/config.yaml")
+config = manager.load_config("./config.yaml")
 
 result = manager.validate_config(config)
 if not result.is_valid:
