@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Introduction</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Introduction to OPCP OpenStack Infrastructure as Code (IaC)</h1>
+
+      <p>
+        Welcome to <strong>SkillHub</strong>, the hands-on training companion for the
+        <em>opcp-openstack-automation</em> project. This course walks you through
+        Infrastructure as Code on OVHcloud OpenStack — from your first authenticated
+        API call to fully automated multi-resource deployments.
+      </p>
+
+      <h2>What You Will Learn</h2>
+      <p>By the end of this training path you will be comfortable with few complementary deployment approaches:</p>
+      <ul>
+        <li><strong>OpenStack SDK (Python)</strong> — programmatic resource management with the project's custom managers</li>
+        <li><strong>Terraform (HCL) / OpenTofu</strong> — declarative infrastructure definitions with the OpenStack provider</li>
+      </ul>
+
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>An OPCP Openstack Project (compatible OVHCloud) with API access</li>
+        <li>Linux bash environment (tested on Ubuntu 24)</li>
+        <li>Basic familiarity with a terminal / command line</li>
+        <li>Python 3.9+ installed (for SDK lessons)</li>
+        <li>Terraform 1.x and/or OpenTofu 1.x installed (for Terraform lessons)</li>
+      </ul>
+
+      <h2>Identify Your Resources — <code>STUDENT_ID</code></h2>
+      <p>
+        During the labs every resource you create (instances, networks, volumes, security groups…)
+        will be <strong>tagged with your student identifier</strong>. This makes it easy to find
+        and clean up all your resources once the training is over.
+      </p>
+      <p>Before you start, export the <code>STUDENT_ID</code> environment variable in your terminal:</p>
+
+      <pre><code class="language-bash">export STUDENT_ID=slepetre</code></pre>
+
+      <p>
+        Replace <code>slepetre</code> with your own identifier (e.g. your username or trigram).
+        The variable must be set in <strong>every terminal session</strong> you use for the labs.
+        You can add the line to your <code>~/.bashrc</code> to make it persistent:
+      </p>
+
+      <pre><code class="language-bash">echo 'export STUDENT_ID=slepetre' >> ~/.bashrc
+source ~/.bashrc</code></pre>
+
+      <p>
+        All scripts and Terraform configurations in this training reference <code>STUDENT_ID</code>
+        to prefix or tag the resources they create. When the labs are finished, you can filter
+        resources by this tag and delete them in a single pass.
+      </p>
+
+      <h2>Project Overview</h2>
+      <p>
+        The <em>opcp-openstack-automation</em> repository provides a layered Python SDK
+        that wraps OpenStack APIs into simple, composable managers — authentication,
+        networking, security groups, compute, volumes, and a deployment engine that
+        orchestrates them all. Alongside the SDK you will find Terraform configurations
+        and Ansible playbooks that achieve the same goals declaratively.
+      </p>
+
+      <h2>Clone the Repository</h2>
+      <p>Start by cloning the project repository:</p>
+
+      <pre><code class="language-bash">git clone https://github.com/Sam9682/opcp-openstack-automation.git
+cd opcp-openstack-automation</code></pre>
+
+      <p>
+        The labs in this training rely on two directories inside the repository:
+      </p>
+      <ul>
+        <li><code>./tests</code> — unit and integration tests, plus ready-to-use code samples referenced throughout the SkillHub lessons</li>
+      </ul>
+
+      <h2>Install the OpenStack SDK</h2>
+      <p>On Ubuntu, install the OpenStack SDK with pip:</p>
+
+      <pre><code class="language-bash">pip install openstacksdk</code></pre>
+
+      <p>
+        If you prefer to isolate dependencies, use a virtual environment first:
+      </p>
+
+      <pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+pip install openstacksdk</code></pre>
+
+      <h2>Complete Environment Variables Example</h2>
+      <p>Here are the <strong>required</strong> environment variables to run the scripts and tests:</p>
+
+      <pre><code class="language-bash">export OS_AUTH_TYPE=v3applicationcredential
+export OS_AUTH_URL=https://keystone.demo.com/v3
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME="crx"
+export OS_INTERFACE=public
+export OS_APPLICATION_CREDENTIAL_ID=33333333333333333333333333333333
+export OS_APPLICATION_CREDENTIAL_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</code></pre>
+
+      <p>Optionally, if a proxy or custom certificate is needed:</p>
+
+      <pre><code class="language-bash"># Optional — only if proxy is required
+export http_proxy=http://1.2.3.4:9999/
+export https_proxy=http://1.2.3.4:9999/
+
+# Optional — only if a custom CA certificate is needed
+export OS_CACERT=./demo4.pem</code></pre>
+
+      <p>
+        Adapt the values above to match your own environment (URLs, credentials, region).
+        You can place these exports in a file (e.g. <code>openrc.sh</code>) and source it
+        at the beginning of each session: <code>source openrc.sh</code>.
+      </p>
+
+      <h2>Quick Start — Validate Your Setup</h2>
+      <p>Create a file called <code>test1.py</code> in the <code>./tests</code> folder:</p>
+
+      <pre><code class="language-bash">cd tests
+nano test1.py</code></pre>
+
+      <p>Paste the following code into <code>test1.py</code>:</p>
+
+      <pre><code class="language-python">"""Quick setup validation for opcp-openstack-automation."""
+import os
+import sys
+
+required_vars = [
+    "OS_AUTH_TYPE",
+    "OS_AUTH_URL",
+    "OS_IDENTITY_API_VERSION",
+    "OS_REGION_NAME",
+    "OS_INTERFACE",
+    "OS_APPLICATION_CREDENTIAL_ID",
+    "OS_APPLICATION_CREDENTIAL_SECRET",
+]
+
+missing = [v for v in required_vars if not os.environ.get(v)]
+
+if missing:
+    print("Missing environment variables:")
+    for var in missing:
+        print(f"  - {var}")
+    sys.exit(1)
+
+print("All required environment variables are set.")
+print(f"Auth URL : {os.environ['OS_AUTH_URL']}")
+print(f"Region   : {os.environ['OS_REGION_NAME']}")
+print("You are ready to begin!")</code></pre>
+
+      <p>Then run the script from the <code>./tests</code> folder:</p>
+
+      <pre><code class="language-bash">python test1.py</code></pre>
+
+      <p>
+        If everything is configured correctly, you should see a confirmation message
+        listing your Auth URL and Project ID. If any variable is missing, the script
+        will tell you which ones to set.
+      </p>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Project on GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts (order matters: data → modules → entry point) -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+    <script type="module" src="../js/scorm/scorm-bootstrap.js"></script>
+</body>
+</html>

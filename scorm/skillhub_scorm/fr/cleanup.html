@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Nettoyage</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- Overlay de la barre latérale (mobile) -->
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+    <!-- Barre latérale -->
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Nettoyage</h1>
+      <p class="lesson-meta">Difficulté : <strong>Débutant</strong> · Durée estimée : <strong>15 min</strong></p>
+
+      <p>
+        Tout au long de cette formation, vous avez créé des réseaux, des groupes de
+        sécurité, des instances et des volumes. Cette dernière leçon vous guide pour
+        lister chaque ressource correspondant à votre préfixe
+        <code>$STUDENT_ID-</code> puis les supprimer afin de laisser votre projet
+        OVHcloud propre.
+      </p>
+
+      <!-- Section 1 -->
+      <h2>1. La convention de nommage</h2>
+      <p>
+        Chaque ressource créée pendant les labs utilise le préfixe
+        <code>$STUDENT_ID-</code> (votre identifiant étudiant). Cela permet de les
+        lister et de les supprimer facilement sans toucher aux ressources de
+        production.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Type de ressource</th>
+            <th>Exemples de noms créés dans les labs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Réseau</td>
+            <td>$STUDENT_ID-app-network, $STUDENT_ID-multi-subnet-network, $STUDENT_ID-private-network</td>
+          </tr>
+          <tr>
+            <td>Sous-réseau</td>
+            <td>$STUDENT_ID-app-subnet, $STUDENT_ID-frontend-subnet, $STUDENT_ID-backend-subnet, $STUDENT_ID-private-subnet</td>
+          </tr>
+          <tr>
+            <td>Groupe de sécurité</td>
+            <td>$STUDENT_ID-web-server-sg, $STUDENT_ID-database-sg, $STUDENT_ID-mixed-sg, $STUDENT_ID-web-sg</td>
+          </tr>
+          <tr>
+            <td>Instance</td>
+            <td>$STUDENT_ID-web-server-1, $STUDENT_ID-nginx-host, $STUDENT_ID-tagged-instance</td>
+          </tr>
+          <tr>
+            <td>Volume</td>
+            <td>$STUDENT_ID-data-vol-1, $STUDENT_ID-fast-vol-1, $STUDENT_ID-web-data, $STUDENT_ID-boot-volume</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Section 2 -->
+      <h2>2. Lister les ressources par préfixe</h2>
+      <p>
+        Avant de supprimer quoi que ce soit, vérifiez que seules les ressources lab
+        sont ciblées. Le script ci-dessous liste chaque ressource dont le nom
+        commence par votre préfixe <code>$STUDENT_ID-</code>.
+      </p>
+
+      <pre><code class="language-python">"""cleanup_list.py — Lister chaque ressource dont le nom commence par $STUDENT_ID-."""
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
+
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+conn = ConnectionManager(credentials).connect()
+
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) + "-"
+
+print(f"Liste des ressources avec le préfixe : {PREFIX}")
+
+print("\n=== Réseaux ===")
+for net in conn.network.networks():
+    if net.name and net.name.startswith(PREFIX):
+        print(f"  {net.name}  (ID : {net.id})")
+
+print("\n=== Sous-réseaux ===")
+for sub in conn.network.subnets():
+    if sub.name and sub.name.startswith(PREFIX):
+        print(f"  {sub.name}  (ID : {sub.id})")
+
+print("\n=== Groupes de sécurité ===")
+for sg in conn.network.security_groups():
+    if sg.name and sg.name.startswith(PREFIX):
+        print(f"  {sg.name}  (ID : {sg.id})")
+
+print("\n=== Instances ===")
+for srv in conn.compute.servers():
+    if srv.name and srv.name.startswith(PREFIX):
+        print(f"  {srv.name}  (ID : {srv.id})  Statut : {srv.status}")
+
+print("\n=== Volumes ===")
+for vol in conn.block_storage.volumes():
+    if vol.name and vol.name.startswith(PREFIX):
+        print(f"  {vol.name}  (ID : {vol.id})  Statut : {vol.status}")</code></pre>
+
+      <!-- Section 3 -->
+      <h2>3. Supprimer toutes les ressources lab (SDK)</h2>
+      <p>
+        Les ressources doivent être supprimées dans l'<strong>ordre inverse des
+        dépendances</strong> : d'abord les volumes (détacher puis supprimer), puis
+        les instances, les groupes de sécurité, les sous-réseaux et enfin les
+        réseaux.
+      </p>
+
+      <pre><code class="language-python">"""cleanup_delete.py — Supprimer toutes les ressources $STUDENT_ID-* dans l'ordre sûr."""
+import sys
+import os
+import time
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import ConnectionManager, AuthenticationManager
+
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+conn = ConnectionManager(credentials).connect()
+
+PREFIX = str(os.environ.get('STUDENT_ID', 'default-student')) + "-"
+
+# ── Étape 1 : Détacher et supprimer les volumes ───────────────
+print("Étape 1/5 — Suppression des volumes …")
+for vol in conn.block_storage.volumes():
+    if not (vol.name and vol.name.startswith(PREFIX)):
+        continue
+    # Détacher si en cours d'utilisation
+    if vol.status == "in-use" and hasattr(vol, "attachments"):
+        for att in vol.attachments:
+            server_id = att.get("server_id")
+            if server_id:
+                print(f"  Détachement de {vol.name} du serveur {server_id}")
+                conn.compute.delete_volume_attachment(vol.id, server_id)
+        time.sleep(3)  # attendre le détachement
+    print(f"  Suppression du volume : {vol.name}")
+    conn.block_storage.delete_volume(vol.id, ignore_missing=True)
+
+# ── Étape 2 : Supprimer les instances ─────────────────────────
+print("Étape 2/5 — Suppression des instances …")
+for srv in conn.compute.servers():
+    if srv.name and srv.name.startswith(PREFIX):
+        print(f"  Suppression de l'instance : {srv.name}")
+        conn.compute.delete_server(srv.id, ignore_missing=True)
+
+# Attendre que les instances disparaissent avant de toucher aux réseaux
+time.sleep(10)
+
+# ── Étape 3 : Supprimer les groupes de sécurité ───────────────
+print("Étape 3/5 — Suppression des groupes de sécurité …")
+for sg in conn.network.security_groups():
+    if sg.name and sg.name.startswith(PREFIX):
+        print(f"  Suppression du groupe de sécurité : {sg.name}")
+        conn.network.delete_security_group(sg.id, ignore_missing=True)
+
+# ── Étape 4 : Supprimer les sous-réseaux ──────────────────────
+print("Étape 4/5 — Suppression des sous-réseaux …")
+for sub in conn.network.subnets():
+    if sub.name and sub.name.startswith(PREFIX):
+        print(f"  Suppression du sous-réseau : {sub.name}")
+        conn.network.delete_subnet(sub.id, ignore_missing=True)
+
+# ── Étape 5 : Supprimer les réseaux ───────────────────────────
+print("Étape 5/5 — Suppression des réseaux …")
+for net in conn.network.networks():
+    if net.name and net.name.startswith(PREFIX):
+        print(f"  Suppression du réseau : {net.name}")
+        conn.network.delete_network(net.id, ignore_missing=True)
+
+print(f"\nNettoyage terminé — toutes les ressources {PREFIX}* ont été supprimées.")</code></pre>
+
+      <!-- Section 4 -->
+      <h2>4. Utiliser le nettoyage du DeploymentEngine</h2>
+      <p>
+        Si vous avez utilisé le <code>DeploymentEngine</code> pendant la leçon
+        Déploiement, vous pouvez passer les IDs de ressources retournés directement
+        à <code>cleanup_resources()</code>.
+      </p>
+
+      <pre><code class="language-python">"""cleanup_engine.py — Nettoyage avec DeploymentEngine."""
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from openstack_sdk.auth_manager import AuthenticationManager
+from openstack_sdk.deployment_engine import DeploymentEngine
+
+auth_mgr = AuthenticationManager()
+credentials = auth_mgr.load_credentials_from_env()
+
+engine = DeploymentEngine(credentials)
+
+# Utilisez les IDs de ressources de votre résultat de déploiement
+resource_ids = {
+    "volumes":         ["&lt;volume-id-1&gt;", "&lt;volume-id-2&gt;"],
+    "instances":       ["&lt;instance-id-1&gt;", "&lt;instance-id-2&gt;"],
+    "security_groups": ["&lt;sg-id-1&gt;"],
+    "subnets":         ["&lt;subnet-id-1&gt;"],
+    "networks":        ["&lt;network-id-1&gt;"],
+}
+
+results = engine.cleanup_resources(resource_ids)
+for resource, success in results.items():
+    status = "supprimé" if success else "ÉCHOUÉ"
+    print(f"  {resource} : {status}")</code></pre>
+
+      <!-- Section 5 -->
+      <h2>5. Nettoyage Terraform / OpenTofu</h2>
+      <p>
+        Si vous avez créé des ressources avec Terraform ou OpenTofu, une seule
+        commande supprime tout. Il lit le fichier d'état et supprime les ressources
+        dans le bon ordre automatiquement.
+      </p>
+
+      <pre><code class="language-bash">cd terraform
+# Avec Terraform :
+terraform destroy -auto-approve
+
+# Ou, avec OpenTofu :
+tofu destroy -auto-approve</code></pre>
+
+      <p>
+        Vérifiez que l'état est vide ensuite :
+      </p>
+
+      <pre><code class="language-bash">terraform state list
+# Ou : tofu state list
+# Ne devrait rien retourner</code></pre>
+
+      <h2>Résumé</h2>
+      <ul>
+        <li>Toutes les ressources lab utilisent le préfixe <strong>$STUDENT_ID-</strong> — filtrez dessus pour les identifier en toute sécurité.</li>
+        <li>Supprimez toujours dans l'<strong>ordre inverse des dépendances</strong> : volumes → instances → groupes de sécurité → sous-réseaux → réseaux.</li>
+        <li>Utilisez <code>DeploymentEngine.cleanup_resources()</code> quand vous avez les IDs de ressources d'un déploiement précédent.</li>
+        <li>Pour les ressources Terraform/OpenTofu, <code>terraform destroy</code> (ou <code>tofu destroy</code>) gère l'ordre pour vous.</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+
+  <!-- Pied de page -->
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://github.com/opcp-openstack-automation" aria-label="Projet sur GitHub">GitHub</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+    <script type="module" src="../js/scorm/scorm-bootstrap.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="SKILLHUB_SCORM12" version="1.0"
+          xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+          xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
+                              http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd
+                              http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="ORG-SKILLHUB">
+    <organization identifier="ORG-SKILLHUB">
+      <title>Agentic AI OPCP Labs - SkillHub</title>
+      <item identifier="ITEM-SKILLHUB" identifierref="RES-SKILLHUB" isvisible="true">
+        <title>Agentic AI OPCP Labs - SkillHub</title>
+        <adlcp:masteryscore>100</adlcp:masteryscore>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES-SKILLHUB" type="webcontent"
+              adlcp:scormtype="sco" href="index.html">
+      <file href="index.html"/>
+      <file href="assets/css/.gitkeep"/>
+      <file href="assets/css/style.css"/>
+      <file href="assets/images/.gitkeep"/>
+      <file href="assets/js/.gitkeep"/>
+      <file href="assets/js/code-highlight.js"/>
+      <file href="assets/js/i18n.js"/>
+      <file href="assets/js/lessons.js"/>
+      <file href="assets/js/main.js"/>
+      <file href="assets/js/navigation.js"/>
+      <file href="en/.gitkeep"/>
+      <file href="en/advanced.html"/>
+      <file href="en/authentication.html"/>
+      <file href="en/cleanup.html"/>
+      <file href="en/compute.html"/>
+      <file href="en/configuration.html"/>
+      <file href="en/deployment.html"/>
+      <file href="en/index.html"/>
+      <file href="en/interaction-methods.html"/>
+      <file href="en/networking.html"/>
+      <file href="en/sdk-cheat-sheet.html"/>
+      <file href="en/security-groups.html"/>
+      <file href="en/terraform.html"/>
+      <file href="en/volumes.html"/>
+      <file href="fr/.gitkeep"/>
+      <file href="fr/advanced.html"/>
+      <file href="fr/authentication.html"/>
+      <file href="fr/cleanup.html"/>
+      <file href="fr/compute.html"/>
+      <file href="fr/configuration.html"/>
+      <file href="fr/deployment.html"/>
+      <file href="fr/index.html"/>
+      <file href="fr/interaction-methods.html"/>
+      <file href="fr/networking.html"/>
+      <file href="fr/sdk-cheat-sheet.html"/>
+      <file href="fr/security-groups.html"/>
+      <file href="fr/terraform.html"/>
+      <file href="fr/volumes.html"/>
+      <file href="js/code-highlight.js"/>
+      <file href="js/i18n.js"/>
+      <file href="js/lessons.js"/>
+      <file href="js/main.js"/>
+      <file href="js/navigation.js"/>
+      <file href="js/progress.js"/>
+      <file href="js/scorm/api-discovery.js"/>
+      <file href="js/scorm/progress-bridge.js"/>
+      <file href="js/scorm/scorm-adapter.js"/>
+      <file href="js/scorm/scorm-api.js"/>
+      <file href="js/scorm/scorm-bootstrap.js"/>
+      <file href="js/self-assessment.js"/>
+    </resource>
+  </resources>
+</manifest>
