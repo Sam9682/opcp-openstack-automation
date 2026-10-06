@@ -45,6 +45,16 @@
     } catch (e) {
       /* graceful degradation */
     }
+    /* SCORM bridge: mirror each completed id into an individual
+       skillhub_lesson_complete_* key so progress-bridge.js can scan them
+       for cmi.suspend_data. */
+    for (var si = 0; si < arr.length; si++) {
+      try {
+        localStorage.setItem('skillhub_lesson_complete_' + arr[si], 'true');
+      } catch (e) {
+        /* graceful degradation */
+      }
+    }
   }
 
   /* ---- Public API ---- */
@@ -215,6 +225,13 @@
   }
 
   /* ---- Expose on namespace ---- */
+  /* SCORM-facing helpers (consumed by js/scorm/scorm-bootstrap.js via the
+     window.SkillHub namespace). Kept here so the SCORM adapter reads this
+     course's real progress instead of a parallel module stack. */
+  function getCompletionPercentage() {
+    return getProgress().percentage;
+  }
+
   window.SkillHub.navigation = {
     renderNavigation: renderNavigation,
     markLessonComplete: markLessonComplete,
@@ -222,4 +239,9 @@
     updateProgressBar: updateProgressBar,
     initHamburgerMenu: initHamburgerMenu
   };
+
+  /* Also expose completion helpers directly on window.SkillHub for the
+     SCORM bootstrap's defensive dependency resolution. */
+  window.SkillHub.getCompletedLessons = getCompletedLessons;
+  window.SkillHub.getCompletionPercentage = getCompletionPercentage;
 })();

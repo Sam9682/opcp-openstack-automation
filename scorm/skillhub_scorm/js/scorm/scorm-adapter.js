@@ -1,168 +1,228 @@
 /**
- * ScormAdapter - The orchestrator that maps the course's existing progress and
- * guardrail self-assessment onto the SCORM 1.2 data model. The rest of the
- * course never has to know it exists.
+ * Scorm_Adapter — orchestrates the SCORM start / sync / end lifecycle, mapping
+ * the SkillHub course's completion data onto the SCORM 1.2 data model.
  *
- * It owns the pure status/score computation and the three lifecycle hooks:
- *   - start(): initialize the session + restore progress from suspend_data
- *   - sync():  recompute status/score and push them (+ suspend_data) to the LMS
- *   - end():   mark the session as suspended, commit, and terminate
+ * The adapter is deliberately **pure by injection**: all course knowledge
+ * arrives through the `deps` object (`getCompletionPercentage`, `totalLessons`,
+ * `getCompletedLessons`, `evaluateGuardrailChecklist`, `readCheckedLayers`), so
+ * the adapter never imports the course directly and its logic can be exercised
+ * in isolation (Req 7.5). Its only collaborators are a `ScormApiWrapper`
+ * (the defensive LMS surface) and the Progress_Bridge module (serialize /
+ * deserialize / restore).
  *
- * The course functions are injected as `deps` so the status/score logic is
- * testable as pure functions and the DOM-reading guardrail path can be driven
- * by a mock. Every method degrades to a safe no-op when the SCORM API wrapper
- * reports it is unavailable, so the course keeps working standalone.
+ * Status mapping is **guardrail-independent**: `cmi.core.lesson_status` is
+ * `completed` only when the Completion_Percentage is exactly 100 and
+ * `incomplete` otherwise. The Guardrail_Assessment is informational only — it
+ * is folded into `cmi.suspend_data` but never participates in the status
+ * decision (Req 4.2, 4.3, 4.4).
  *
- * Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 6.3, 6.4
+ * Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 5.4, 5.5, 5.6, 7.5
+ *
+ * @module scorm-adapter
  */
 
 import {
+  STORAGE_PREFIX,
   readCompletedIds,
   serializeProgress,
   deserializeProgress,
   restoreToLocalStorage,
 } from "./progress-bridge.js";
 
+/**
+ * Default debounce window (ms) for the commit scheduled by {@link ScormAdapter#sync}.
+ * @type {number}
+ */
+export const DEFAULT_COMMIT_DEBOUNCE_MS = 500;
+
+/**
+ * Map a Completion_Percentage onto the SCORM `cmi.core.lesson_status` value.
+ *
+ * The result depends **only** on the percentage — `completed` when it equals
+ * 100, `incomplete` for every other value. The Guardrail_Assessment never
+ * participates in this decision (Req 4.2, 4.3, 4.4).
+ *
+ * @param {number} pct  The Completion_Percentage (0–100).
+ * @returns {"completed"|"incomplete"} the SCORM lesson status.
+ */
+export function computeStatus(pct) {
+  return pct === 100 ? "completed" : "incomplete";
+}
+
+/**
+ * @typedef {Object} ScormAdapterDeps
+ * @property {() => number} getCompletionPercentage  Current completion percentage (0–100).
+ * @property {() => number} [totalLessons]           Total number of lessons.
+ * @property {() => string[]} [getCompletedLessons]  Completed lesson ids.
+ * @property {() => *} [evaluateGuardrailChecklist]  Informational guardrail result.
+ * @property {() => *} [readCheckedLayers]           Checked guardrail layers.
+ */
+
 export class ScormAdapter {
   /**
-   * @param {import("./scorm-api.js").ScormApiWrapper} wrapper - defensive LMS
-   *   API wrapper (its `available` getter gates every side effect).
-   * @param {object} deps - injected pure course functions for testability:
-   * @param {(totalLessons: number) => number} deps.getCompletionPercentage
-   *   returns the integer completion percentage 0–100 for the given lesson count.
-   * @param {number} deps.totalLessons - total number of lessons in the course.
-   * @param {(checkedLayers: string[]) => {passed: boolean}} deps.evaluateGuardrailChecklist
-   *   evaluates the all-five-layers guardrail rule.
-   * @param {(container?: HTMLElement) => string[]} deps.readCheckedLayers
-   *   reads the currently checked guardrail layers from the DOM.
+   * @param {import("./scorm-api.js").ScormApiWrapper} wrapper  Defensive LMS wrapper.
+   * @param {object} bridge  The Progress_Bridge module (serialize / deserialize / restore).
+   * @param {ScormAdapterDeps} deps  Injected course functions (Req 7.5).
+   * @param {object} [options]
+   * @param {number} [options.commitDebounceMs]  Debounce window for the commit schedule.
    */
-  constructor(wrapper, deps = {}) {
+  constructor(wrapper, bridge, deps, options = {}) {
+    /** @type {import("./scorm-api.js").ScormApiWrapper} */
     this.wrapper = wrapper;
-    this.getCompletionPercentage = deps.getCompletionPercentage;
-    this.totalLessons = deps.totalLessons;
-    this.evaluateGuardrailChecklist = deps.evaluateGuardrailChecklist;
-    this.readCheckedLayers = deps.readCheckedLayers;
+    /** @type {object} */
+    this.bridge = bridge || {
+      readCompletedIds,
+      serializeProgress,
+      deserializeProgress,
+      restoreToLocalStorage,
+      STORAGE_PREFIX,
+    };
+    /** @type {ScormAdapterDeps} */
+    this.deps = deps || {};
+    /** @type {number} */
+    this.commitDebounceMs =
+      typeof options.commitDebounceMs === "number"
+        ? options.commitDebounceMs
+        : DEFAULT_COMMIT_DEBOUNCE_MS;
+    /** @type {ReturnType<typeof setTimeout>|null} */
+    this._commitTimer = null;
   }
 
   /**
-   * Pure mapping from completion state to a SCORM `cmi.core.lesson_status`.
+   * Read the current Completion_Percentage from the injected course function,
+   * clamped to an integer in 0–100. Any missing dep or thrown error yields 0 so
+   * the adapter never propagates a fault into the lifecycle.
    *
-   * - `passed`     when the course is complete (pct >= 100) AND the guardrail
-   *                self-assessment passed (Req 4.4).
-   * - `completed`  when the course is complete (pct >= 100) but the guardrail
-   *                did not pass (Req 4.1).
-   * - `incomplete` for any percentage below 100 (Req 4.2).
-   *
-   * @param {number} pct - completion percentage in [0, 100].
-   * @param {boolean} guardrailPassed - whether the guardrail self-check passed.
-   * @returns {"passed"|"completed"|"incomplete"}
+   * @returns {number} integer percentage in [0, 100]
    */
-  computeStatus(pct, guardrailPassed) {
-    if (pct >= 100) {
-      return guardrailPassed ? "passed" : "completed";
-    }
-    return "incomplete";
-  }
-
-  /**
-   * On launch: initialize the SCORM session, then restore any progress stored
-   * in `cmi.suspend_data` back into localStorage before the page reads progress
-   * (Req 5.2, 6.3). Safe no-op when the LMS API is unavailable.
-   */
-  start() {
-    if (!this.wrapper || !this.wrapper.available) {
-      return;
-    }
-
-    this.wrapper.initialize();
-
-    // Restore progress from suspend_data into localStorage (Req 5.2).
-    const suspendData = this.wrapper.getValue("cmi.suspend_data");
-    const ids = deserializeProgress(suspendData);
-    if (ids.length > 0) {
-      restoreToLocalStorage(ids);
-    }
-  }
-
-  /**
-   * Recompute the overall status + score from current course state and push a
-   * single `cmi.core.lesson_status`, `cmi.core.score.raw` (integer 0–100), and
-   * `cmi.suspend_data` to the LMS, then commit (Req 4.*, 5.1). Safe no-op when
-   * the LMS API is unavailable.
-   */
-  sync() {
-    if (!this.wrapper || !this.wrapper.available) {
-      return;
-    }
-
-    const pct = this._completionPercentage();
-    const guardrailPassed = this._guardrailPassed();
-    const status = this.computeStatus(pct, guardrailPassed);
-
-    // Single overall status and score for the whole course (Req 4.5).
-    this.wrapper.setValue("cmi.core.lesson_status", status);
-    this.wrapper.setValue("cmi.core.score.raw", String(pct));
-
-    // Mirror localStorage progress into suspend_data (Req 5.1).
-    this.wrapper.setValue(
-      "cmi.suspend_data",
-      serializeProgress(readCompletedIds())
-    );
-
-    this.wrapper.commit();
-  }
-
-  /**
-   * On unload: mark the session as suspended, commit the current data model
-   * values, then terminate the session (Req 5.3). Safe no-op when the LMS API
-   * is unavailable.
-   */
-  end() {
-    if (!this.wrapper || !this.wrapper.available) {
-      return;
-    }
-
-    this.wrapper.setValue("cmi.core.exit", "suspend");
-    this.wrapper.commit();
-    this.wrapper.terminate();
-  }
-
-  /**
-   * Current completion percentage as a clamped integer in [0, 100].
-   * @returns {number}
-   * @private
-   */
-  _completionPercentage() {
-    let pct = 0;
-    if (typeof this.getCompletionPercentage === "function") {
-      pct = this.getCompletionPercentage(this.totalLessons);
-    }
-    pct = Math.round(Number(pct) || 0);
-    if (pct < 0) {
+  _percentage() {
+    try {
+      const raw = this.deps.getCompletionPercentage
+        ? this.deps.getCompletionPercentage()
+        : 0;
+      const n = Math.round(Number(raw));
+      if (!Number.isFinite(n)) {
+        return 0;
+      }
+      return Math.min(100, Math.max(0, n));
+    } catch {
       return 0;
     }
-    if (pct > 100) {
-      return 100;
-    }
-    return pct;
   }
 
   /**
-   * Whether the guardrail self-assessment currently passes. Reads the checked
-   * layers from the DOM and evaluates the all-five-layers rule. Degrades to
-   * `false` when the dependencies are not wired.
-   * @returns {boolean}
+   * Evaluate the informational Guardrail_Assessment from the injected course
+   * function. Returns `null` when no dep is provided or the call throws — the
+   * guardrail is informational only and must never break the lifecycle (Req 4.4).
+   *
+   * @returns {*} the guardrail value, or `null`
+   */
+  _guardrail() {
+    try {
+      return this.deps.evaluateGuardrailChecklist
+        ? this.deps.evaluateGuardrailChecklist()
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Read the set of completed lesson ids. Prefers the injected
+   * `getCompletedLessons` course function and falls back to scanning
+   * localStorage through the bridge, so the suspend envelope always reflects
+   * the course's own completion keys.
+   *
+   * @returns {string[]} completed lesson ids
+   */
+  _completedIds() {
+    try {
+      if (this.deps.getCompletedLessons) {
+        const ids = this.deps.getCompletedLessons();
+        if (Array.isArray(ids)) {
+          return ids.filter((id) => typeof id === "string");
+        }
+      }
+    } catch {
+      // fall through to the bridge scan
+    }
+    return this.bridge.readCompletedIds();
+  }
+
+  /**
+   * Restore completed lesson ids from `cmi.suspend_data` into localStorage,
+   * then synchronize the SCORM values. Restoring **before** the course renders
+   * lets the course pick up resumed progress on first paint (Req 5.4).
+   */
+  start() {
+    const suspendData = this.wrapper.getValue("cmi.suspend_data");
+    const { ids } = this.bridge.deserializeProgress(suspendData);
+    this.bridge.restoreToLocalStorage(ids);
+    this.sync();
+  }
+
+  /**
+   * Synchronize the current course progress onto the SCORM data model:
+   *
+   *  - `cmi.core.score.raw`     ← integer Completion_Percentage (Req 4.1)
+   *  - `cmi.core.lesson_status` ← {@link computeStatus} of the percentage (Req 4.2, 4.3)
+   *  - `cmi.suspend_data`       ← Suspend_Envelope folding in the informational
+   *                               guardrail (Req 4.5)
+   *
+   * The persisting `commit` is scheduled on a debounced timer so a burst of
+   * progress changes collapses into a single LMS commit (Req 5.6).
+   */
+  sync() {
+    const pct = this._percentage();
+    this.wrapper.setValue("cmi.core.score.raw", pct);
+    this.wrapper.setValue("cmi.core.lesson_status", computeStatus(pct));
+
+    const ids = this._completedIds();
+    const guardrail = this._guardrail();
+    const envelope = this.bridge.serializeProgress(ids, guardrail);
+    this.wrapper.setValue("cmi.suspend_data", envelope);
+
+    this._scheduleCommit();
+  }
+
+  /**
+   * Schedule a debounced `commit`. A pending timer is cleared and replaced, so
+   * only the trailing call within the debounce window actually commits.
+   *
    * @private
    */
-  _guardrailPassed() {
-    if (
-      typeof this.evaluateGuardrailChecklist !== "function" ||
-      typeof this.readCheckedLayers !== "function"
-    ) {
-      return false;
+  _scheduleCommit() {
+    if (this._commitTimer != null) {
+      clearTimeout(this._commitTimer);
     }
-    const checkedLayers = this.readCheckedLayers();
-    const result = this.evaluateGuardrailChecklist(checkedLayers);
-    return Boolean(result && result.passed);
+    this._commitTimer = setTimeout(() => {
+      this._commitTimer = null;
+      this.wrapper.commit();
+    }, this.commitDebounceMs);
+  }
+
+  /**
+   * Flush any pending debounced commit immediately, cancelling the timer. Used
+   * by {@link end} so the final unload sequence is strictly ordered.
+   *
+   * @private
+   */
+  _flushPendingCommit() {
+    if (this._commitTimer != null) {
+      clearTimeout(this._commitTimer);
+      this._commitTimer = null;
+    }
+  }
+
+  /**
+   * End the SCORM session on host unload: set `cmi.core.exit` to `suspend`,
+   * then `commit`, then `finish`, in that exact order (Req 5.5). Any pending
+   * debounced commit is cancelled so the terminal commit is the one that runs.
+   */
+  end() {
+    this._flushPendingCommit();
+    this.wrapper.setValue("cmi.core.exit", "suspend");
+    this.wrapper.commit();
+    this.wrapper.finish();
   }
 }

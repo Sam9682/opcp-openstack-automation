@@ -1,20 +1,31 @@
 /**
- * ScormApiWrapper - Thin, defensive wrapper over the raw SCORM 1.2 `API`
- * method surface (LMSInitialize, LMSGetValue, LMSSetValue, LMSCommit,
- * LMSFinish). Every method is a safe no-op when no API was discovered, and
- * every raw call is wrapped in try/catch so an LMS error never propagates to
- * the course (graceful degradation).
+ * ScormApiWrapper — a thin, defensive wrapper over the raw SCORM 1.2 LMS `API`
+ * method surface: `LMSInitialize`, `LMSGetValue`, `LMSSetValue`, `LMSCommit`,
+ * `LMSFinish`, and `LMSGetLastError`.
  *
- * Validates: Requirements 6.3, 6.4, 7.1, 7.4
+ * Two safety guarantees keep the course operational in every environment:
+ *
+ *  - **Standalone mode (no LMS).** When constructed with a `null` api — the
+ *    result of a failed `discoverApi()` — every method is an inert no-op that
+ *    returns a safe default (`""` for value reads, `false` for operations), so
+ *    the SCO keeps working with no LMS attached.
+ *  - **Error tolerance.** Every raw LMS call is wrapped in `try/catch`; a
+ *    throwing LMS method is contained and the same safe default is returned,
+ *    so an LMS fault never propagates into the course.
+ *
+ * Validates: Requirements 7.1, 7.3
+ *
+ * @module scorm-api
  */
 
 export class ScormApiWrapper {
   /**
-   * @param {object|null} api  Result of discoverApi(); null → inert wrapper.
+   * @param {object|null} api  The discovered LMS API object, or `null` to
+   *                           build an inert, standalone-mode wrapper.
    */
   constructor(api) {
+    /** @type {object|null} */
     this.api = api;
-    this.initialized = false;
   }
 
   /**
@@ -26,9 +37,9 @@ export class ScormApiWrapper {
   }
 
   /**
-   * Initialize the SCORM session via LMSInitialize(""). Must run before any
-   * get/set (Req 6.3). Safe no-op (returns false) when no API is available.
-   * @returns {boolean} True if the LMS reported a successful initialization.
+   * Begin the SCORM session via `LMSInitialize("")`.
+   * @returns {boolean} `true` when the LMS reports success; `false` otherwise,
+   *                    when no API is available, or when the call throws.
    */
   initialize() {
     if (!this.available) {
@@ -36,18 +47,17 @@ export class ScormApiWrapper {
     }
     try {
       const result = this.api.LMSInitialize("");
-      // SCORM 1.2 returns the string "true"/"false" or a boolean.
-      this.initialized = result === "true" || result === true;
-      return this.initialized;
+      return result === "true" || result === true;
     } catch {
       return false;
     }
   }
 
   /**
-   * Read a data model element via LMSGetValue.
-   * @param {string} element  e.g. "cmi.suspend_data"
-   * @returns {string} The value, or "" on error / when unavailable.
+   * Read a data model element via `LMSGetValue`.
+   * @param {string} element  e.g. `"cmi.suspend_data"`.
+   * @returns {string} The value as a string; `""` when no API is available or
+   *                   the call throws.
    */
   getValue(element) {
     if (!this.available) {
@@ -62,10 +72,11 @@ export class ScormApiWrapper {
   }
 
   /**
-   * Write a data model element via LMSSetValue.
-   * @param {string} element  e.g. "cmi.core.lesson_status"
+   * Write a data model element via `LMSSetValue`.
+   * @param {string} element  e.g. `"cmi.core.lesson_status"`.
    * @param {string|number} value
-   * @returns {boolean} True if the LMS reported a successful set.
+   * @returns {boolean} `true` when the LMS reports success; `false` otherwise,
+   *                    when no API is available, or when the call throws.
    */
   setValue(element, value) {
     if (!this.available) {
@@ -80,8 +91,9 @@ export class ScormApiWrapper {
   }
 
   /**
-   * Persist pending values via LMSCommit("").
-   * @returns {boolean} True if the LMS reported a successful commit.
+   * Persist pending values via `LMSCommit("")`.
+   * @returns {boolean} `true` when the LMS reports success; `false` otherwise,
+   *                    when no API is available, or when the call throws.
    */
   commit() {
     if (!this.available) {
@@ -96,22 +108,36 @@ export class ScormApiWrapper {
   }
 
   /**
-   * End the SCORM session via LMSFinish("").
-   * @returns {boolean} True if the LMS reported a successful finish.
+   * End the SCORM session via `LMSFinish("")`.
+   * @returns {boolean} `true` when the LMS reports success; `false` otherwise,
+   *                    when no API is available, or when the call throws.
    */
-  terminate() {
+  finish() {
     if (!this.available) {
       return false;
     }
     try {
       const result = this.api.LMSFinish("");
-      if (result === "true" || result === true) {
-        this.initialized = false;
-        return true;
-      }
-      return false;
+      return result === "true" || result === true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Read the last LMS error code via `LMSGetLastError`.
+   * @returns {string} The error code as a string; `""` when no API is
+   *                   available or the call throws.
+   */
+  getLastError() {
+    if (!this.available) {
+      return "";
+    }
+    try {
+      const code = this.api.LMSGetLastError();
+      return code == null ? "" : String(code);
+    } catch {
+      return "";
     }
   }
 }

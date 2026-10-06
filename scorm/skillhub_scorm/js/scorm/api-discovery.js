@@ -1,63 +1,76 @@
 /**
- * ApiDiscovery - Locates the LMS SCORM 1.2 adapter object named `API`
- * by walking parent and opener frame chains.
+ * Api_Discovery — locates the LMS SCORM 1.2 API object.
  *
- * All property access is wrapped in try/catch to tolerate cross-origin
- * frame access errors: discovery returns `null` rather than throwing.
- * The functions are pure over an injectable start window so they can be
- * driven by mock window graphs in tests.
+ * The SCORM 1.2 API is exposed by an ancestor (or opener) window as a global
+ * named `API` that implements `LMSInitialize`. Because the SCO may be nested in
+ * frames owned by the LMS — potentially on a different origin — every window
+ * access is wrapped in try/catch: a cross-origin SecurityError must not abort
+ * the search, it simply means that window is not ours and we move on.
  *
- * Validates: Requirements 6.1, 6.2
+ * Pure, dependency-free ES module.
+ *
+ * Requirements: 6.1, 6.2, 6.3, 6.4
  */
 
-/**
- * Maximum number of windows to inspect when walking a chain.
- * Guards against infinite loops in self-referential / cyclic window graphs
- * and detached frames.
- * @type {number}
- */
-const MAX_DEPTH = 20;
+/** Maximum number of windows to traverse in either the parent or opener chain. */
+export const MAX_DEPTH = 20;
 
 /**
- * Walk a window's `.parent` chain looking for a window exposing `API`.
+ * Decide whether a given window hosts the LMS SCORM 1.2 API.
  *
- * Starts at `startWin` itself, then follows `.parent` upward until a window
- * exposing `API` is found, the top window is reached (a window whose parent
- * is itself), or MAX_DEPTH windows have been inspected. Every property access
- * is wrapped in try/catch so cross-origin access errors return `null` rather
- * than throwing.
+ * A window hosts the API when it exposes an `API` object carrying an
+ * `LMSInitialize` function. The access itself can throw on a cross-origin
+ * window, so the caller is responsible for wrapping this in try/catch.
  *
- * @param {Window} startWin - The window to begin the parent-walk from
- * @returns {object|null} The LMS API object, or `null` if not found
+ * @param {Window} win
+ * @returns {object|null} the API object, or null when absent
+ */
+function apiOnWindow(win) {
+  if (win && win.API && typeof win.API.LMSInitialize === "function") {
+    return win.API;
+  }
+  return null;
+}
+
+/**
+ * Walk the `.parent` chain starting at `startWin`, up to `MAX_DEPTH` windows,
+ * returning the LMS `API` object as soon as it is found.
+ *
+ * Each window access is guarded so a cross-origin access error does not
+ * terminate the search — traversal continues to the next window. The walk also
+ * stops once a window is its own parent (the top of the chain).
+ *
+ * @param {Window} startWin
+ * @returns {object|null} the LMS API object, or null when not found
  */
 export function findApiInChain(startWin) {
   let win = startWin;
   let depth = 0;
 
-  while (win != null && depth < MAX_DEPTH) {
-    // Does this window expose `API`?
+  while (win && depth < MAX_DEPTH) {
     try {
-      if (win.API != null) {
-        return win.API;
+      const api = apiOnWindow(win);
+      if (api) {
+        return api;
       }
-    } catch {
-      // Cross-origin access: treat as "not here" and keep walking.
+    } catch (_err) {
+      // Cross-origin access raised — this window is not reachable; keep going.
     }
 
-    // Advance to the parent. The top window's parent is itself.
-    let parent;
+    let parent = null;
     try {
-      parent = win.parent;
-    } catch {
-      // Cross-origin access to .parent: cannot walk further.
-      return null;
+      // A window at the top of the chain is its own parent; detect and stop.
+      if (win.parent && win.parent !== win) {
+        parent = win.parent;
+      }
+    } catch (_err) {
+      // Reading `.parent` can also throw cross-origin; treat as end of chain.
+      parent = null;
     }
 
-    if (parent == null || parent === win) {
-      // Reached the top window.
+    if (!parent) {
       break;
     }
-
     win = parent;
     depth += 1;
   }
@@ -66,43 +79,36 @@ export function findApiInChain(startWin) {
 }
 
 /**
- * Discover the LMS API: parent chain first (Req 6.1), then opener chain (Req 6.2).
+ * Discover the LMS API by searching the parent chain first, then the opener
+ * chain, each bounded by `MAX_DEPTH`.
  *
- * 1. Walk `win` then `win.parent` upward until `API` is found or the top
- *    window / MAX_DEPTH is reached.
- * 2. If not found and `win.opener` exists, repeat the parent-walk starting
- *    from `win.opener`.
- * 3. Return the first `API` found, else `null`.
- *
- * @param {Window} [win=window] - The window to begin discovery from
- * @returns {object|null} The LMS API object, or `null` if not found
+ * @param {Window} [win=window] the window from which to start the search
+ * @returns {object|null} the LMS API object, or null when found in neither chain
  */
 export function discoverApi(win = window) {
-  if (win == null) {
-    return null;
-  }
-
   // 1. Parent chain.
   const fromParent = findApiInChain(win);
-  if (fromParent != null) {
+  if (fromParent) {
     return fromParent;
   }
 
-  // 2. Opener chain.
-  let opener;
+  // 2. Opener chain. Reading `.opener` can throw cross-origin, so guard it.
+  let opener = null;
   try {
-    opener = win.opener;
-  } catch {
-    // Cross-origin access to .opener: nothing more to search.
-    return null;
+    if (win && win.opener && win.opener !== win) {
+      opener = win.opener;
+    }
+  } catch (_err) {
+    opener = null;
   }
 
-  if (opener != null && opener !== win) {
+  if (opener) {
     const fromOpener = findApiInChain(opener);
-    if (fromOpener != null) {
+    if (fromOpener) {
       return fromOpener;
     }
   }
 
+  // 3. Found in neither chain.
   return null;
 }

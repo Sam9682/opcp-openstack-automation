@@ -60,18 +60,12 @@
       <file href="fr/security-groups.html"/>
       <file href="fr/terraform.html"/>
       <file href="fr/volumes.html"/>
-      <file href="js/code-highlight.js"/>
-      <file href="js/i18n.js"/>
-      <file href="js/lessons.js"/>
-      <file href="js/main.js"/>
-      <file href="js/navigation.js"/>
-      <file href="js/progress.js"/>
       <file href="js/scorm/api-discovery.js"/>
+      <file href="js/scorm/locale.js"/>
       <file href="js/scorm/progress-bridge.js"/>
       <file href="js/scorm/scorm-adapter.js"/>
       <file href="js/scorm/scorm-api.js"/>
       <file href="js/scorm/scorm-bootstrap.js"/>
-      <file href="js/self-assessment.js"/>
     </resource>
   </resources>
 </manifest>
