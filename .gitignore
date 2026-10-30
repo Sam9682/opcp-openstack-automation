@@ -33,6 +33,10 @@ ENV/
 *.swo
 *~
 .DS_Store
+.kiro
+.kiro/
+.kiro/*
+.shai
 
 # Testing
 .pytest_cache/
